@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/piece_provider.dart';
@@ -57,6 +58,21 @@ class _MainScreenState extends State<MainScreen>
             ),
           ],
         ),
+        actions: [
+          if (kDebugMode)
+            IconButton(
+              icon: const Icon(Icons.science_outlined, color: kTextSecondary),
+              tooltip: 'Seed test data',
+              onPressed: () async {
+                await context.read<PieceProvider>().seedTestData();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Test data loaded')),
+                  );
+                }
+              },
+            ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: kGoldColor,

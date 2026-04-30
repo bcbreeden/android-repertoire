@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/piece.dart';
 import '../utils/constants.dart';
 
@@ -83,8 +84,6 @@ class PieceCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              _ProgressIndicators(piece: piece, stageColor: stageColor),
             ],
           ),
         ),
@@ -109,29 +108,32 @@ class _LastPracticedRow extends StatelessWidget {
       lastPracticed.day,
     );
 
-    final bool isToday = practiceDay == today;
-    final bool isYesterday = practiceDay == yesterday;
-    final int daysAgo = today.difference(practiceDay).inDays;
+    final timeStr = DateFormat('h:mm a').format(lastPracticed);
 
-    if (isToday) {
-      return Row(
-        children: const [
-          Icon(Icons.check_circle, size: 12, color: Colors.green),
-          SizedBox(width: 4),
-          Text(
-            'Practiced today',
-            style: TextStyle(color: kTextSecondary, fontSize: 11),
-          ),
-        ],
-      );
+    String dateStr;
+    Color iconColor;
+    IconData icon;
+
+    if (practiceDay == today) {
+      dateStr = 'Today, $timeStr';
+      iconColor = Colors.green;
+      icon = Icons.check_circle;
+    } else if (practiceDay == yesterday) {
+      dateStr = 'Yesterday, $timeStr';
+      iconColor = kTextSecondary;
+      icon = Icons.history;
+    } else {
+      dateStr = '${DateFormat('MMM d').format(lastPracticed)}, $timeStr';
+      iconColor = kTextSecondary;
+      icon = Icons.history;
     }
 
     return Row(
       children: [
-        Icon(Icons.history, size: 12, color: kTextSecondary),
+        Icon(icon, size: 12, color: iconColor),
         const SizedBox(width: 4),
         Text(
-          isYesterday ? 'Practiced yesterday' : 'Last practiced $daysAgo days ago',
+          dateStr,
           style: const TextStyle(color: kTextSecondary, fontSize: 11),
         ),
       ],

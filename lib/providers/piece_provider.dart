@@ -26,8 +26,18 @@ class PieceProvider extends ChangeNotifier {
   List<PracticeSession> get practiceSessions => _practiceSessions;
 
   List<Piece> get filteredPieces {
-    if (_activeFilter == 'all') return _pieces;
-    return _pieces.where((p) => p.status == _activeFilter).toList();
+    final list = _activeFilter == 'all'
+        ? List<Piece>.from(_pieces)
+        : _pieces.where((p) => p.status == _activeFilter).toList();
+    list.sort((a, b) {
+      final aDate = _lastPracticeDates[a.id];
+      final bDate = _lastPracticeDates[b.id];
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+    return list;
   }
 
   int get totalCount => _pieces.length;
@@ -236,5 +246,10 @@ class PieceProvider extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  Future<void> seedTestData() async {
+    await _db.seedTestData();
+    await loadPieces();
   }
 }
