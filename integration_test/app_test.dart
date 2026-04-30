@@ -2,6 +2,58 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:repertoire/main.dart' as app;
+import 'package:repertoire/widgets/piece_card.dart';
+
+// ── Shared helpers ────────────────────────────────────────────────────────────
+
+/// Returns a Finder that matches a PieceCard whose piece.name equals [name].
+/// This is more reliable than find.ancestor because it directly checks widget
+/// properties rather than tree structure, avoiding false matches from the
+/// Recent Milestones section.
+Finder _cardFinder(String name) => find.byWidgetPredicate(
+      (widget) => widget is PieceCard && widget.piece.name == name,
+      skipOffstage: false,
+    );
+
+/// Scrolls to a piece card by name and opens its detail screen.
+/// Delta is negative to scroll DOWN (positive Y drag = scroll UP in Flutter).
+Future<void> _openPiece(WidgetTester tester, String name) async {
+  // Use default skipOffstage: true so dragUntilVisible loops correctly until
+  // the card is actually in the viewport (not just in SliverList cache extent).
+  final card = find.byWidgetPredicate(
+    (widget) => widget is PieceCard && widget.piece.name == name,
+  );
+  await tester.scrollUntilVisible(
+    card,
+    -500,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(card);
+  await tester.pumpAndSettle();
+}
+
+/// Taps the Advance button on the detail screen once and confirms the dialog.
+/// Handles the CelebrationScreen that appears when advancing to Mastered.
+Future<void> _advanceOnce(WidgetTester tester) async {
+  await tester.ensureVisible(find.textContaining('Advance to').first);
+  await tester.pumpAndSettle();
+  await tester.tap(find.textContaining('Advance to').first);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Confirm'));
+  await tester.pumpAndSettle();
+  // Dismiss celebration screen if this was the final stage
+  if (find.text('Dismiss').evaluate().isNotEmpty) {
+    await tester.tap(find.text('Dismiss'));
+    await tester.pumpAndSettle();
+  }
+}
+
+/// Navigates back to the home screen from the detail screen.
+Future<void> _goBack(WidgetTester tester) async {
+  await tester.pageBack();
+  await tester.pumpAndSettle();
+}
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -107,7 +159,7 @@ void main() {
       // ── Navigate to detail ────────────────────────────────────────────────
       await tester.scrollUntilVisible(
         find.text('Full Field Piece').last,
-        200,
+        -500,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.tap(find.text('Full Field Piece').last);
@@ -194,7 +246,7 @@ void main() {
       // Tap it to navigate to the detail screen.
       await tester.scrollUntilVisible(
         find.text('Test Piece').last,
-        200,
+        -500,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.tap(find.text('Test Piece').last);
@@ -267,6 +319,171 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Repertoire'), findsOneWidget);
+    });
+  });
+
+  group('Stage advancement and filter chips', () {
+    // These tests use the debug seed button to populate 40 pieces across all
+    // five stages, then verify filter chips isolate pieces by stage and that
+    // a piece can be advanced to the next stage.
+    //
+    // Seed data stage distribution:
+    //   Learning (12): Clair de Lune, Moonlight Sonata, ...
+    //   Note Perfection (9): Ballade No. 1, Sonatina in G, ...
+    //   Dynamics Perfection (8): Waldstein Sonata, Minuet in G, ...
+    //   Tempo Perfection (6): Pathetique Sonata, ...
+    //   Mastered (5): Prelude in C# Minor, Gymnopédie No. 3, ...
+
+    testWidgets('filter chips isolate pieces by stage', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Seed 40 pieces across all stages using the debug flask button
+      await tester.tap(find.byIcon(Icons.science_outlined));
+      await tester.pumpAndSettle();
+
+      // Each stage chip should now show a count
+      expect(find.textContaining('Learning'), findsAtLeastNWidgets(1));
+      expect(find.textContaining('Note Perfection'), findsAtLeastNWidgets(1));
+      expect(find.textContaining('Dynamics Perfection'), findsAtLeastNWidgets(1));
+      expect(find.textContaining('Tempo Perfection'), findsAtLeastNWidgets(1));
+      expect(find.textContaining('Mastered'), findsAtLeastNWidgets(1));
+
+      // Helper: bring a filter chip into view (FilterChips are in a
+      // SliverToBoxAdapter so always in tree, but can scroll off screen)
+      // and tap it.
+      Future<void> tapChip(String label) async {
+        final chip = find.ancestor(
+          of: find.textContaining(label),
+          matching: find.byType(FilterChip),
+        );
+        await tester.ensureVisible(chip.first);
+        await tester.pumpAndSettle();
+        await tester.tap(chip.first);
+        await tester.pumpAndSettle();
+      }
+
+      // ── Learning filter ───────────────────────────────────────────────────
+      await tapChip('Learning');
+      // Scroll down to expose piece cards (negative delta = scroll DOWN)
+      await tester.scrollUntilVisible(
+        _cardFinder('Clair de Lune'),
+        -500,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(_cardFinder('Clair de Lune'), findsAtLeastNWidgets(1));
+      expect(_cardFinder('Ballade No. 1'), findsNothing);      // Note Perfection
+      expect(_cardFinder('Waldstein Sonata'), findsNothing);   // Dynamics Perfection
+      expect(_cardFinder('Pathetique Sonata'), findsNothing);  // Tempo Perfection
+      expect(_cardFinder('Prelude in C# Minor'), findsNothing); // Mastered
+
+      // ── Note Perfection filter ────────────────────────────────────────────
+      await tapChip('Note Perfection');
+      await tester.scrollUntilVisible(
+        _cardFinder('Sonatina in G'),
+        -500,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(_cardFinder('Sonatina in G'), findsAtLeastNWidgets(1));
+      expect(_cardFinder('Clair de Lune'), findsNothing);
+      expect(_cardFinder('Waldstein Sonata'), findsNothing);
+
+      // ── Dynamics Perfection filter ────────────────────────────────────────
+      await tapChip('Dynamics Perfection');
+      await tester.scrollUntilVisible(
+        _cardFinder('Minuet in G'),
+        -500,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(_cardFinder('Minuet in G'), findsAtLeastNWidgets(1));
+      expect(_cardFinder('Sonatina in G'), findsNothing);
+      expect(_cardFinder('Pathetique Sonata'), findsNothing);
+
+      // ── Tempo Perfection filter ───────────────────────────────────────────
+      await tapChip('Tempo Perfection');
+      await tester.scrollUntilVisible(
+        _cardFinder('Pathetique Sonata'),
+        -500,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(_cardFinder('Pathetique Sonata'), findsAtLeastNWidgets(1));
+      expect(_cardFinder('Minuet in G'), findsNothing);
+      expect(_cardFinder('Prelude in C# Minor'), findsNothing);
+
+      // ── Mastered filter ───────────────────────────────────────────────────
+      await tapChip('Mastered');
+      await tester.scrollUntilVisible(
+        _cardFinder('Gymnopédie No. 3'),
+        -500,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(_cardFinder('Gymnopédie No. 3'), findsAtLeastNWidgets(1));
+      expect(_cardFinder('Pathetique Sonata'), findsNothing);
+      expect(_cardFinder('Clair de Lune'), findsNothing);
+
+      // ── All filter restores the full list ─────────────────────────────────
+      await tapChip('All');
+      expect(find.textContaining('All'), findsAtLeastNWidgets(1));
+    });
+
+    testWidgets('advancing a piece moves it to the next stage', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Seed 40 pieces across all stages
+      await tester.tap(find.byIcon(Icons.science_outlined));
+      await tester.pumpAndSettle();
+
+      // 'Clair de Lune' is in Learning — near top of sorted list.
+      await _openPiece(tester, 'Clair de Lune');
+
+      // Verify we navigated to the detail screen before advancing
+      expect(find.text('Log Practice'), findsOneWidget);
+
+      // Advance from Learning → Note Perfection
+      await _advanceOnce(tester);
+
+      // Stage badge on detail screen now shows Note Perfection
+      expect(find.textContaining('Note Perfection'), findsAtLeastNWidgets(1));
+
+      await _goBack(tester);
+
+      // Learning filter should no longer contain Clair de Lune piece card
+      final learningChip = find.ancestor(
+        of: find.textContaining('Learning'),
+        matching: find.byType(FilterChip),
+      );
+      await tester.ensureVisible(learningChip.first);
+      await tester.pumpAndSettle();
+      await tester.tap(learningChip.first);
+      await tester.pumpAndSettle();
+      expect(_cardFinder('Clair de Lune'), findsNothing);
+
+      // Note Perfection filter should now contain it
+      final npChip = find.ancestor(
+        of: find.textContaining('Note Perfection'),
+        matching: find.byType(FilterChip),
+      );
+      await tester.ensureVisible(npChip.first);
+      await tester.pumpAndSettle();
+      await tester.tap(npChip.first);
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        _cardFinder('Clair de Lune'),
+        -500,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(_cardFinder('Clair de Lune'), findsAtLeastNWidgets(1));
+
+      // Restore All using tapChip-style ensureVisible
+      final allChip = find.ancestor(
+        of: find.textContaining('All'),
+        matching: find.byType(FilterChip),
+      );
+      await tester.ensureVisible(allChip.first);
+      await tester.pumpAndSettle();
+      await tester.tap(allChip.first);
+      await tester.pumpAndSettle();
     });
   });
 }

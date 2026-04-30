@@ -394,6 +394,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
           children: [
             const SizedBox(height: 8),
             _buildTextField(
+              key: const Key('wizard-title'),
               controller: _nameController,
               label: 'Piece Title',
               hint: 'e.g. Moonlight Sonata',
@@ -410,6 +411,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
             ),
             const SizedBox(height: 16),
             _buildTextField(
+              key: const Key('wizard-measures'),
               controller: _measuresController,
               label: 'Total Measures',
               hint: 'e.g. 64',
@@ -550,6 +552,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
   }
 
   Widget _buildTextField({
+    Key? key,
     required TextEditingController controller,
     required String label,
     String? hint,
@@ -560,6 +563,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
     int maxLines = 1,
   }) {
     return TextFormField(
+      key: key,
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
