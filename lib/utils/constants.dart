@@ -20,7 +20,7 @@ const Map<String, String> kStageLabels = {
   kStageNotePerfection: 'Note Perfection',
   kStageDynamicsPerfection: 'Dynamics Perfection',
   kStageTempoPerfection: 'Tempo Perfection',
-  kStageRepertoire: 'Repertoire',
+  kStageRepertoire: 'Mastered',
 };
 
 const Map<String, String> kStageDescriptions = {

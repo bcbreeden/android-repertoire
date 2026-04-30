@@ -576,7 +576,7 @@ class _StageActions extends StatelessWidget {
                   Icon(Icons.star, color: kGoldColor),
                   SizedBox(width: 8),
                   Text(
-                    'Repertoire Complete!',
+                    'Mastered!',
                     style: TextStyle(
                       color: kGoldColor,
                       fontSize: 15,
