@@ -67,6 +67,119 @@ void main() {
     });
   });
 
+  group('Create and edit piece with all fields', () {
+    testWidgets('fills all fields on add, then edits all fields and verifies', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // ── Add ──────────────────────────────────────────────────────────────
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      if (find.text('Next').evaluate().isEmpty) {
+        markTestSkipped('Paywall active — clear seeded data first.');
+        return;
+      }
+
+      // Step 1: all available fields
+      await tester.enterText(find.byType(TextFormField).at(0), 'Full Field Piece');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(1), 'Test Composer');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(2), '80');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(3), '120'); // Target BPM
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(4), '60');  // Current BPM
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+
+      // Step 2: notes
+      await tester.enterText(find.byType(TextFormField).first, 'Original notes');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Piece'));
+      await tester.pumpAndSettle();
+
+      // Piece appears in list
+      expect(find.text('Full Field Piece'), findsAtLeastNWidgets(1));
+
+      // ── Navigate to detail ────────────────────────────────────────────────
+      await tester.scrollUntilVisible(
+        find.text('Full Field Piece').last,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Full Field Piece').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Log Practice'), findsOneWidget);
+
+      // ── Open edit screen ──────────────────────────────────────────────────
+      await tester.tap(find.byIcon(Icons.edit_outlined));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Piece'), findsOneWidget);
+
+      // ── Edit all fields ───────────────────────────────────────────────────
+      // Edit form field order: Title(0), Composer(1), Total Measures(2),
+      // Measures Learned(3), Current Tempo(4), Target Tempo(5), Notes(6)
+      // Use tap-then-enterText to ensure proper focus on all API levels.
+      final fields = find.byType(TextFormField);
+
+      await tester.tap(fields.at(0));
+      await tester.pumpAndSettle();
+      await tester.enterText(fields.at(0), 'Edited Piece Title');
+      await tester.pumpAndSettle();
+
+      await tester.tap(fields.at(1));
+      await tester.pumpAndSettle();
+      await tester.enterText(fields.at(1), 'Edited Composer');
+      await tester.pumpAndSettle();
+
+      await tester.tap(fields.at(2));
+      await tester.pumpAndSettle();
+      await tester.enterText(fields.at(2), '96');
+      await tester.pumpAndSettle();
+
+      await tester.tap(fields.at(3));
+      await tester.pumpAndSettle();
+      await tester.enterText(fields.at(3), '48');
+      await tester.pumpAndSettle();
+
+      await tester.tap(fields.at(4));
+      await tester.pumpAndSettle();
+      await tester.enterText(fields.at(4), '72');
+      await tester.pumpAndSettle();
+
+      // Scroll to expose Target Tempo and Notes fields
+      await tester.drag(find.byType(SingleChildScrollView).first, const Offset(0, -300));
+      await tester.pumpAndSettle();
+
+      await tester.tap(fields.at(5));
+      await tester.pumpAndSettle();
+      await tester.enterText(fields.at(5), '144');
+      await tester.pumpAndSettle();
+
+      await tester.tap(fields.at(6));
+      await tester.pumpAndSettle();
+      await tester.enterText(fields.at(6), 'Edited notes');
+      await tester.pumpAndSettle();
+
+      // Scroll Save Changes button into view and tap it
+      await tester.drag(find.byType(SingleChildScrollView).first, const Offset(0, -300));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save Changes'));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      // ── Verify on detail screen ───────────────────────────────────────────
+      // 'Edited Piece Title' appears in the AppBar title on the detail screen
+      expect(find.text('Edited Piece Title'), findsAtLeastNWidgets(1));
+      expect(find.text('Log Practice'), findsOneWidget);
+    });
+  });
+
   group('Piece detail', () {
     testWidgets('tapping a piece opens detail screen', (tester) async {
       app.main();
