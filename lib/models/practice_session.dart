@@ -5,6 +5,7 @@ class PracticeSession {
   final int? measuresLearned;
   final int? currentBpm;
   final String? notes;
+  final int? durationSeconds;
 
   const PracticeSession({
     this.id,
@@ -13,6 +14,7 @@ class PracticeSession {
     this.measuresLearned,
     this.currentBpm,
     this.notes,
+    this.durationSeconds,
   });
 
   Map<String, dynamic> toMap() => {
@@ -22,6 +24,7 @@ class PracticeSession {
     'measures_learned': measuresLearned,
     'current_bpm': currentBpm,
     'notes': notes,
+    'duration_seconds': durationSeconds,
   };
 
   factory PracticeSession.fromMap(Map<String, dynamic> map) => PracticeSession(
@@ -31,5 +34,6 @@ class PracticeSession {
     measuresLearned: map['measures_learned'] as int?,
     currentBpm: map['current_bpm'] as int?,
     notes: map['notes'] as String?,
+    durationSeconds: map['duration_seconds'] as int?,
   );
 }

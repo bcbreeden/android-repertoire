@@ -185,6 +185,7 @@ class PieceProvider extends ChangeNotifier {
     int? measuresLearned,
     int? currentBpm,
     String? notes,
+    int? durationSeconds,
   }) async {
     try {
       final session = PracticeSession(
@@ -193,6 +194,7 @@ class PieceProvider extends ChangeNotifier {
         measuresLearned: measuresLearned,
         currentBpm: currentBpm,
         notes: notes,
+        durationSeconds: durationSeconds,
       );
       await _db.insertPracticeSession(session);
 

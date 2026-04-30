@@ -79,17 +79,22 @@ class _MainScreenState extends State<MainScreen>
           PracticeTab(),
         ],
       ),
-      floatingActionButton: GestureDetector(
-        onLongPress: _isPracticeTab ? null : () => _showLogSheet(context),
-        child: FloatingActionButton(
-          onPressed: _isPracticeTab
-              ? () => _showLogSheet(context)
-              : () => _addPiece(context),
-          backgroundColor: kGoldColor,
-          foregroundColor: const Color(0xFF1A1200),
-          tooltip: _isPracticeTab ? 'Log Practice' : 'Add Piece',
-          child: Icon(_isPracticeTab ? Icons.edit_note : Icons.add),
-        ),
+      floatingActionButton: Consumer<PieceProvider>(
+        builder: (context, provider, _) {
+          if (_isPracticeTab && provider.pieces.isEmpty) return const SizedBox.shrink();
+          return GestureDetector(
+            onLongPress: _isPracticeTab ? null : () => _showLogSheet(context),
+            child: FloatingActionButton(
+              onPressed: _isPracticeTab
+                  ? () => _showLogSheet(context)
+                  : () => _addPiece(context),
+              backgroundColor: kGoldColor,
+              foregroundColor: const Color(0xFF1A1200),
+              tooltip: _isPracticeTab ? 'Log Practice' : 'Add Piece',
+              child: Icon(_isPracticeTab ? Icons.edit_note : Icons.add),
+            ),
+          );
+        },
       ),
     );
   }

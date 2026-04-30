@@ -20,7 +20,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'repertoire.db');
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createDatabase,
       onUpgrade: _onUpgrade,
     );
@@ -59,7 +59,8 @@ class DatabaseHelper {
         timestamp TEXT NOT NULL,
         measures_learned INTEGER,
         current_bpm INTEGER,
-        notes TEXT
+        notes TEXT,
+        duration_seconds INTEGER
       )
     ''');
   }
@@ -80,9 +81,19 @@ class DatabaseHelper {
           timestamp TEXT NOT NULL,
           measures_learned INTEGER,
           current_bpm INTEGER,
-          notes TEXT
+          notes TEXT,
+          duration_seconds INTEGER
         )
       ''');
+    }
+    if (oldVersion < 4) {
+      final cols = await db.rawQuery('PRAGMA table_info(practice_sessions)');
+      final hasCol = cols.any((c) => c['name'] == 'duration_seconds');
+      if (!hasCol) {
+        await db.execute(
+          'ALTER TABLE practice_sessions ADD COLUMN duration_seconds INTEGER',
+        );
+      }
     }
   }
 

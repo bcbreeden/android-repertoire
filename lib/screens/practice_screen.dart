@@ -27,6 +27,7 @@ class _PracticeTabState extends State<PracticeTab>
 
         if (sessions.isEmpty) {
           return _EmptyPractice(
+            hasPieces: provider.pieces.isNotEmpty,
             onLog: () => _showLogSheet(context),
           );
         }
@@ -269,6 +270,16 @@ class _SessionTile extends StatelessWidget {
 
   const _SessionTile({required this.session, required this.provider});
 
+  String _formatDuration(int seconds) {
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    final s = seconds % 60;
+    if (h > 0) {
+      return '${h}h ${m.toString().padLeft(2, '0')}m';
+    }
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final piece = provider.getPieceById(session.pieceId);
@@ -326,12 +337,20 @@ class _SessionTile extends StatelessWidget {
               ),
             ],
           ),
-          if (session.measuresLearned != null || session.currentBpm != null) ...[
+          if (session.measuresLearned != null ||
+              session.currentBpm != null ||
+              session.durationSeconds != null) ...[
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 4,
               children: [
+                if (session.durationSeconds != null)
+                  _Chip(
+                    icon: Icons.timer_outlined,
+                    label: _formatDuration(session.durationSeconds!),
+                    color: stageColor,
+                  ),
                 if (session.measuresLearned != null)
                   _Chip(
                     icon: Icons.piano,
@@ -400,8 +419,9 @@ class _Chip extends StatelessWidget {
 // ── Empty state ───────────────────────────────────────────────────────────────
 
 class _EmptyPractice extends StatelessWidget {
+  final bool hasPieces;
   final VoidCallback onLog;
-  const _EmptyPractice({required this.onLog});
+  const _EmptyPractice({required this.hasPieces, required this.onLog});
 
   @override
   Widget build(BuildContext context) {
@@ -411,34 +431,41 @@ class _EmptyPractice extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.edit_note,
-                size: 64, color: kTextSecondary.withOpacity(0.4)),
+            Icon(
+              hasPieces ? Icons.edit_note : Icons.piano,
+              size: 64,
+              color: kTextSecondary.withOpacity(0.4),
+            ),
             const SizedBox(height: 16),
-            const Text(
-              'No sessions yet',
-              style: TextStyle(
+            Text(
+              hasPieces ? 'No sessions yet' : 'No pieces yet',
+              style: const TextStyle(
                   color: kTextPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Log your first practice session to start tracking your progress',
-              style: TextStyle(color: kTextSecondary, fontSize: 14),
+            Text(
+              hasPieces
+                  ? 'Log your first practice session to start tracking your progress'
+                  : 'Add a piece in the Pieces tab before logging practice',
+              style: const TextStyle(color: kTextSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: onLog,
-              icon: const Icon(Icons.add),
-              label: const Text('Log Practice'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kGoldColor,
-                foregroundColor: const Color(0xFF1A1200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            if (hasPieces) ...[
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: onLog,
+                icon: const Icon(Icons.add),
+                label: const Text('Log Practice'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kGoldColor,
+                  foregroundColor: const Color(0xFF1A1200),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),

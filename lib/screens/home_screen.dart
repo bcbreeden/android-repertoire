@@ -7,6 +7,7 @@ import '../utils/constants.dart';
 import '../widgets/piece_card.dart';
 import '../widgets/stats_card.dart';
 import 'piece_detail_screen.dart';
+import 'piece_form_screen.dart';
 
 class PiecesTab extends StatefulWidget {
   const PiecesTab({super.key});
@@ -88,7 +89,7 @@ class _PiecesTabState extends State<PiecesTab>
                 SliverFillRemaining(
                   child: _EmptyState(
                     isFiltered: provider.activeFilter != 'all',
-                    onAdd: () => Navigator.of(context).pushNamed('/add'),
+                    onAdd: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PieceFormScreen())),
                   ),
                 )
               else
