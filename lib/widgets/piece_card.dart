@@ -5,11 +5,13 @@ import '../utils/constants.dart';
 class PieceCard extends StatelessWidget {
   final Piece piece;
   final VoidCallback onTap;
+  final DateTime? lastPracticed;
 
   const PieceCard({
     super.key,
     required this.piece,
     required this.onTap,
+    this.lastPracticed,
   });
 
   @override
@@ -66,6 +68,10 @@ class PieceCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
+                        if (lastPracticed != null) ...[
+                          const SizedBox(height: 4),
+                          _LastPracticedRow(lastPracticed: lastPracticed!),
+                        ],
                       ],
                     ),
                   ),
@@ -83,6 +89,52 @@ class PieceCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _LastPracticedRow extends StatelessWidget {
+  final DateTime lastPracticed;
+
+  const _LastPracticedRow({required this.lastPracticed});
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final practiceDay = DateTime(
+      lastPracticed.year,
+      lastPracticed.month,
+      lastPracticed.day,
+    );
+
+    final bool isToday = practiceDay == today;
+    final bool isYesterday = practiceDay == yesterday;
+    final int daysAgo = today.difference(practiceDay).inDays;
+
+    if (isToday) {
+      return Row(
+        children: const [
+          Icon(Icons.check_circle, size: 12, color: Colors.green),
+          SizedBox(width: 4),
+          Text(
+            'Practiced today',
+            style: TextStyle(color: kTextSecondary, fontSize: 11),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Icon(Icons.history, size: 12, color: kTextSecondary),
+        const SizedBox(width: 4),
+        Text(
+          isYesterday ? 'Practiced yesterday' : 'Last practiced $daysAgo days ago',
+          style: const TextStyle(color: kTextSecondary, fontSize: 11),
+        ),
+      ],
     );
   }
 }

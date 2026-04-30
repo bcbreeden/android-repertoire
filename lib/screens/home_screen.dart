@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../models/piece.dart';
 import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
+import '../widgets/log_practice_sheet.dart';
+import '../widgets/paywall_sheet.dart';
 import '../widgets/piece_card.dart';
 import '../widgets/stats_card.dart';
 import 'piece_detail_screen.dart';
@@ -48,13 +50,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: kGoldColor),
-            onPressed: () => _navigateToAdd(context),
-            tooltip: 'Add Piece',
-          ),
-        ],
       ),
       body: Consumer<PieceProvider>(
         builder: (context, provider, _) {
@@ -137,6 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return PieceCard(
                           piece: piece,
                           onTap: () => _navigateToDetail(context, piece),
+                          lastPracticed: provider.lastPracticeDateForPiece(piece.id!),
                         );
                       },
                       childCount: provider.filteredPieces.length,
@@ -149,19 +145,47 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAdd(context),
-        backgroundColor: kGoldColor,
-        foregroundColor: const Color(0xFF1A1200),
-        child: const Icon(Icons.add),
+      floatingActionButton: GestureDetector(
+        onLongPress: () => _showLogPracticeSheet(context),
+        child: FloatingActionButton(
+          onPressed: () => _navigateToAdd(context),
+          backgroundColor: kGoldColor,
+          foregroundColor: const Color(0xFF1A1200),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
 
   Future<void> _navigateToAdd(BuildContext context) async {
+    final provider = context.read<PieceProvider>();
+    if (!provider.canAddPiece) {
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: kCardColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (_) => const PaywallSheet(),
+      );
+      return;
+    }
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const PieceFormScreen()),
+    );
+  }
+
+  Future<void> _showLogPracticeSheet(BuildContext context) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: kCardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const LogPracticeSheet(pieceId: null),
     );
   }
 
@@ -210,7 +234,7 @@ class _FilterBar extends StatelessWidget {
             ),
             onSelected: (_) => provider.setFilter(filter),
             backgroundColor: kCardColor,
-            selectedColor: color.withOpacity(0.15),
+            selectedColor: color.withOpacity(0.3),
             checkmarkColor: color,
             side: BorderSide(
               color: isSelected ? color.withOpacity(0.5) : kDividerColor,

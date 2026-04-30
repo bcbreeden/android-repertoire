@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/piece.dart';
+import '../models/practice_session.dart';
 import '../utils/constants.dart';
 
 class DatabaseHelper {
@@ -19,7 +20,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'repertoire.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDatabase,
       onUpgrade: _onUpgrade,
     );
@@ -51,6 +52,16 @@ class DatabaseHelper {
         date TEXT PRIMARY KEY
       )
     ''');
+    await db.execute('''
+      CREATE TABLE practice_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        piece_id INTEGER NOT NULL,
+        timestamp TEXT NOT NULL,
+        measures_learned INTEGER,
+        current_bpm INTEGER,
+        notes TEXT
+      )
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -58,6 +69,18 @@ class DatabaseHelper {
       await db.execute('''
         CREATE TABLE IF NOT EXISTS app_opens (
           date TEXT PRIMARY KEY
+        )
+      ''');
+    }
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS practice_sessions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          piece_id INTEGER NOT NULL,
+          timestamp TEXT NOT NULL,
+          measures_learned INTEGER,
+          current_bpm INTEGER,
+          notes TEXT
         )
       ''');
     }
@@ -273,6 +296,38 @@ class DatabaseHelper {
         (b['timestamp'] as DateTime).compareTo(a['timestamp'] as DateTime));
 
     return milestones.take(limit).toList();
+  }
+
+  // Practice session methods
+  Future<int> insertPracticeSession(PracticeSession session) async {
+    final db = await database;
+    return await db.insert('practice_sessions', session.toMap());
+  }
+
+  Future<DateTime?> getLastSessionDateForPiece(int pieceId) async {
+    final db = await database;
+    final rows = await db.query(
+      'practice_sessions',
+      where: 'piece_id = ?',
+      whereArgs: [pieceId],
+      orderBy: 'timestamp DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return DateTime.parse(rows.first['timestamp'] as String);
+  }
+
+  Future<Map<int, DateTime>> getAllLastSessionDates() async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      'SELECT piece_id, MAX(timestamp) as last_ts FROM practice_sessions GROUP BY piece_id',
+    );
+    final map = <int, DateTime>{};
+    for (final row in rows) {
+      map[row['piece_id'] as int] =
+          DateTime.parse(row['last_ts'] as String);
+    }
+    return map;
   }
 
   Future<void> close() async {

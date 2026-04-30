@@ -38,7 +38,7 @@ class StatsCard extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               _StatTile(
-                label: 'Repertoire',
+                label: 'Mastered',
                 value: repertoireCount.toString(),
                 icon: Icons.star,
                 color: kGoldColor,

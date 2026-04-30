@@ -4,8 +4,27 @@ import 'package:provider/provider.dart';
 import '../models/piece.dart';
 import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
+import '../widgets/log_practice_sheet.dart';
 import '../widgets/stage_progress_tracker.dart';
+import 'celebration_screen.dart';
 import 'piece_form_screen.dart';
+
+String _motivationalText(String status) {
+  switch (status) {
+    case kStagelearning:
+      return 'Keep practicing!';
+    case kStageNotePerfection:
+      return 'Getting it down!';
+    case kStageDynamicsPerfection:
+      return 'Sounding great!';
+    case kStageTempoPerfection:
+      return 'Almost there!';
+    case kStageRepertoire:
+      return 'Mastered!';
+    default:
+      return '';
+  }
+}
 
 class PieceDetailScreen extends StatefulWidget {
   final int pieceId;
@@ -86,6 +105,9 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
                 // Progress bars
                 _ProgressSection(piece: piece, stageColor: stageColor),
 
+                // Log Practice button
+                _LogPracticeButton(pieceId: piece.id!),
+
                 // Advance / Stage selector
                 _StageActions(
                   piece: piece,
@@ -138,13 +160,13 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: kCardColor,
-        title: const Text(
-          'Advance Stage?',
-          style: TextStyle(color: kTextPrimary),
+        title: Text(
+          'Advance to $newStageLabel?',
+          style: const TextStyle(color: kTextPrimary),
         ),
-        content: Text(
-          'Move "${piece.name}" to $newStageLabel?',
-          style: const TextStyle(color: kTextSecondary),
+        content: const Text(
+          "Make sure you're ready — this can't be undone.",
+          style: TextStyle(color: kTextSecondary),
         ),
         actions: [
           TextButton(
@@ -157,7 +179,7 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
               backgroundColor: kGoldColor,
               foregroundColor: const Color(0xFF1A1200),
             ),
-            child: const Text('Advance'),
+            child: const Text('Confirm'),
           ),
         ],
       ),
@@ -166,13 +188,22 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
     if (confirmed == true && context.mounted) {
       final updated = await provider.advanceStage(piece);
       if (updated != null && context.mounted) {
-        final label = kStageLabels[updated.status] ?? updated.status;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Advanced to $label!'),
-            backgroundColor: kStageColors[updated.status] ?? kGoldColor,
-          ),
-        );
+        if (updated.status == kStageRepertoire) {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CelebrationScreen(pieceName: updated.name),
+            ),
+          );
+        } else {
+          final label = kStageLabels[updated.status] ?? updated.status;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Advanced to $label!'),
+              backgroundColor: kStageColors[updated.status] ?? kGoldColor,
+            ),
+          );
+        }
       }
     }
   }
@@ -308,9 +339,22 @@ class _HeroHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                '${piece.daysAtStage} days at this stage',
-                style: const TextStyle(color: kTextSecondary, fontSize: 13),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${piece.daysAtStage} days at this stage',
+                    style: const TextStyle(color: kTextSecondary, fontSize: 13),
+                  ),
+                  Text(
+                    _motivationalText(piece.status),
+                    style: const TextStyle(
+                      color: kTextSecondary,
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -437,6 +481,41 @@ class _ProgressBar extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LogPracticeButton extends StatelessWidget {
+  final int pieceId;
+
+  const _LogPracticeButton({required this.pieceId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () => showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: kCardColor,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            builder: (_) => LogPracticeSheet(pieceId: pieceId),
+          ),
+          icon: const Icon(Icons.edit_note, size: 18),
+          label: const Text('Log Practice'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: kGoldColor,
+            side: const BorderSide(color: kGoldColor, width: 1.2),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ),
     );
   }
 }

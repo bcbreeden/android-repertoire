@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
 import '../models/piece.dart';
+import '../models/practice_session.dart';
 import '../utils/constants.dart';
 
 class PieceProvider extends ChangeNotifier {
@@ -11,12 +13,15 @@ class PieceProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   int _streak = 0;
+  bool _isPremium = false;
+  Map<int, DateTime> _lastPracticeDates = {};
 
   List<Piece> get pieces => _pieces;
   String get activeFilter => _activeFilter;
   bool get isLoading => _isLoading;
   String? get error => _error;
   int get streak => _streak;
+  bool get isPremium => _isPremium;
 
   List<Piece> get filteredPieces {
     if (_activeFilter == 'all') return _pieces;
@@ -45,6 +50,10 @@ class PieceProvider extends ChangeNotifier {
     return map;
   }
 
+  bool get canAddPiece => _isPremium || _pieces.length < 3;
+
+  DateTime? lastPracticeDateForPiece(int pieceId) => _lastPracticeDates[pieceId];
+
   Future<List<Map<String, dynamic>>> get recentMilestones =>
       _db.getRecentMilestones(limit: 5);
 
@@ -57,6 +66,10 @@ class PieceProvider extends ChangeNotifier {
       await _db.recordAppOpen();
       _pieces = await _db.getAllPieces();
       _streak = await _db.getStreak();
+      _lastPracticeDates = await _db.getAllLastSessionDates();
+
+      final prefs = await SharedPreferences.getInstance();
+      _isPremium = prefs.getBool('is_premium') ?? false;
     } catch (e) {
       _error = 'Failed to load pieces: $e';
     } finally {
@@ -154,6 +167,55 @@ class PieceProvider extends ChangeNotifier {
       _error = 'Failed to set stage: $e';
       notifyListeners();
       return null;
+    }
+  }
+
+  Future<void> setPremium(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_premium', value);
+    _isPremium = value;
+    notifyListeners();
+  }
+
+  Future<void> logPractice(
+    int pieceId, {
+    int? measuresLearned,
+    int? currentBpm,
+    String? notes,
+  }) async {
+    try {
+      final session = PracticeSession(
+        pieceId: pieceId,
+        timestamp: DateTime.now(),
+        measuresLearned: measuresLearned,
+        currentBpm: currentBpm,
+        notes: notes,
+      );
+      await _db.insertPracticeSession(session);
+
+      // Optionally update piece measures/bpm if provided
+      if (measuresLearned != null || currentBpm != null) {
+        final piece = getPieceById(pieceId);
+        if (piece != null) {
+          final updatedPiece = piece.copyWith(
+            measuresLearned: measuresLearned ?? piece.measuresLearned,
+            currentTempo: currentBpm ?? piece.currentTempo,
+            updatedAt: DateTime.now(),
+          );
+          await _db.updatePiece(updatedPiece);
+          final idx = _pieces.indexWhere((p) => p.id == pieceId);
+          if (idx >= 0) {
+            _pieces[idx] = updatedPiece;
+          }
+        }
+      }
+
+      // Reload last practice dates
+      _lastPracticeDates = await _db.getAllLastSessionDates();
+      notifyListeners();
+    } catch (e) {
+      _error = 'Failed to log practice: $e';
+      notifyListeners();
     }
   }
 
