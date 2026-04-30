@@ -15,7 +15,10 @@ class PieceFormScreen extends StatefulWidget {
 }
 
 class _PieceFormScreenState extends State<PieceFormScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _step1Key = GlobalKey<FormState>();
+  final _step2Key = GlobalKey<FormState>();
+  final _step3Key = GlobalKey<FormState>();
+  final _editFormKey = GlobalKey<FormState>();
 
   late final TextEditingController _nameController;
   late final TextEditingController _composerController;
@@ -26,6 +29,8 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
   late final TextEditingController _notesController;
   late String _status;
 
+  final PageController _pageController = PageController();
+  int _currentStep = 0;
   bool _isSaving = false;
 
   bool get isEditing => widget.piece != null;
@@ -57,11 +62,92 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
     _currentTempoController.dispose();
     _targetTempoController.dispose();
     _notesController.dispose();
+    _pageController.dispose();
     super.dispose();
+  }
+
+  void _nextStep() {
+    final keys = [_step1Key, _step2Key, _step3Key];
+    if (!keys[_currentStep].currentState!.validate()) return;
+    if (_currentStep < 2) {
+      setState(() => _currentStep++);
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _prevStep() {
+    if (_currentStep > 0) {
+      setState(() => _currentStep--);
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  Future<void> _save() async {
+    // For wizard, validate the current (last) step
+    final keys = [_step1Key, _step2Key, _step3Key];
+    final key = isEditing ? _editFormKey : keys[_currentStep];
+    if (!key.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+
+    final provider = context.read<PieceProvider>();
+    final now = DateTime.now();
+
+    final piece = Piece(
+      id: widget.piece?.id,
+      name: _nameController.text.trim(),
+      composer: _composerController.text.trim().isEmpty
+          ? null
+          : _composerController.text.trim(),
+      measures: int.parse(_measuresController.text),
+      measuresLearned: _measuresLearnedController.text.trim().isEmpty
+          ? null
+          : int.parse(_measuresLearnedController.text),
+      currentTempo: _currentTempoController.text.trim().isEmpty
+          ? null
+          : int.parse(_currentTempoController.text),
+      targetTempo: _targetTempoController.text.trim().isEmpty
+          ? null
+          : int.parse(_targetTempoController.text),
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
+      status: _status,
+      createdAt: widget.piece?.createdAt ?? now,
+      updatedAt: now,
+      learningAt: widget.piece?.learningAt,
+      notePerfectionAt: widget.piece?.notePerfectionAt,
+      dynamicsPerfectionAt: widget.piece?.dynamicsPerfectionAt,
+      tempoPerfectionAt: widget.piece?.tempoPerfectionAt,
+      repertoireAt: widget.piece?.repertoireAt,
+    );
+
+    if (isEditing) {
+      await provider.updatePiece(piece);
+    } else {
+      await provider.addPiece(piece);
+    }
+
+    if (mounted) {
+      setState(() => _isSaving = false);
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    return isEditing ? _buildEditForm() : _buildWizard();
+  }
+
+  // ── Full edit form (unchanged behaviour) ────────────────────────────────
+
+  Widget _buildEditForm() {
     return Scaffold(
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
@@ -69,19 +155,16 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: kTextPrimary),
-        title: Text(
-          isEditing ? 'Edit Piece' : 'Add Piece',
-          style: const TextStyle(
-            color: kTextPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+        title: const Text(
+          'Edit Piece',
+          style: TextStyle(
+              color: kTextPrimary, fontSize: 18, fontWeight: FontWeight.w600),
         ),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _save,
             child: Text(
-              isEditing ? 'Save' : 'Add',
+              'Save',
               style: TextStyle(
                 color: _isSaving ? kTextSecondary : kGoldColor,
                 fontSize: 15,
@@ -92,7 +175,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
         ],
       ),
       body: Form(
-        key: _formKey,
+        key: _editFormKey,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -100,28 +183,22 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
             children: [
               _SectionLabel('Basic Info'),
               const SizedBox(height: 8),
-
               _buildTextField(
                 controller: _nameController,
                 label: 'Piece Title',
                 hint: 'e.g. Moonlight Sonata',
                 isRequired: true,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) {
-                    return 'Piece title is required';
-                  }
-                  return null;
-                },
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Piece title is required'
+                    : null,
               ),
               const SizedBox(height: 12),
-
               _buildTextField(
                 controller: _composerController,
                 label: 'Composer',
                 hint: 'e.g. Ludwig van Beethoven',
               ),
               const SizedBox(height: 12),
-
               _buildTextField(
                 controller: _measuresController,
                 label: 'Total Measures',
@@ -134,17 +211,13 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                     return 'Total measures is required';
                   }
                   final n = int.tryParse(v);
-                  if (n == null || n < 1) {
-                    return 'Enter a valid number of measures';
-                  }
+                  if (n == null || n < 1) return 'Enter a valid number';
                   return null;
                 },
               ),
-
               const SizedBox(height: 20),
               _SectionLabel('Practice Progress'),
               const SizedBox(height: 8),
-
               _buildTextField(
                 controller: _measuresLearnedController,
                 label: 'Measures Learned',
@@ -163,7 +236,6 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                 },
               ),
               const SizedBox(height: 12),
-
               Row(
                 children: [
                   Expanded(
@@ -199,29 +271,23 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 20),
               _SectionLabel('Stage'),
               const SizedBox(height: 8),
-
               _StageSelector(
                 value: _status,
                 onChanged: (s) => setState(() => _status = s),
               ),
-
               const SizedBox(height: 20),
               _SectionLabel('Notes'),
               const SizedBox(height: 8),
-
               _buildTextField(
                 controller: _notesController,
                 label: 'Practice Notes',
                 hint: 'Tips, reminders, tricky sections...',
                 maxLines: 4,
               ),
-
               const SizedBox(height: 32),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -231,25 +297,228 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                     foregroundColor: const Color(0xFF1A1200),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     textStyle: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                        fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   child: _isSaving
                       ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                            color: kGoldColor,
-                            strokeWidth: 2,
-                          ),
+                              color: kGoldColor, strokeWidth: 2),
                         )
-                      : Text(isEditing ? 'Save Changes' : 'Add Piece'),
+                      : const Text('Save Changes'),
                 ),
               ),
               const SizedBox(height: 24),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // ── Wizard ───────────────────────────────────────────────────────────────
+
+  Widget _buildWizard() {
+    return Scaffold(
+      backgroundColor: kBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: kBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: kTextPrimary),
+        title: Text(
+          _wizardTitles[_currentStep],
+          style: const TextStyle(
+              color: kTextPrimary, fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+      ),
+      body: Column(
+        children: [
+          _StepIndicator(currentStep: _currentStep, totalSteps: 3),
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildStep1(),
+                _buildStep2(),
+                _buildStep3(),
+              ],
+            ),
+          ),
+          _buildNavButtons(),
+        ],
+      ),
+    );
+  }
+
+  static const _wizardTitles = [
+    'What are you learning?',
+    'Measures & Tempo',
+    'Any notes?',
+  ];
+
+  Widget _buildStep1() {
+    return Form(
+      key: _step1Key,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            _buildTextField(
+              controller: _nameController,
+              label: 'Piece Title',
+              hint: 'e.g. Moonlight Sonata',
+              isRequired: true,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Piece title is required'
+                  : null,
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(
+              controller: _composerController,
+              label: 'Composer',
+              hint: 'e.g. Ludwig van Beethoven',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStep2() {
+    return Form(
+      key: _step2Key,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            _buildTextField(
+              controller: _measuresController,
+              label: 'Total Measures',
+              hint: 'e.g. 64',
+              isRequired: true,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) {
+                  return 'Total measures is required';
+                }
+                final n = int.tryParse(v);
+                if (n == null || n < 1) return 'Enter a valid number';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    controller: _currentTempoController,
+                    label: 'Current BPM',
+                    hint: 'e.g. 60',
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return null;
+                      final n = int.tryParse(v);
+                      if (n == null || n < 1) return 'Invalid BPM';
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    controller: _targetTempoController,
+                    label: 'Target BPM',
+                    hint: 'e.g. 120',
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return null;
+                      final n = int.tryParse(v);
+                      if (n == null || n < 1) return 'Invalid BPM';
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStep3() {
+    return Form(
+      key: _step3Key,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            _buildTextField(
+              controller: _notesController,
+              label: 'Practice Notes',
+              hint: 'Tips, reminders, tricky sections...',
+              maxLines: 6,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavButtons() {
+    final isLast = _currentStep == 2;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+        child: Row(
+          children: [
+            if (_currentStep > 0)
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _prevStep,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: kTextSecondary,
+                    side: const BorderSide(color: kDividerColor),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text('Back'),
+                ),
+              ),
+            if (_currentStep > 0) const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : (isLast ? _save : _nextStep),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kGoldColor,
+                  foregroundColor: const Color(0xFF1A1200),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  textStyle: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: kGoldColor, strokeWidth: 2),
+                      )
+                    : Text(isLast ? 'Add Piece' : 'Next'),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -305,56 +574,44 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
       ),
     );
   }
+}
 
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+// ── Step indicator ───────────────────────────────────────────────────────────
 
-    setState(() => _isSaving = true);
+class _StepIndicator extends StatelessWidget {
+  final int currentStep;
+  final int totalSteps;
 
-    final provider = context.read<PieceProvider>();
-    final now = DateTime.now();
+  const _StepIndicator({required this.currentStep, required this.totalSteps});
 
-    final piece = Piece(
-      id: widget.piece?.id,
-      name: _nameController.text.trim(),
-      composer: _composerController.text.trim().isEmpty
-          ? null
-          : _composerController.text.trim(),
-      measures: int.parse(_measuresController.text),
-      measuresLearned: _measuresLearnedController.text.trim().isEmpty
-          ? null
-          : int.parse(_measuresLearnedController.text),
-      currentTempo: _currentTempoController.text.trim().isEmpty
-          ? null
-          : int.parse(_currentTempoController.text),
-      targetTempo: _targetTempoController.text.trim().isEmpty
-          ? null
-          : int.parse(_targetTempoController.text),
-      notes: _notesController.text.trim().isEmpty
-          ? null
-          : _notesController.text.trim(),
-      status: _status,
-      createdAt: widget.piece?.createdAt ?? now,
-      updatedAt: now,
-      learningAt: widget.piece?.learningAt,
-      notePerfectionAt: widget.piece?.notePerfectionAt,
-      dynamicsPerfectionAt: widget.piece?.dynamicsPerfectionAt,
-      tempoPerfectionAt: widget.piece?.tempoPerfectionAt,
-      repertoireAt: widget.piece?.repertoireAt,
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Row(
+        children: List.generate(totalSteps, (i) {
+          final isActive = i == currentStep;
+          final isDone = i < currentStep;
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: i < totalSteps - 1 ? 6 : 0),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDone || isActive ? kGoldColor : kDividerColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
     );
-
-    if (isEditing) {
-      await provider.updatePiece(piece);
-    } else {
-      await provider.addPiece(piece);
-    }
-
-    if (mounted) {
-      setState(() => _isSaving = false);
-      Navigator.pop(context);
-    }
   }
 }
+
+// ── Shared widgets ───────────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   final String text;
