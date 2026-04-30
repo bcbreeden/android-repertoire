@@ -15,6 +15,7 @@ class PieceProvider extends ChangeNotifier {
   int _streak = 0;
   bool _isPremium = false;
   Map<int, DateTime> _lastPracticeDates = {};
+  List<PracticeSession> _practiceSessions = [];
 
   List<Piece> get pieces => _pieces;
   String get activeFilter => _activeFilter;
@@ -22,6 +23,7 @@ class PieceProvider extends ChangeNotifier {
   String? get error => _error;
   int get streak => _streak;
   bool get isPremium => _isPremium;
+  List<PracticeSession> get practiceSessions => _practiceSessions;
 
   List<Piece> get filteredPieces {
     if (_activeFilter == 'all') return _pieces;
@@ -67,6 +69,7 @@ class PieceProvider extends ChangeNotifier {
       _pieces = await _db.getAllPieces();
       _streak = await _db.getStreak();
       _lastPracticeDates = await _db.getAllLastSessionDates();
+      _practiceSessions = await _db.getAllPracticeSessions();
 
       final prefs = await SharedPreferences.getInstance();
       _isPremium = prefs.getBool('is_premium') ?? false;
@@ -210,8 +213,9 @@ class PieceProvider extends ChangeNotifier {
         }
       }
 
-      // Reload last practice dates
+      // Reload last practice dates and sessions
       _lastPracticeDates = await _db.getAllLastSessionDates();
+      _practiceSessions = await _db.getAllPracticeSessions();
       notifyListeners();
     } catch (e) {
       _error = 'Failed to log practice: $e';

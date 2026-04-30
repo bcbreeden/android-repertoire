@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'providers/piece_provider.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_screen.dart';
 import 'utils/constants.dart';
 
 void main() async {
@@ -31,7 +31,7 @@ class RepertoireApp extends StatelessWidget {
         title: 'Repertoire',
         debugShowCheckedModeBanner: false,
         theme: _buildTheme(),
-        home: const HomeScreen(),
+        home: const MainScreen(),
       ),
     );
   }

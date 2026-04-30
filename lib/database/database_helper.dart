@@ -299,6 +299,12 @@ class DatabaseHelper {
   }
 
   // Practice session methods
+  Future<List<PracticeSession>> getAllPracticeSessions() async {
+    final db = await database;
+    final rows = await db.query('practice_sessions', orderBy: 'timestamp DESC');
+    return rows.map((r) => PracticeSession.fromMap(r)).toList();
+  }
+
   Future<int> insertPracticeSession(PracticeSession session) async {
     final db = await database;
     return await db.insert('practice_sessions', session.toMap());

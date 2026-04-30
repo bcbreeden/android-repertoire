@@ -4,21 +4,22 @@ import 'package:provider/provider.dart';
 import '../models/piece.dart';
 import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
-import '../widgets/log_practice_sheet.dart';
-import '../widgets/paywall_sheet.dart';
 import '../widgets/piece_card.dart';
 import '../widgets/stats_card.dart';
 import 'piece_detail_screen.dart';
-import 'piece_form_screen.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class PiecesTab extends StatefulWidget {
+  const PiecesTab({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<PiecesTab> createState() => _PiecesTabState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _PiecesTabState extends State<PiecesTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   void initState() {
     super.initState();
@@ -29,179 +30,100 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: kBackgroundColor,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        title: Row(
-          children: [
-            const Icon(Icons.piano, color: kGoldColor, size: 24),
-            const SizedBox(width: 8),
-            const Text(
-              'Repertoire',
-              style: TextStyle(
-                color: kTextPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ],
-        ),
-      ),
-      body: Consumer<PieceProvider>(
-        builder: (context, provider, _) {
-          if (provider.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: kGoldColor),
-            );
-          }
+    super.build(context);
+    return Consumer<PieceProvider>(
+      builder: (context, provider, _) {
+        if (provider.isLoading) {
+          return const Center(
+              child: CircularProgressIndicator(color: kGoldColor));
+        }
 
-          if (provider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                  const SizedBox(height: 16),
-                  Text(
-                    provider.error!,
+        if (provider.error != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                const SizedBox(height: 16),
+                Text(provider.error!,
                     style: const TextStyle(color: kTextSecondary),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      provider.clearError();
-                      provider.loadPieces();
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            color: kGoldColor,
-            backgroundColor: kCardColor,
-            onRefresh: () => provider.loadPieces(),
-            child: CustomScrollView(
-              slivers: [
-                // Stats card
-                SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 8),
-                      StatsCard(
-                        totalPieces: provider.totalCount,
-                        repertoireCount: provider.repertoireCount,
-                        streak: provider.streak,
-                        stageCounts: provider.stageCounts,
-                      ),
-                    ],
-                  ),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    provider.clearError();
+                    provider.loadPieces();
+                  },
+                  child: const Text('Retry'),
                 ),
-
-                // Recent Milestones
-                SliverToBoxAdapter(
-                  child: _RecentMilestones(provider: provider),
-                ),
-
-                // Filter chips
-                SliverToBoxAdapter(
-                  child: _FilterBar(provider: provider),
-                ),
-
-                // Piece list
-                if (provider.filteredPieces.isEmpty)
-                  SliverFillRemaining(
-                    child: _EmptyState(
-                      isFiltered: provider.activeFilter != 'all',
-                      onAdd: () => _navigateToAdd(context),
-                    ),
-                  )
-                else
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final piece = provider.filteredPieces[index];
-                        return PieceCard(
-                          piece: piece,
-                          onTap: () => _navigateToDetail(context, piece),
-                          lastPracticed: provider.lastPracticeDateForPiece(piece.id!),
-                        );
-                      },
-                      childCount: provider.filteredPieces.length,
-                    ),
-                  ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 88)),
               ],
             ),
           );
-        },
-      ),
-      floatingActionButton: GestureDetector(
-        onLongPress: () => _showLogPracticeSheet(context),
-        child: FloatingActionButton(
-          onPressed: () => _navigateToAdd(context),
-          backgroundColor: kGoldColor,
-          foregroundColor: const Color(0xFF1A1200),
-          child: const Icon(Icons.add),
-        ),
-      ),
-    );
-  }
+        }
 
-  Future<void> _navigateToAdd(BuildContext context) async {
-    final provider = context.read<PieceProvider>();
-    if (!provider.canAddPiece) {
-      await showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: kCardColor,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (_) => const PaywallSheet(),
-      );
-      return;
-    }
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const PieceFormScreen()),
-    );
-  }
-
-  Future<void> _showLogPracticeSheet(BuildContext context) async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: kCardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => const LogPracticeSheet(pieceId: null),
-    );
-  }
-
-  Future<void> _navigateToDetail(BuildContext context, Piece piece) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PieceDetailScreen(pieceId: piece.id!),
-      ),
+        return RefreshIndicator(
+          color: kGoldColor,
+          backgroundColor: kCardColor,
+          onRefresh: () => provider.loadPieces(),
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
+                    StatsCard(
+                      totalPieces: provider.totalCount,
+                      repertoireCount: provider.repertoireCount,
+                      streak: provider.streak,
+                      stageCounts: provider.stageCounts,
+                    ),
+                  ],
+                ),
+              ),
+              SliverToBoxAdapter(
+                  child: _RecentMilestones(provider: provider)),
+              SliverToBoxAdapter(child: _FilterBar(provider: provider)),
+              if (provider.filteredPieces.isEmpty)
+                SliverFillRemaining(
+                  child: _EmptyState(
+                    isFiltered: provider.activeFilter != 'all',
+                    onAdd: () => Navigator.of(context).pushNamed('/add'),
+                  ),
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final piece = provider.filteredPieces[index];
+                      return PieceCard(
+                        piece: piece,
+                        lastPracticed:
+                            provider.lastPracticeDateForPiece(piece.id!),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  PieceDetailScreen(pieceId: piece.id!)),
+                        ),
+                      );
+                    },
+                    childCount: provider.filteredPieces.length,
+                  ),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 88)),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
+// ── Filter bar ────────────────────────────────────────────────────────────────
+
 class _FilterBar extends StatelessWidget {
   final PieceProvider provider;
-
   const _FilterBar({required this.provider});
 
   @override
@@ -217,7 +139,8 @@ class _FilterBar extends StatelessWidget {
           final color = filter == 'all'
               ? kTextPrimary
               : (kStageColors[filter] ?? kGoldColor);
-          final label = filter == 'all' ? 'All' : (kStageLabels[filter] ?? filter);
+          final label =
+              filter == 'all' ? 'All' : (kStageLabels[filter] ?? filter);
           final count = filter == 'all'
               ? provider.totalCount
               : (provider.stageCounts[filter] ?? 0);
@@ -248,9 +171,10 @@ class _FilterBar extends StatelessWidget {
   }
 }
 
+// ── Recent milestones ─────────────────────────────────────────────────────────
+
 class _RecentMilestones extends StatelessWidget {
   final PieceProvider provider;
-
   const _RecentMilestones({required this.provider});
 
   @override
@@ -299,25 +223,20 @@ class _RecentMilestones extends StatelessWidget {
                     children: [
                       if (index > 0)
                         Divider(
-                          height: 1,
-                          color: kDividerColor,
-                          indent: 16,
-                          endIndent: 16,
-                        ),
+                            height: 1,
+                            color: kDividerColor,
+                            indent: 16,
+                            endIndent: 16),
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
+                            horizontal: 16, vertical: 10),
                         child: Row(
                           children: [
                             Container(
                               width: 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: color,
-                              ),
+                                  shape: BoxShape.circle, color: color),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -327,30 +246,21 @@ class _RecentMilestones extends StatelessWidget {
                                   Text(
                                     piece.name,
                                     style: const TextStyle(
-                                      color: kTextPrimary,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                        color: kTextPrimary,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  Text(
-                                    label,
-                                    style: TextStyle(
-                                      color: color,
-                                      fontSize: 11,
-                                    ),
-                                  ),
+                                  Text(label,
+                                      style: TextStyle(
+                                          color: color, fontSize: 11)),
                                 ],
                               ),
                             ),
-                            Text(
-                              dateStr,
-                              style: const TextStyle(
-                                color: kTextSecondary,
-                                fontSize: 11,
-                              ),
-                            ),
+                            Text(dateStr,
+                                style: const TextStyle(
+                                    color: kTextSecondary, fontSize: 11)),
                           ],
                         ),
                       ),
@@ -365,6 +275,8 @@ class _RecentMilestones extends StatelessWidget {
     );
   }
 }
+
+// ── Empty state ───────────────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
   final bool isFiltered;
@@ -381,20 +293,19 @@ class _EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              isFiltered ? Icons.filter_list_off : Icons.library_music_outlined,
+              isFiltered
+                  ? Icons.filter_list_off
+                  : Icons.library_music_outlined,
               size: 64,
               color: kTextSecondary.withOpacity(0.4),
             ),
             const SizedBox(height: 16),
             Text(
-              isFiltered
-                  ? 'No pieces in this stage'
-                  : 'No pieces yet',
+              isFiltered ? 'No pieces in this stage' : 'No pieces yet',
               style: const TextStyle(
-                color: kTextPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+                  color: kTextPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
@@ -413,8 +324,8 @@ class _EmptyState extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kGoldColor,
                   foregroundColor: const Color(0xFF1A1200),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 12),
                 ),
               ),
             ],
