@@ -190,7 +190,7 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
               const SizedBox(height: 24),
 
               // Piece — picker when opened generically, info row when pre-selected
-              const Text('Piece',
+              const Text('Song',
                   style: TextStyle(color: kTextSecondary, fontSize: 12)),
               const SizedBox(height: 6),
               if (widget.pieceId == null) ...[
@@ -207,7 +207,7 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
                       value: _selectedPieceId,
                       isExpanded: true,
                       dropdownColor: kCardColor,
-                      hint: const Text('Select a piece',
+                      hint: const Text('Select a song',
                           style: TextStyle(color: kTextSecondary)),
                       style:
                           const TextStyle(color: kTextPrimary, fontSize: 14),

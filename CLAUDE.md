@@ -19,8 +19,8 @@ lib/
   providers/
     piece_provider.dart      # PieceProvider (ChangeNotifier) — single source of truth
   screens/
-    main_screen.dart         # TabBarView: Pieces + Practice tabs
-    home_screen.dart         # CustomScrollView with slivers; filter chips; piece list
+    main_screen.dart         # TabBarView: Songs + Practice tabs
+    home_screen.dart         # CustomScrollView with slivers; filter chips; song list
     piece_detail_screen.dart # Stage badge, advance button, practice history
     piece_form_screen.dart   # Add/edit piece wizard
     practice_screen.dart     # Practice session history
@@ -57,6 +57,8 @@ Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageInde
 - **Portrait-only**: `SystemChrome.setPreferredOrientations` enforces this at startup.
 - **Dark gold theme**: `kGoldColor = #C9A227`, `kBackgroundColor = #111318`. All UI uses the centralized theme from `main.dart`.
 - **Debug seed button**: `Icons.science_outlined` FAB visible only in `kDebugMode`. Seeds 40 pieces across all 5 stages with realistic data and practice sessions.
+- **Naming convention**: All user-facing UI strings use "song"/"songs" (e.g. "Add Song", "No songs yet"). Code identifiers, DB table names (`pieces`, `practice_sessions`), and widget keys (`Key('pieces_scroll')`) remain unchanged.
+- **Practice pill button**: `PieceCard` accepts an optional `onPractice` callback. When provided, a small "Practice" pill renders below the stage badge. Tapping it opens `LogPracticeSheet` pre-filled for that piece (name + composer shown, dropdown hidden). When `onPractice` is null the pill is absent and tapping the card navigates normally.
 
 ## Development Workflow
 

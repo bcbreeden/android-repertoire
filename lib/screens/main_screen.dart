@@ -83,7 +83,7 @@ class _MainScreenState extends State<MainScreen>
               fontSize: 14, fontWeight: FontWeight.w600),
           unselectedLabelStyle: const TextStyle(fontSize: 14),
           tabs: const [
-            Tab(text: 'Pieces'),
+            Tab(text: 'Songs'),
             Tab(text: 'Practice'),
           ],
         ),
@@ -106,7 +106,7 @@ class _MainScreenState extends State<MainScreen>
                   : () => _addPiece(context),
               backgroundColor: kGoldColor,
               foregroundColor: const Color(0xFF1A1200),
-              tooltip: _isPracticeTab ? 'Log Practice' : 'Add Piece',
+              tooltip: _isPracticeTab ? 'Log Practice' : 'Add Song',
               child: Icon(_isPracticeTab ? Icons.edit_note : Icons.add),
             ),
           );

@@ -283,7 +283,7 @@ class _SessionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final piece = provider.getPieceById(session.pieceId);
-    final pieceName = piece?.name ?? 'Unknown Piece';
+    final pieceName = piece?.name ?? 'Unknown Song';
     final stageColor = piece != null
         ? (kStageColors[piece.status] ?? kGoldColor)
         : kTextSecondary;
@@ -438,7 +438,7 @@ class _EmptyPractice extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              hasPieces ? 'No sessions yet' : 'No pieces yet',
+              hasPieces ? 'No sessions yet' : 'No songs yet',
               style: const TextStyle(
                   color: kTextPrimary,
                   fontSize: 18,
@@ -448,7 +448,7 @@ class _EmptyPractice extends StatelessWidget {
             Text(
               hasPieces
                   ? 'Log your first practice session to start tracking your progress'
-                  : 'Add a piece in the Pieces tab before logging practice',
+                  : 'Add a song in the Songs tab before logging practice',
               style: const TextStyle(color: kTextSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),

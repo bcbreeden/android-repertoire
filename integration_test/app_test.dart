@@ -93,7 +93,7 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      expect(find.text('Pieces'), findsOneWidget);
+      expect(find.text('Songs'), findsOneWidget);
       expect(find.text('Practice'), findsOneWidget);
     });
 
@@ -119,7 +119,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Step 2: save
-      await tester.tap(find.text('Add Piece'));
+      await tester.tap(find.text('Add Song'));
       await tester.pumpAndSettle();
 
       expect(find.text('Test Piece'), findsAtLeastNWidgets(1));
@@ -196,7 +196,7 @@ void main() {
       // Step 2: notes
       await tester.enterText(find.byType(TextFormField).first, 'Original notes');
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Add Piece'));
+      await tester.tap(find.text('Add Song'));
       await tester.pumpAndSettle();
 
       // Piece appears in list
@@ -217,7 +217,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.edit_outlined));
       await tester.pumpAndSettle();
 
-      expect(find.text('Edit Piece'), findsOneWidget);
+      expect(find.text('Edit Song'), findsOneWidget);
 
       // ── Edit all fields ───────────────────────────────────────────────────
       // Edit form field order: Title(0), Composer(1), Total Measures(2),
@@ -292,7 +292,7 @@ void main() {
 
       final hasValidState =
           find.text('No sessions yet').evaluate().isNotEmpty ||
-          find.text('No pieces yet').evaluate().isNotEmpty ||
+          find.text('No songs yet').evaluate().isNotEmpty ||
           find.text('Session History').evaluate().isNotEmpty;
       expect(hasValidState, isTrue);
     });
@@ -507,7 +507,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Add Piece'));
+      await tester.tap(find.text('Add Song'));
       await tester.pumpAndSettle();
 
       // Practice button is visible on the card
@@ -526,7 +526,7 @@ void main() {
       expect(find.text('Save Session'), findsOneWidget);
 
       // Piece picker dropdown is hidden — sheet was opened with a pre-selected piece
-      expect(find.text('Select a piece'), findsNothing);
+      expect(find.text('Select a song'), findsNothing);
 
       // Piece name and composer are displayed in the sheet
       // (findsAtLeastNWidgets because the name also appears in the card behind the sheet)
@@ -555,7 +555,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Add Piece'));
+      await tester.tap(find.text('Add Song'));
       await tester.pumpAndSettle();
 
       // Tapping the card itself (not the Practice button) navigates to detail

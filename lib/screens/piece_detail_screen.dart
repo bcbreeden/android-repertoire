@@ -51,7 +51,7 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
             ),
             body: const Center(
               child: Text(
-                'Piece not found',
+                'Song not found',
                 style: TextStyle(color: kTextSecondary),
               ),
             ),
@@ -237,7 +237,7 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: kCardColor,
         title: const Text(
-          'Delete Piece?',
+          'Delete Song?',
           style: TextStyle(color: kTextPrimary),
         ),
         content: Text(
@@ -268,7 +268,7 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Piece deleted'),
+            content: Text('Song deleted'),
             backgroundColor: Colors.red,
           ),
         );

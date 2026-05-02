@@ -88,18 +88,18 @@ class _PaywallSheetState extends State<PaywallSheet> {
           const Icon(Icons.lock_outline, color: kGoldColor, size: 48),
           const SizedBox(height: 16),
           const Text(
-            'Unlock Unlimited Pieces',
+            'Unlock Unlimited Songs',
             style: TextStyle(color: kTextPrimary, fontSize: 20, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           const Text(
-            "You've used your 3 free pieces",
+            "You've used your 3 free songs",
             style: TextStyle(color: kTextSecondary, fontSize: 15),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           const Text(
-            'Unlock unlimited pieces with a one-time purchase.',
+            'Unlock unlimited songs with a one-time purchase.',
             style: TextStyle(color: kTextSecondary, fontSize: 13),
             textAlign: TextAlign.center,
           ),

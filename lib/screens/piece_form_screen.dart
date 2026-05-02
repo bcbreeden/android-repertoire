@@ -155,7 +155,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: kTextPrimary),
         title: const Text(
-          'Edit Piece',
+          'Edit Song',
           style: TextStyle(
               color: kTextPrimary, fontSize: 18, fontWeight: FontWeight.w600),
         ),
@@ -184,11 +184,11 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _nameController,
-                label: 'Piece Title',
+                label: 'Song Title',
                 hint: 'e.g. Moonlight Sonata',
                 isRequired: true,
                 validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Piece title is required'
+                    ? 'Song title is required'
                     : null,
               ),
               const SizedBox(height: 12),
@@ -542,7 +542,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                         child: CircularProgressIndicator(
                             color: kGoldColor, strokeWidth: 2),
                       )
-                    : Text(isLast ? 'Add Piece' : 'Next'),
+                    : Text(isLast ? 'Add Song' : 'Next'),
               ),
             ),
           ],

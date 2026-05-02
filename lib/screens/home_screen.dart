@@ -315,7 +315,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              isFiltered ? 'No pieces in this stage' : 'No pieces yet',
+              isFiltered ? 'No songs in this stage' : 'No songs yet',
               style: const TextStyle(
                   color: kTextPrimary,
                   fontSize: 18,
@@ -325,7 +325,7 @@ class _EmptyState extends StatelessWidget {
             Text(
               isFiltered
                   ? 'Try selecting a different filter'
-                  : 'Add your first piece to get started',
+                  : 'Add your first song to get started',
               style: const TextStyle(color: kTextSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),
@@ -334,7 +334,7 @@ class _EmptyState extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onAdd,
                 icon: const Icon(Icons.add),
-                label: const Text('Add Piece'),
+                label: const Text('Add Song'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kGoldColor,
                   foregroundColor: const Color(0xFF1A1200),

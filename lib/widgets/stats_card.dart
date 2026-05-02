@@ -31,7 +31,7 @@ class StatsCard extends StatelessWidget {
           Row(
             children: [
               _StatTile(
-                label: 'Total Pieces',
+                label: 'Total Songs',
                 value: totalPieces.toString(),
                 icon: Icons.library_music,
                 color: kTextPrimary,
