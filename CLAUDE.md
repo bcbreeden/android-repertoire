@@ -79,10 +79,13 @@ Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageInde
 Follow this order for every feature or fix:
 
 1. **Build** the feature or fix.
-2. **Write new tests** — unit/widget tests for logic and widget behaviour; integration tests for any new user-visible flow.
-3. **Run all tests** — unit tests first (fast, no device), then integration tests. All must be green before pushing.
+2. **Write or update tests** — this is mandatory, not optional:
+   - **Unit/widget tests**: every new method, model change, or widget behaviour change must have a corresponding test added or updated in `test/`. If existing tests break due to the change, fix them.
+   - **Integration tests**: every new user-visible flow must have at least one end-to-end test added or updated in `integration_test/app_test.dart`. If existing integration tests are affected by the change (e.g. UI text changed, navigation changed), update them too.
+   - Do not skip this step even for "small" changes — a fix with no test is incomplete.
+3. **Run all tests** — unit tests first (fast, no device), then integration tests on both emulators. All must be green before pushing.
 4. **Review and self-heal this steering file** — update any section that is now stale (architecture map, test file list, helpers, pitfalls, design decisions). Commit the updated `CLAUDE.md` alongside the feature changes.
-5. **Push.**
+5. **Push** (without `--no-verify` — the pre-push hook must pass).
 
 ```bash
 # Step 2 & 4 — run everything (preferred)
