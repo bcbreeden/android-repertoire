@@ -89,12 +89,15 @@ void main() {
       await DatabaseHelper.instance.resetForTesting();
     });
 
-    testWidgets('home screen loads with Pieces and Practice tabs', (tester) async {
+    testWidgets('home screen loads with all tabs', (tester) async {
       app.main();
       await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
 
-      expect(find.text('Songs'), findsOneWidget);
-      expect(find.text('Practice'), findsOneWidget);
+      expect(find.text('Songs', skipOffstage: false), findsOneWidget);
+      expect(find.text('Practice', skipOffstage: false), findsOneWidget);
+      expect(find.text('Stats', skipOffstage: false), findsOneWidget);
     });
 
     testWidgets('can add a new piece', (tester) async {
@@ -1012,6 +1015,77 @@ void main() {
 
       expect(find.text('Session Details'), findsOneWidget);
       expect(find.widgetWithText(TextFormField, '45'), findsOneWidget);
+    });
+  });
+
+  // ── Stats tab ─────────────────────────────────────────────────────────────
+  group('Stats tab', () {
+    setUp(() async {
+      await DatabaseHelper.instance.resetForTesting();
+    });
+
+    testWidgets('Stats tab shows empty state when no data', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+      // Extra pump to ensure providers fully reload after reset
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Stats').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('No stats yet'), findsOneWidget);
+    });
+
+    testWidgets('Stats tab shows summary stats after logging a session',
+        (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Add a song
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      if (find.text('Next').evaluate().isEmpty) {
+        markTestSkipped('Paywall active.');
+        return;
+      }
+
+      await tester.enterText(find.byType(TextFormField).at(0), 'Stats Test Piece');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(2), '32');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Song'));
+      await tester.pumpAndSettle();
+
+      // Log a session
+      final practiceBtn = find.descendant(
+        of: _cardFinder('Stats Test Piece'),
+        matching: find.text('Practice'),
+      );
+      await tester.tap(practiceBtn);
+      await tester.pumpAndSettle();
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save Session'));
+      await tester.pumpAndSettle();
+
+      // Navigate to Stats tab
+      await tester.tap(find.text('Stats').last);
+      await tester.pumpAndSettle();
+
+      // Summary stats are present
+      expect(find.text('Total Sessions'), findsOneWidget);
+      expect(find.text('Total Time'), findsOneWidget);
+      expect(find.text('Streak'), findsOneWidget);
+
+      // Section headers
+      expect(find.text('THIS WEEK'), findsOneWidget);
+      expect(find.text('LAST 7 DAYS'), findsOneWidget);
+      expect(find.text('MOST PRACTICED'), findsOneWidget);
     });
   });
 }

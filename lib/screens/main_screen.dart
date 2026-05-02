@@ -11,6 +11,7 @@ import 'exercises_screen.dart';
 import 'home_screen.dart';
 import 'piece_form_screen.dart';
 import 'practice_screen.dart';
+import 'stats_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -26,7 +27,7 @@ class _MainScreenState extends State<MainScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() => setState(() {}));
   }
 
@@ -39,6 +40,7 @@ class _MainScreenState extends State<MainScreen>
   bool get _isSongsTab      => _tabController.index == 0;
   bool get _isExercisesTab  => _tabController.index == 1;
   bool get _isPracticeTab   => _tabController.index == 2;
+  bool get _isStatsTab      => _tabController.index == 3;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +93,7 @@ class _MainScreenState extends State<MainScreen>
             Tab(text: 'Songs'),
             Tab(text: 'Exercises'),
             Tab(text: 'Practice'),
+            Tab(text: 'Stats'),
           ],
         ),
       ),
@@ -100,10 +103,12 @@ class _MainScreenState extends State<MainScreen>
           PiecesTab(),
           ExercisesTab(),
           PracticeTab(),
+          StatsTab(),
         ],
       ),
       floatingActionButton: Consumer2<PieceProvider, ExerciseProvider>(
         builder: (context, pieceProvider, exerciseProvider, _) {
+          if (_isStatsTab) return const SizedBox.shrink();
           if (_isPracticeTab &&
               pieceProvider.pieces.isEmpty &&
               exerciseProvider.exercises.isEmpty) {
