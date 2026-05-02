@@ -6,6 +6,7 @@ import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/piece_card.dart';
 import '../widgets/stats_card.dart';
+import '../widgets/log_practice_sheet.dart';
 import 'piece_detail_screen.dart';
 import 'piece_form_screen.dart';
 
@@ -107,6 +108,17 @@ class _PiecesTabState extends State<PiecesTab>
                           MaterialPageRoute(
                               builder: (_) =>
                                   PieceDetailScreen(pieceId: piece.id!)),
+                        ),
+                        onPractice: () => showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: kCardColor,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(20)),
+                          ),
+                          builder: (_) =>
+                              LogPracticeSheet(pieceId: piece.id),
                         ),
                       );
                     },

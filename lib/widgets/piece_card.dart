@@ -6,12 +6,14 @@ import '../utils/constants.dart';
 class PieceCard extends StatelessWidget {
   final Piece piece;
   final VoidCallback onTap;
+  final VoidCallback? onPractice;
   final DateTime? lastPracticed;
 
   const PieceCard({
     super.key,
     required this.piece,
     required this.onTap,
+    this.onPractice,
     this.lastPracticed,
   });
 
@@ -77,10 +79,48 @@ class PieceCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  _StageBadge(
-                    label: kStageLabels[piece.status] ?? piece.status,
-                    color: stageColor,
-                    isRepertoire: isRepertoire,
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _StageBadge(
+                        label: kStageLabels[piece.status] ?? piece.status,
+                        color: stageColor,
+                        isRepertoire: isRepertoire,
+                      ),
+                      if (onPractice != null) ...[
+                        const SizedBox(height: 6),
+                        GestureDetector(
+                          onTap: onPractice,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: stageColor.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: stageColor.withOpacity(0.35)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.play_arrow,
+                                    size: 12, color: stageColor),
+                                const SizedBox(width: 3),
+                                Text(
+                                  'Practice',
+                                  style: TextStyle(
+                                    color: stageColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
