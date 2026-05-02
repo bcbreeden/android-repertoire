@@ -497,6 +497,8 @@ void main() {
 
       await tester.enterText(find.byType(TextFormField).at(0), 'Practice Btn Piece');
       await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(1), 'Test Composer');
+      await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField).at(2), '64');  // measures
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField).at(3), '120'); // target BPM
@@ -525,6 +527,11 @@ void main() {
 
       // Piece picker dropdown is hidden — sheet was opened with a pre-selected piece
       expect(find.text('Select a piece'), findsNothing);
+
+      // Piece name and composer are displayed in the sheet
+      // (findsAtLeastNWidgets because the name also appears in the card behind the sheet)
+      expect(find.text('Practice Btn Piece'), findsAtLeastNWidgets(1));
+      expect(find.text('Test Composer'), findsAtLeastNWidgets(1));
     });
 
     testWidgets('Practice button absent when onPractice not wired — card tap still navigates', (tester) async {

@@ -141,6 +141,9 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
   Widget build(BuildContext context) {
     final provider = context.watch<PieceProvider>();
     final pieces = provider.pieces;
+    final selectedPiece = _selectedPieceId != null
+        ? provider.getPieceById(_selectedPieceId!)
+        : null;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -186,11 +189,11 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
               ),
               const SizedBox(height: 24),
 
-              // Piece picker
+              // Piece — picker when opened generically, info row when pre-selected
+              const Text('Piece',
+                  style: TextStyle(color: kTextSecondary, fontSize: 12)),
+              const SizedBox(height: 6),
               if (widget.pieceId == null) ...[
-                const Text('Piece',
-                    style: TextStyle(color: kTextSecondary, fontSize: 12)),
-                const SizedBox(height: 6),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -234,8 +237,41 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+              ] else ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: kCardColor,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: kDividerColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        selectedPiece?.name ?? '—',
+                        style: const TextStyle(
+                          color: kTextPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (selectedPiece?.composer != null &&
+                          selectedPiece!.composer!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          selectedPiece.composer!,
+                          style: const TextStyle(
+                              color: kTextSecondary, fontSize: 12),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ],
+              const SizedBox(height: 16),
 
               // Measures + BPM
               Row(
