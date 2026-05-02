@@ -73,9 +73,14 @@ Follow this order for every feature or fix:
 # Step 2 & 4 — unit + widget tests (no device needed)
 flutter test test/
 
-# Step 2 & 4 — integration tests
-flutter test integration_test/app_test.dart -d emulator-5554
+# Step 2 & 4 — integration tests (run against ALL open emulators)
+for device in emulator-5554 emulator-5556; do
+  echo "=== $device ==="
+  flutter test integration_test/app_test.dart -d $device
+done
 ```
+
+The two emulators cover different API levels (emulator-5554 = API 37, emulator-5556 = API 29). Running both catches regressions on older APIs — API 29 in particular has different focus/keyboard behaviour, which is why form fields use tap-then-enterText rather than enterText alone.
 
 ## Testing
 
@@ -149,10 +154,13 @@ dev_dependencies:
 # Unit + widget tests (no device)
 flutter test test/
 
-# Integration tests
-flutter test integration_test/app_test.dart -d emulator-5554
+# Integration tests — all open emulators
+for device in emulator-5554 emulator-5556; do
+  echo "=== $device ==="
+  flutter test integration_test/app_test.dart -d $device
+done
 
-# Run a single integration test group by name
+# Integration tests — single group, single device
 flutter test integration_test/app_test.dart -d emulator-5554 --name "Practice button"
 
 # List connected devices
