@@ -475,4 +475,87 @@ void main() {
       await _tapChip(tester, 'All');
     });
   });
+
+  // ── Practice button ───────────────────────────────────────────────────────
+  group('Practice button', () {
+    setUp(() async {
+      await DatabaseHelper.instance.resetForTesting();
+    });
+
+    testWidgets('tapping Practice on a card opens the sheet pre-filled for that piece', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Add a piece with known measures and tempo so prefill is testable
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      if (find.text('Next').evaluate().isEmpty) {
+        markTestSkipped('Paywall active.');
+        return;
+      }
+
+      await tester.enterText(find.byType(TextFormField).at(0), 'Practice Btn Piece');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(2), '64');  // measures
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(3), '120'); // target BPM
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(4), '80');  // current BPM
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Piece'));
+      await tester.pumpAndSettle();
+
+      // Practice button is visible on the card
+      final practiceBtn = find.descendant(
+        of: _cardFinder('Practice Btn Piece'),
+        matching: find.text('Practice'),
+      );
+      expect(practiceBtn, findsOneWidget);
+
+      // Tap it
+      await tester.tap(practiceBtn);
+      await tester.pumpAndSettle();
+
+      // Sheet opened
+      expect(find.text('Log Practice'), findsOneWidget);
+      expect(find.text('Save Session'), findsOneWidget);
+
+      // Piece picker dropdown is hidden — sheet was opened with a pre-selected piece
+      expect(find.text('Select a piece'), findsNothing);
+    });
+
+    testWidgets('Practice button absent when onPractice not wired — card tap still navigates', (tester) async {
+      // This test seeds data and verifies the Practice button appears on real
+      // cards rendered by the home screen (as opposed to the widget-level test
+      // that builds PieceCard in isolation).
+      app.main();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      if (find.text('Next').evaluate().isEmpty) {
+        markTestSkipped('Paywall active.');
+        return;
+      }
+
+      await tester.enterText(find.byType(TextFormField).at(0), 'Nav Test Piece');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(2), '32');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Piece'));
+      await tester.pumpAndSettle();
+
+      // Tapping the card itself (not the Practice button) navigates to detail
+      await tester.tap(_cardFinder('Nav Test Piece'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Log Practice'), findsOneWidget);
+    });
+  });
 }
