@@ -157,6 +157,8 @@ Integration test pitfalls:
 - `PiecesTab` uses `AutomaticKeepAliveClientMixin`, so scroll position is preserved across navigation. Always scroll to top before tapping chips after `_goBack`.
 - Scroll direction: `drag(Offset(0, negative))` = scroll DOWN; `drag(Offset(0, positive))` = scroll UP / back to top.
 - **Keyboard blocking bottom-sheet buttons**: After `enterText` inside a modal bottom sheet, the soft keyboard remains up and its hit-test layer blocks taps on buttons near the bottom of the sheet (e.g. "Save Session"). Always call `FocusManager.instance.primaryFocus?.unfocus(); await tester.pumpAndSettle();` before tapping such buttons.
+- **Practice tab empty-state text**: When both providers have zero items the text is "Nothing added yet"; when items exist but no sessions have been logged it is "No sessions yet". The old "No songs yet" string no longer exists.
+- **Tab navigation in tests**: Use `find.widgetWithText(Tab, 'Exercises')` (not `find.text('Exercises')`) to avoid ambiguity with exercise names rendered elsewhere on screen.
 
 ## Dependencies
 

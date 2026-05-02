@@ -292,7 +292,7 @@ void main() {
 
       final hasValidState =
           find.text('No sessions yet').evaluate().isNotEmpty ||
-          find.text('No songs yet').evaluate().isNotEmpty ||
+          find.text('Nothing added yet').evaluate().isNotEmpty ||
           find.text('Session History').evaluate().isNotEmpty;
       expect(hasValidState, isTrue);
     });
@@ -747,6 +747,207 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Log Practice'), findsOneWidget);
+    });
+  });
+
+  // ── Exercises tab ─────────────────────────────────────────────────────────
+  group('Exercises tab', () {
+    setUp(() async {
+      await DatabaseHelper.instance.resetForTesting();
+    });
+
+    testWidgets('can add an exercise and see it in the list', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(Tab, 'Exercises'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(TextFormField).at(0));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(0), 'C Major Scale');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add Exercise'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('C Major Scale'), findsOneWidget);
+    });
+
+    testWidgets('Play button opens log exercise sheet', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(Tab, 'Exercises'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(TextFormField).at(0));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(0), 'Arpeggios');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add Exercise'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Play'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Save Session'), findsOneWidget);
+    });
+  });
+
+  // ── Exercise session in Practice tab ─────────────────────────────────────
+  group('Exercise session in Practice tab', () {
+    setUp(() async {
+      await DatabaseHelper.instance.resetForTesting();
+    });
+
+    testWidgets('logging an exercise session shows it in the Practice tab',
+        (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Add an exercise
+      await tester.tap(find.widgetWithText(Tab, 'Exercises'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(TextFormField).at(0));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(0), 'Hanon No. 1');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add Exercise'));
+      await tester.pumpAndSettle();
+
+      // Log a session via the Play button
+      await tester.tap(find.text('Play'));
+      await tester.pumpAndSettle();
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Save Session'));
+      await tester.pumpAndSettle();
+
+      // Navigate to Practice tab
+      await tester.tap(find.widgetWithText(Tab, 'Practice'));
+      await tester.pumpAndSettle();
+
+      // Exercise session appears in Practice tab
+      expect(find.text('Hanon No. 1'), findsOneWidget);
+      expect(find.text('Session History'), findsOneWidget);
+    });
+  });
+
+  // ── Practice session detail ───────────────────────────────────────────────
+  group('Practice session detail', () {
+    setUp(() async {
+      await DatabaseHelper.instance.resetForTesting();
+    });
+
+    testWidgets('tapping a session tile opens the detail screen', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      if (find.text('Next').evaluate().isEmpty) {
+        markTestSkipped('Paywall active.');
+        return;
+      }
+
+      await tester.enterText(find.byType(TextFormField).at(0), 'Detail Test Piece');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(2), '32');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Song'));
+      await tester.pumpAndSettle();
+
+      // Log a session via the Practice pill
+      final practiceBtn = find.descendant(
+        of: _cardFinder('Detail Test Piece'),
+        matching: find.text('Practice'),
+      );
+      await tester.tap(practiceBtn);
+      await tester.pumpAndSettle();
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save Session'));
+      await tester.pumpAndSettle();
+
+      // Navigate to Practice tab and tap the session tile
+      await tester.tap(find.widgetWithText(Tab, 'Practice'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Detail Test Piece'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Session Details'), findsOneWidget);
+    });
+
+    testWidgets('deleting a session from the detail screen removes it from Practice tab',
+        (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      if (find.text('Next').evaluate().isEmpty) {
+        markTestSkipped('Paywall active.');
+        return;
+      }
+
+      await tester.enterText(find.byType(TextFormField).at(0), 'Delete Session Piece');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(2), '32');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Song'));
+      await tester.pumpAndSettle();
+
+      final practiceBtn = find.descendant(
+        of: _cardFinder('Delete Session Piece'),
+        matching: find.text('Practice'),
+      );
+      await tester.tap(practiceBtn);
+      await tester.pumpAndSettle();
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save Session'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(Tab, 'Practice'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Delete Session Piece'));
+      await tester.pumpAndSettle();
+
+      // Delete from detail screen
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      // Back in Practice tab — session is gone
+      expect(find.text('Session History'), findsNothing);
+      expect(find.text('Delete Session Piece'), findsNothing);
     });
   });
 }
