@@ -72,6 +72,7 @@ Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageInde
 - **Debug seed button**: `Icons.science_outlined` FAB visible only in `kDebugMode`. Seeds 40 pieces across all 5 stages with realistic data and practice sessions.
 - **Naming convention**: All user-facing UI strings use "song"/"songs" (e.g. "Add Song", "No songs yet"). Code identifiers, DB table names (`pieces`, `practice_sessions`), and widget keys (`Key('pieces_scroll')`) remain unchanged.
 - **Practice pill button**: `PieceCard` accepts an optional `onPractice` callback. When provided, a small "Practice" pill renders below the stage badge. Tapping it opens `LogPracticeSheet` pre-filled for that piece (name + composer shown, dropdown hidden). When `onPractice` is null the pill is absent and tapping the card navigates normally.
+- **Practice session deletion**: In `PracticeTab`, each `_SessionTile` is wrapped in a `Dismissible` (swipe left-to-right to reveal red delete background). `onDismissed` calls `PieceProvider.deletePracticeSession(id)`, which removes the session from `_practiceSessions`, refreshes `_lastPracticeDates` via DB, and notifies listeners. A "Session deleted" `SnackBar` confirms the action. The outer session-group `Container` uses `clipBehavior: Clip.hardEdge` to keep the red dismiss background within the rounded corners.
 
 ## Development Workflow
 
@@ -120,7 +121,7 @@ Test files:
 - `test/models/practice_session_test.dart` — PracticeSession toMap/fromMap
 - `test/utils/constants_test.dart` — nextStage, isLastStage, stageIndex, constant integrity
 - `test/database/database_helper_test.dart` — Full CRUD, stage advancement, streak, milestones
-- `test/providers/piece_provider_test.dart` — filteredPieces, overallProgressPct, canAddPiece, etc.
+- `test/providers/piece_provider_test.dart` — filteredPieces, overallProgressPct, canAddPiece, deletePracticeSession, etc.
 - `test/widgets/piece_card_test.dart` — PieceCard button visibility and tap-routing behaviour
 - `test/widgets/log_practice_sheet_test.dart` — LogPracticeSheet timer controls, piece display (dropdown vs info row), prefill, Save button enabled state
 - `test/widgets/exercise_card_test.dart` — ExerciseCard name/source display, Play button always visible, tap routing

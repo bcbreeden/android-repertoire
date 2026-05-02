@@ -235,6 +235,7 @@ class _DayGroup extends StatelessWidget {
         ),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
+          clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
             color: kCardColor,
             borderRadius: BorderRadius.circular(12),
@@ -242,17 +243,36 @@ class _DayGroup extends StatelessWidget {
           ),
           child: Column(
             children: List.generate(sessions.length, (i) {
-              return Column(
-                children: [
-                  if (i > 0)
-                    const Divider(
-                        height: 1,
-                        color: kDividerColor,
-                        indent: 16,
-                        endIndent: 16),
-                  _SessionTile(
-                      session: sessions[i], provider: provider),
-                ],
+              final session = sessions[i];
+              return Dismissible(
+                key: ValueKey(session.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  color: Colors.red.shade800,
+                  child: const Icon(Icons.delete_outline, color: Colors.white),
+                ),
+                onDismissed: (_) {
+                  provider.deletePracticeSession(session.id!);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Session deleted'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: Column(
+                  children: [
+                    if (i > 0)
+                      const Divider(
+                          height: 1,
+                          color: kDividerColor,
+                          indent: 16,
+                          endIndent: 16),
+                    _SessionTile(session: session, provider: provider),
+                  ],
+                ),
               );
             }),
           ),

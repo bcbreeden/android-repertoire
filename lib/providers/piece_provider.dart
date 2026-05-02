@@ -235,6 +235,20 @@ class PieceProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> deletePracticeSession(int sessionId) async {
+    try {
+      await _db.deletePracticeSession(sessionId);
+      _practiceSessions.removeWhere((s) => s.id == sessionId);
+      _lastPracticeDates = await _db.getAllLastSessionDates();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = 'Failed to delete session: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
   Piece? getPieceById(int id) {
     try {
       return _pieces.firstWhere((p) => p.id == id);

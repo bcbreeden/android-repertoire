@@ -354,6 +354,11 @@ class DatabaseHelper {
   }
 
   // Practice session methods
+  Future<int> deletePracticeSession(int id) async {
+    final db = await database;
+    return await db.delete('practice_sessions', where: 'id = ?', whereArgs: [id]);
+  }
+
   Future<List<PracticeSession>> getAllPracticeSessions() async {
     final db = await database;
     final rows = await db.query('practice_sessions', orderBy: 'timestamp DESC');

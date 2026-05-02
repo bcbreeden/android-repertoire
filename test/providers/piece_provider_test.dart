@@ -487,6 +487,54 @@ void main() {
     });
   });
 
+  // ── deletePracticeSession ─────────────────────────────────────────────────
+
+  group('deletePracticeSession', () {
+    test('removes session from practiceSessions list', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!);
+      final sessionId = provider.practiceSessions.first.id!;
+      await provider.deletePracticeSession(sessionId);
+      expect(provider.practiceSessions, isEmpty);
+    });
+
+    test('only removes the targeted session', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!);
+      await provider.logPractice(added.id!);
+      final sessionId = provider.practiceSessions.first.id!;
+      await provider.deletePracticeSession(sessionId);
+      expect(provider.practiceSessions.length, 1);
+    });
+
+    test('returns true on success', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!);
+      final sessionId = provider.practiceSessions.first.id!;
+      final result = await provider.deletePracticeSession(sessionId);
+      expect(result, isTrue);
+    });
+
+    test('clears lastPracticeDate when last session for piece is deleted', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!);
+      expect(provider.lastPracticeDateForPiece(added.id!), isNotNull);
+      final sessionId = provider.practiceSessions.first.id!;
+      await provider.deletePracticeSession(sessionId);
+      expect(provider.lastPracticeDateForPiece(added.id!), isNull);
+    });
+
+    test('notifies listeners after deletion', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!);
+      final sessionId = provider.practiceSessions.first.id!;
+      var notified = false;
+      provider.addListener(() => notified = true);
+      await provider.deletePracticeSession(sessionId);
+      expect(notified, isTrue);
+    });
+  });
+
   // ── setPremium ────────────────────────────────────────────────────────────
 
   group('setPremium', () {
