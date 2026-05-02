@@ -66,7 +66,8 @@ Follow this order for every feature or fix:
 2. **Run existing tests** — unit tests first (fast, no device), then integration tests.
 3. **Write new tests** — unit/widget tests for logic and widget behaviour; integration tests for any new user-visible flow.
 4. **Run tests again** — all must be green before pushing.
-5. **Push.**
+5. **Review and self-heal this steering file** — update any section that is now stale (architecture map, test file list, helpers, pitfalls, design decisions). Commit the updated `CLAUDE.md` alongside the feature changes.
+6. **Push.**
 
 ```bash
 # Step 2 & 4 — unit + widget tests (no device needed)
