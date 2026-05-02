@@ -8,7 +8,6 @@ import '../widgets/piece_card.dart';
 import '../widgets/stats_card.dart';
 import '../widgets/log_practice_sheet.dart';
 import 'piece_detail_screen.dart';
-import 'piece_form_screen.dart';
 
 class PiecesTab extends StatefulWidget {
   const PiecesTab({super.key});
@@ -88,7 +87,6 @@ class _PiecesTabState extends State<PiecesTab>
                 SliverFillRemaining(
                   child: _EmptyState(
                     isFiltered: provider.activeFilter != 'all',
-                    onAdd: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PieceFormScreen())),
                   ),
                 )
               else
@@ -291,9 +289,8 @@ class _RecentMilestones extends StatelessWidget {
 
 class _EmptyState extends StatelessWidget {
   final bool isFiltered;
-  final VoidCallback onAdd;
 
-  const _EmptyState({required this.isFiltered, required this.onAdd});
+  const _EmptyState({required this.isFiltered});
 
   @override
   Widget build(BuildContext context) {
@@ -326,20 +323,6 @@ class _EmptyState extends StatelessWidget {
               style: const TextStyle(color: kTextSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),
-            if (!isFiltered) ...[
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: onAdd,
-                icon: const Icon(Icons.add),
-                label: const Text('Add Song'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kGoldColor,
-                  foregroundColor: const Color(0xFF1A1200),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 12),
-                ),
-              ),
-            ],
           ],
         ),
       ),
