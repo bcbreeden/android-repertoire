@@ -1,11 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../models/exercise_session.dart';
 import '../models/practice_session.dart';
+import '../providers/exercise_provider.dart';
 import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/log_practice_sheet.dart';
+import 'exercise_detail_screen.dart';
 import 'practice_session_detail_screen.dart';
+
+// ── Unified entry ──────────────────────────────────────────────────────────────
+
+class _Entry {
+  final DateTime timestamp;
+  final PracticeSession? practiceSession;
+  final ExerciseSession? exerciseSession;
+
+  _Entry.practice(PracticeSession s)
+      : timestamp = s.timestamp,
+        practiceSession = s,
+        exerciseSession = null;
+
+  _Entry.exercise(ExerciseSession s)
+      : timestamp = s.timestamp,
+        exerciseSession = s,
+        practiceSession = null;
+}
+
+// ── PracticeTab ────────────────────────────────────────────────────────────────
 
 class PracticeTab extends StatefulWidget {
   const PracticeTab({super.key});
@@ -19,32 +42,55 @@ class _PracticeTabState extends State<PracticeTab>
   @override
   bool get wantKeepAlive => true;
 
+  List<_Entry> _buildEntries(
+      PieceProvider pieceProvider, ExerciseProvider exerciseProvider) {
+    final entries = [
+      ...pieceProvider.practiceSessions.map(_Entry.practice),
+      ...exerciseProvider.sessions.map(_Entry.exercise),
+    ];
+    entries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return entries;
+  }
+
+  Map<DateTime, List<_Entry>> _groupByDate(List<_Entry> entries) {
+    final map = <DateTime, List<_Entry>>{};
+    for (final e in entries) {
+      final day =
+          DateTime(e.timestamp.year, e.timestamp.month, e.timestamp.day);
+      map.putIfAbsent(day, () => []).add(e);
+    }
+    return map;
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Consumer<PieceProvider>(
-      builder: (context, provider, _) {
-        final sessions = provider.practiceSessions;
+    return Consumer2<PieceProvider, ExerciseProvider>(
+      builder: (context, pieceProvider, exerciseProvider, _) {
+        final entries = _buildEntries(pieceProvider, exerciseProvider);
 
-        if (sessions.isEmpty) {
+        if (entries.isEmpty) {
           return _EmptyPractice(
-            hasPieces: provider.pieces.isNotEmpty,
+            hasSongsOrExercises: pieceProvider.pieces.isNotEmpty ||
+                exerciseProvider.exercises.isNotEmpty,
             onLog: () => _showLogSheet(context),
           );
         }
 
-        // Group sessions by date
-        final grouped = _groupByDate(sessions);
+        final grouped = _groupByDate(entries);
         final dateKeys = grouped.keys.toList();
 
         return RefreshIndicator(
           color: kGoldColor,
           backgroundColor: kCardColor,
-          onRefresh: () => provider.loadPieces(),
+          onRefresh: () async {
+            await pieceProvider.loadPieces();
+            await exerciseProvider.loadExercises();
+          },
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
-                child: _SummaryCard(sessions: sessions),
+                child: _SummaryCard(entries: entries),
               ),
               const SliverToBoxAdapter(
                 child: Padding(
@@ -64,11 +110,11 @@ class _PracticeTabState extends State<PracticeTab>
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final date = dateKeys[index];
-                    final daySessions = grouped[date]!;
                     return _DayGroup(
                       date: date,
-                      sessions: daySessions,
-                      provider: provider,
+                      entries: grouped[date]!,
+                      pieceProvider: pieceProvider,
+                      exerciseProvider: exerciseProvider,
                     );
                   },
                   childCount: dateKeys.length,
@@ -80,17 +126,6 @@ class _PracticeTabState extends State<PracticeTab>
         );
       },
     );
-  }
-
-  Map<DateTime, List<PracticeSession>> _groupByDate(
-      List<PracticeSession> sessions) {
-    final map = <DateTime, List<PracticeSession>>{};
-    for (final s in sessions) {
-      final day = DateTime(
-          s.timestamp.year, s.timestamp.month, s.timestamp.day);
-      map.putIfAbsent(day, () => []).add(s);
-    }
-    return map;
   }
 
   void _showLogSheet(BuildContext context) {
@@ -109,17 +144,17 @@ class _PracticeTabState extends State<PracticeTab>
 // ── Summary card ──────────────────────────────────────────────────────────────
 
 class _SummaryCard extends StatelessWidget {
-  final List<PracticeSession> sessions;
-  const _SummaryCard({required this.sessions});
+  final List<_Entry> entries;
+  const _SummaryCard({required this.entries});
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final thisWeek = sessions.where((s) =>
-        s.timestamp.isAfter(weekStart.subtract(const Duration(days: 1)))).length;
-    final today = sessions.where((s) {
-      final d = s.timestamp;
+    final thisWeek = entries.where((e) =>
+        e.timestamp.isAfter(weekStart.subtract(const Duration(days: 1)))).length;
+    final today = entries.where((e) {
+      final d = e.timestamp;
       return d.year == now.year && d.month == now.month && d.day == now.day;
     }).length;
 
@@ -139,7 +174,7 @@ class _SummaryCard extends StatelessWidget {
           _StatCell(label: 'This Week', value: thisWeek.toString(),
               icon: Icons.date_range, color: const Color(0xFF64B5F6)),
           _divider(),
-          _StatCell(label: 'Total', value: sessions.length.toString(),
+          _StatCell(label: 'Total', value: entries.length.toString(),
               icon: Icons.history, color: const Color(0xFF81C784)),
         ],
       ),
@@ -195,13 +230,15 @@ class _StatCell extends StatelessWidget {
 
 class _DayGroup extends StatelessWidget {
   final DateTime date;
-  final List<PracticeSession> sessions;
-  final PieceProvider provider;
+  final List<_Entry> entries;
+  final PieceProvider pieceProvider;
+  final ExerciseProvider exerciseProvider;
 
   const _DayGroup({
     required this.date,
-    required this.sessions,
-    required this.provider,
+    required this.entries,
+    required this.pieceProvider,
+    required this.exerciseProvider,
   });
 
   @override
@@ -242,8 +279,8 @@ class _DayGroup extends StatelessWidget {
             border: Border.all(color: kDividerColor),
           ),
           child: Column(
-            children: List.generate(sessions.length, (i) {
-              final session = sessions[i];
+            children: List.generate(entries.length, (i) {
+              final entry = entries[i];
               return Column(
                 children: [
                   if (i > 0)
@@ -252,16 +289,38 @@ class _DayGroup extends StatelessWidget {
                         color: kDividerColor,
                         indent: 16,
                         endIndent: 16),
-                  InkWell(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PracticeSessionDetailScreen(
-                            session: session),
+                  if (entry.practiceSession != null)
+                    InkWell(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PracticeSessionDetailScreen(
+                              session: entry.practiceSession!),
+                        ),
                       ),
+                      child: _SessionTile(
+                          session: entry.practiceSession!,
+                          provider: pieceProvider),
+                    )
+                  else
+                    InkWell(
+                      onTap: () {
+                        final exercise = exerciseProvider
+                            .getExerciseById(entry.exerciseSession!.exerciseId);
+                        if (exercise != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ExerciseDetailScreen(exercise: exercise),
+                            ),
+                          );
+                        }
+                      },
+                      child: _ExerciseTile(
+                          session: entry.exerciseSession!,
+                          exerciseProvider: exerciseProvider),
                     ),
-                    child: _SessionTile(session: session, provider: provider),
-                  ),
                 ],
               );
             }),
@@ -272,7 +331,7 @@ class _DayGroup extends StatelessWidget {
   }
 }
 
-// ── Session tile ──────────────────────────────────────────────────────────────
+// ── Song session tile ─────────────────────────────────────────────────────────
 
 class _SessionTile extends StatelessWidget {
   final PracticeSession session;
@@ -284,9 +343,7 @@ class _SessionTile extends StatelessWidget {
     final h = seconds ~/ 3600;
     final m = (seconds % 3600) ~/ 60;
     final s = seconds % 60;
-    if (h > 0) {
-      return '${h}h ${m.toString().padLeft(2, '0')}m';
-    }
+    if (h > 0) return '${h}h ${m.toString().padLeft(2, '0')}m';
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
@@ -396,6 +453,126 @@ class _SessionTile extends StatelessWidget {
   }
 }
 
+// ── Exercise session tile ─────────────────────────────────────────────────────
+
+class _ExerciseTile extends StatelessWidget {
+  final ExerciseSession session;
+  final ExerciseProvider exerciseProvider;
+
+  const _ExerciseTile(
+      {required this.session, required this.exerciseProvider});
+
+  String _formatDuration(int seconds) {
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    final s = seconds % 60;
+    if (h > 0) return '${h}h ${m.toString().padLeft(2, '0')}m';
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final exercise = exerciseProvider.getExerciseById(session.exerciseId);
+    final name = exercise?.name ?? 'Unknown Exercise';
+    final timeStr = DateFormat('h:mm a').format(session.timestamp);
+    const color = kGoldColor;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 3,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        color: kTextPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (exercise?.source != null &&
+                        exercise!.source!.isNotEmpty)
+                      Text(
+                        exercise.source!,
+                        style: const TextStyle(
+                            color: kTextSecondary, fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      )
+                    else
+                      const Text(
+                        'Exercise',
+                        style:
+                            TextStyle(color: kTextSecondary, fontSize: 12),
+                      ),
+                  ],
+                ),
+              ),
+              Text(
+                timeStr,
+                style: const TextStyle(color: kTextSecondary, fontSize: 12),
+              ),
+            ],
+          ),
+          if (session.bpm != null || session.durationSeconds != null) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                if (session.durationSeconds != null)
+                  _Chip(
+                    icon: Icons.timer_outlined,
+                    label: _formatDuration(session.durationSeconds!),
+                    color: color,
+                  ),
+                if (session.bpm != null)
+                  _Chip(
+                    icon: Icons.speed,
+                    label: '${session.bpm} BPM',
+                    color: color,
+                  ),
+              ],
+            ),
+          ],
+          if (session.notes != null && session.notes!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              session.notes!,
+              style: const TextStyle(
+                color: kTextSecondary,
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                height: 1.4,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _Chip extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -429,9 +606,10 @@ class _Chip extends StatelessWidget {
 // ── Empty state ───────────────────────────────────────────────────────────────
 
 class _EmptyPractice extends StatelessWidget {
-  final bool hasPieces;
+  final bool hasSongsOrExercises;
   final VoidCallback onLog;
-  const _EmptyPractice({required this.hasPieces, required this.onLog});
+  const _EmptyPractice(
+      {required this.hasSongsOrExercises, required this.onLog});
 
   @override
   Widget build(BuildContext context) {
@@ -442,13 +620,13 @@ class _EmptyPractice extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              hasPieces ? Icons.edit_note : Icons.piano,
+              hasSongsOrExercises ? Icons.edit_note : Icons.piano,
               size: 64,
               color: kTextSecondary.withOpacity(0.4),
             ),
             const SizedBox(height: 16),
             Text(
-              hasPieces ? 'No sessions yet' : 'No songs yet',
+              hasSongsOrExercises ? 'No sessions yet' : 'Nothing added yet',
               style: const TextStyle(
                   color: kTextPrimary,
                   fontSize: 18,
@@ -456,13 +634,13 @@ class _EmptyPractice extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              hasPieces
-                  ? 'Log your first practice session to start tracking your progress'
-                  : 'Add a song in the Songs tab before logging practice',
+              hasSongsOrExercises
+                  ? 'Log a song or exercise session to start tracking your progress'
+                  : 'Add songs or exercises before logging practice',
               style: const TextStyle(color: kTextSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),
-            if (hasPieces) ...[
+            if (hasSongsOrExercises) ...[
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: onLog,
@@ -471,8 +649,8 @@ class _EmptyPractice extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kGoldColor,
                   foregroundColor: const Color(0xFF1A1200),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 12),
                 ),
               ),
             ],
