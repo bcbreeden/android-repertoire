@@ -495,4 +495,13 @@ class DatabaseHelper {
       _database = null;
     }
   }
+
+  /// Deletes all rows from every table. Used by integration tests to guarantee
+  /// a clean state before each test group without re-opening the database.
+  Future<void> resetForTesting() async {
+    final db = await database;
+    await db.delete('practice_sessions');
+    await db.delete('pieces');
+    await db.delete('app_opens');
+  }
 }

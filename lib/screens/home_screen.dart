@@ -67,6 +67,7 @@ class _PiecesTabState extends State<PiecesTab>
           backgroundColor: kCardColor,
           onRefresh: () => provider.loadPieces(),
           child: CustomScrollView(
+            key: const Key('pieces_scroll'),
             slivers: [
               SliverToBoxAdapter(
                 child: Column(
@@ -223,7 +224,7 @@ class _RecentMilestones extends StatelessWidget {
                   return Column(
                     children: [
                       if (index > 0)
-                        Divider(
+                        const Divider(
                             height: 1,
                             color: kDividerColor,
                             indent: 16,
