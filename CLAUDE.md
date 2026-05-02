@@ -65,22 +65,29 @@ Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageInde
 Follow this order for every feature or fix:
 
 1. **Build** the feature or fix.
-2. **Run existing tests** — unit tests first (fast, no device), then integration tests.
-3. **Write new tests** — unit/widget tests for logic and widget behaviour; integration tests for any new user-visible flow.
-4. **Run tests again** — all must be green before pushing.
-5. **Review and self-heal this steering file** — update any section that is now stale (architecture map, test file list, helpers, pitfalls, design decisions). Commit the updated `CLAUDE.md` alongside the feature changes.
-6. **Push.**
+2. **Write new tests** — unit/widget tests for logic and widget behaviour; integration tests for any new user-visible flow.
+3. **Run all tests** — unit tests first (fast, no device), then integration tests. All must be green before pushing.
+4. **Review and self-heal this steering file** — update any section that is now stale (architecture map, test file list, helpers, pitfalls, design decisions). Commit the updated `CLAUDE.md` alongside the feature changes.
+5. **Push.**
 
 ```bash
-# Step 2 & 4 — unit + widget tests (no device needed)
+# Step 2 & 4 — run everything (preferred)
+bash test_all.sh
+
+# Or manually:
+# Unit + widget tests (no device needed)
 flutter test test/
 
-# Step 2 & 4 — integration tests (run against ALL open emulators)
+# Integration tests — all open emulators
 for device in emulator-5554 emulator-5556; do
   echo "=== $device ==="
   flutter test integration_test/app_test.dart -d $device
 done
 ```
+
+**Windows note**: Flutter 3.41.x has two tooling bugs on Windows that prevent tests from running at all (not test failures — Flutter itself crashes before running a single test). `test_all.sh` works around both automatically:
+- Kills lingering `dart.exe`/`flutter_tester.exe` processes that lock shader files
+- Deletes stale `build/native_assets/windows/sqlite3.dll` before each run
 
 The two emulators cover different API levels (emulator-5554 = API 37, emulator-5556 = API 29). Running both catches regressions on older APIs — API 29 in particular has different focus/keyboard behaviour, which is why form fields use tap-then-enterText rather than enterText alone.
 
@@ -102,6 +109,7 @@ Test files:
 - `test/database/database_helper_test.dart` — Full CRUD, stage advancement, streak, milestones
 - `test/providers/piece_provider_test.dart` — filteredPieces, overallProgressPct, canAddPiece, etc.
 - `test/widgets/piece_card_test.dart` — PieceCard button visibility and tap-routing behaviour
+- `test/widgets/log_practice_sheet_test.dart` — LogPracticeSheet timer controls, piece display (dropdown vs info row), prefill, Save button enabled state
 
 Database tests use `sqflite_common_ffi` (dev dependency) with `databaseFactory = databaseFactoryFfi`. Each test file's `setUp` deletes all rows from `pieces`, `practice_sessions`, and `app_opens`. Each file has a `tearDownAll` that calls `DatabaseHelper.instance.close()`.
 
@@ -132,6 +140,7 @@ Integration test pitfalls:
 - Filter chips live in a `SliverToBoxAdapter`. When the list is scrolled down, the sliver is disposed (not merely offstage). Use `_tapChip` which handles `ensureVisible`, and scroll back to the top with a large `drag(..., Offset(0, 10000))` after returning from a detail screen before interacting with chips.
 - `PiecesTab` uses `AutomaticKeepAliveClientMixin`, so scroll position is preserved across navigation. Always scroll to top before tapping chips after `_goBack`.
 - Scroll direction: `drag(Offset(0, negative))` = scroll DOWN; `drag(Offset(0, positive))` = scroll UP / back to top.
+- **Keyboard blocking bottom-sheet buttons**: After `enterText` inside a modal bottom sheet, the soft keyboard remains up and its hit-test layer blocks taps on buttons near the bottom of the sheet (e.g. "Save Session"). Always call `FocusManager.instance.primaryFocus?.unfocus(); await tester.pumpAndSettle();` before tapping such buttons.
 
 ## Dependencies
 

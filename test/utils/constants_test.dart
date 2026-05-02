@@ -134,4 +134,47 @@ void main() {
       }
     });
   });
+
+  // ── kStageDescriptions ────────────────────────────────────────────────────
+
+  group('kStageDescriptions', () {
+    test('every stage in kStageOrder has a description', () {
+      for (final stage in kStageOrder) {
+        expect(kStageDescriptions.containsKey(stage), isTrue,
+            reason: 'Missing description for stage "$stage"');
+      }
+    });
+
+    test('no description is empty', () {
+      for (final desc in kStageDescriptions.values) {
+        expect(desc.isNotEmpty, isTrue);
+      }
+    });
+
+    test('has exactly as many entries as stages', () {
+      expect(kStageDescriptions.length, kStageOrder.length);
+    });
+  });
+
+  // ── kStageColors ──────────────────────────────────────────────────────────
+
+  group('kStageColors', () {
+    test('every stage in kStageOrder has a color', () {
+      for (final stage in kStageOrder) {
+        expect(kStageColors.containsKey(stage), isTrue,
+            reason: 'Missing color for stage "$stage"');
+      }
+    });
+
+    test('has exactly as many entries as stages', () {
+      expect(kStageColors.length, kStageOrder.length);
+    });
+
+    test('no two stages share the same color value', () {
+      final values = kStageColors.values.map((c) => c.value).toList();
+      final unique = values.toSet();
+      expect(unique.length, values.length,
+          reason: 'Stage colors should be visually distinct');
+    });
+  });
 }

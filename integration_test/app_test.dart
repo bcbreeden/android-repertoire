@@ -476,6 +476,190 @@ void main() {
     });
   });
 
+  // ── Delete song ───────────────────────────────────────────────────────────
+  group('Delete song', () {
+    setUp(() async {
+      await DatabaseHelper.instance.resetForTesting();
+    });
+
+    testWidgets('deleting a song removes it from the list', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      if (find.text('Next').evaluate().isEmpty) {
+        markTestSkipped('Paywall active — cannot add song to test deletion.');
+        return;
+      }
+
+      await tester.enterText(find.byType(TextFormField).at(0), 'Delete Me');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(2), '32');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Song'));
+      await tester.pumpAndSettle();
+
+      // Open detail screen
+      await tester.tap(_cardFinder('Delete Me'));
+      await tester.pumpAndSettle();
+
+      // Tap the delete icon
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+
+      // Confirm dialog appears
+      expect(find.text('Delete Song?'), findsOneWidget);
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      // Navigated back to songs list, piece is gone
+      expect(_cardFinder('Delete Me'), findsNothing);
+    });
+
+    testWidgets('cancelling the delete dialog keeps the song', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      if (find.text('Next').evaluate().isEmpty) {
+        markTestSkipped('Paywall active.');
+        return;
+      }
+
+      await tester.enterText(find.byType(TextFormField).at(0), 'Keep Me');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(2), '32');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Song'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(_cardFinder('Keep Me'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+
+      // Cancel the dialog
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      // Still on detail screen with song intact
+      expect(find.text('Log Practice'), findsOneWidget);
+    });
+  });
+
+  // ── End-to-end practice session save ─────────────────────────────────────
+  group('Practice session save', () {
+    setUp(() async {
+      await DatabaseHelper.instance.resetForTesting();
+    });
+
+    testWidgets('saving a session shows it in the Practice tab', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      if (find.text('Next').evaluate().isEmpty) {
+        markTestSkipped('Paywall active.');
+        return;
+      }
+
+      await tester.enterText(find.byType(TextFormField).at(0), 'Session Piece');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(2), '64');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Song'));
+      await tester.pumpAndSettle();
+
+      // Open the log sheet via the Practice pill on the card
+      final practiceBtn = find.descendant(
+        of: _cardFinder('Session Piece'),
+        matching: find.text('Practice'),
+      );
+      await tester.tap(practiceBtn);
+      await tester.pumpAndSettle();
+
+      // Fill in measures learned
+      await tester.enterText(find.byType(TextFormField).at(0), '32');
+      await tester.pumpAndSettle();
+
+      // Dismiss keyboard so Save Session button is tappable
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
+      // Save
+      await tester.tap(find.text('Save Session'));
+      await tester.pumpAndSettle();
+
+      // Switch to Practice tab (use Tab widget to avoid ambiguity with Practice pill)
+      await tester.tap(find.widgetWithText(Tab, 'Practice'));
+      await tester.pumpAndSettle();
+
+      // Session appears — piece name is shown in the session tile
+      expect(find.text('Session Piece'), findsAtLeastNWidgets(1));
+      expect(find.text('Session History'), findsOneWidget);
+    });
+
+    testWidgets('saved session chip shows measures in the Practice tab', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      if (find.text('Next').evaluate().isEmpty) {
+        markTestSkipped('Paywall active.');
+        return;
+      }
+
+      await tester.enterText(find.byType(TextFormField).at(0), 'Chip Test Piece');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(2), '80');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Song'));
+      await tester.pumpAndSettle();
+
+      final practiceBtn = find.descendant(
+        of: _cardFinder('Chip Test Piece'),
+        matching: find.text('Practice'),
+      );
+      await tester.tap(practiceBtn);
+      await tester.pumpAndSettle();
+
+      // Enter 55 measures
+      await tester.enterText(find.byType(TextFormField).at(0), '55');
+      await tester.pumpAndSettle();
+
+      // Dismiss keyboard so Save Session button is tappable
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Save Session'));
+      await tester.pumpAndSettle();
+
+      // Switch to Practice tab (use Tab widget to avoid ambiguity with Practice pill)
+      await tester.tap(find.widgetWithText(Tab, 'Practice'));
+      await tester.pumpAndSettle();
+
+      // The measures chip should show "55 measures"
+      expect(find.text('55 measures'), findsOneWidget);
+    });
+  });
+
   // ── Practice button ───────────────────────────────────────────────────────
   group('Practice button', () {
     setUp(() async {

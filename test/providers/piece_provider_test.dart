@@ -339,4 +339,209 @@ void main() {
       expect(notifyCount, 1);
     });
   });
+
+  // ── advanceStage ──────────────────────────────────────────────────────────
+
+  group('advanceStage', () {
+    test('advances piece to next stage', () async {
+      final added = await provider.addPiece(_piece(status: kStagelearning));
+      final result = await provider.advanceStage(added!);
+      expect(result, isNotNull);
+      expect(result!.status, kStageNotePerfection);
+    });
+
+    test('updates piece in the in-memory list', () async {
+      final added = await provider.addPiece(_piece(status: kStagelearning));
+      await provider.advanceStage(added!);
+      expect(provider.pieces.first.status, kStageNotePerfection);
+    });
+
+    test('notifies listeners after advancing', () async {
+      final added = await provider.addPiece(_piece(status: kStagelearning));
+      int notifyCount = 0;
+      provider.addListener(() => notifyCount++);
+      await provider.advanceStage(added!);
+      expect(notifyCount, greaterThan(0));
+    });
+
+    test('piece stays at repertoire when already at last stage', () async {
+      final added = await provider.addPiece(_piece(status: kStageRepertoire));
+      await provider.advanceStage(added!);
+      expect(provider.pieces.first.status, kStageRepertoire);
+    });
+
+    test('sets timestamp for the new stage', () async {
+      final added = await provider.addPiece(_piece(status: kStagelearning));
+      final result = await provider.advanceStage(added!);
+      expect(result!.timestampForStage(kStageNotePerfection), isNotNull);
+    });
+  });
+
+  // ── setStage ──────────────────────────────────────────────────────────────
+
+  group('setStage', () {
+    test('sets piece to the specified stage', () async {
+      final added = await provider.addPiece(_piece(status: kStagelearning));
+      final result = await provider.setStage(added!, kStageTempoPerfection);
+      expect(result!.status, kStageTempoPerfection);
+    });
+
+    test('updates piece in the in-memory list', () async {
+      final added = await provider.addPiece(_piece(status: kStagelearning));
+      await provider.setStage(added!, kStageRepertoire);
+      expect(provider.pieces.first.status, kStageRepertoire);
+    });
+
+    test('notifies listeners', () async {
+      final added = await provider.addPiece(_piece(status: kStagelearning));
+      int notifyCount = 0;
+      provider.addListener(() => notifyCount++);
+      await provider.setStage(added!, kStageDynamicsPerfection);
+      expect(notifyCount, greaterThan(0));
+    });
+
+    test('can jump multiple stages forward', () async {
+      final added = await provider.addPiece(_piece(status: kStagelearning));
+      await provider.setStage(added!, kStageRepertoire);
+      expect(provider.pieces.first.status, kStageRepertoire);
+    });
+
+    test('preserves first achievement timestamp on re-entry', () async {
+      final added = await provider.addPiece(_piece(status: kStagelearning));
+      // First time reaching note_perfection — timestamp is set
+      await provider.setStage(added!, kStageNotePerfection);
+      final first = provider.pieces.first.timestampForStage(kStageNotePerfection);
+      expect(first, isNotNull);
+
+      // Go back to learning, then return to note_perfection
+      await provider.setStage(provider.pieces.first, kStagelearning);
+      await provider.setStage(provider.pieces.first, kStageNotePerfection);
+      final second = provider.pieces.first.timestampForStage(kStageNotePerfection);
+      // Timestamp must be the original (write-once)
+      expect(second, first);
+    });
+  });
+
+  // ── logPractice ───────────────────────────────────────────────────────────
+
+  group('logPractice', () {
+    test('creates a practice session', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!);
+      expect(provider.practiceSessions.length, 1);
+      expect(provider.practiceSessions.first.pieceId, added.id);
+    });
+
+    test('multiple sessions accumulate', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!);
+      await provider.logPractice(added.id!);
+      expect(provider.practiceSessions.length, 2);
+    });
+
+    test('updates measuresLearned on the piece when provided', () async {
+      final added = await provider.addPiece(_piece(measures: 100));
+      await provider.logPractice(added!.id!, measuresLearned: 50);
+      expect(provider.pieces.first.measuresLearned, 50);
+    });
+
+    test('updates currentTempo on the piece when bpm is provided', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!, currentBpm: 88);
+      expect(provider.pieces.first.currentTempo, 88);
+    });
+
+    test('does not change piece data when measures and bpm are both null', () async {
+      final added = await provider.addPiece(_piece(measures: 100));
+      final originalUpdatedAt = provider.pieces.first.updatedAt;
+      await provider.logPractice(added!.id!);
+      // No piece update should have occurred
+      expect(provider.pieces.first.updatedAt, originalUpdatedAt);
+    });
+
+    test('stores notes in the session', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!, notes: 'Felt great');
+      expect(provider.practiceSessions.first.notes, 'Felt great');
+    });
+
+    test('stores durationSeconds in the session', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!, durationSeconds: 300);
+      expect(provider.practiceSessions.first.durationSeconds, 300);
+    });
+
+    test('updates lastPracticeDates after logging', () async {
+      final added = await provider.addPiece(_piece());
+      expect(provider.lastPracticeDateForPiece(added!.id!), isNull);
+      await provider.logPractice(added.id!);
+      expect(provider.lastPracticeDateForPiece(added.id!), isNotNull);
+    });
+
+    test('notifies listeners after logging', () async {
+      final added = await provider.addPiece(_piece());
+      int notifyCount = 0;
+      provider.addListener(() => notifyCount++);
+      await provider.logPractice(added!.id!);
+      expect(notifyCount, greaterThan(0));
+    });
+  });
+
+  // ── setPremium ────────────────────────────────────────────────────────────
+
+  group('setPremium', () {
+    test('sets isPremium to true', () async {
+      await provider.setPremium(true);
+      expect(provider.isPremium, isTrue);
+    });
+
+    test('sets isPremium to false', () async {
+      await provider.setPremium(true);
+      await provider.setPremium(false);
+      expect(provider.isPremium, isFalse);
+    });
+
+    test('persists value to SharedPreferences', () async {
+      await provider.setPremium(true);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getBool('is_premium'), isTrue);
+    });
+
+    test('notifies listeners', () async {
+      int notifyCount = 0;
+      provider.addListener(() => notifyCount++);
+      await provider.setPremium(true);
+      expect(notifyCount, greaterThan(0));
+    });
+  });
+
+  // ── lastPracticeDateForPiece ───────────────────────────────────────────────
+
+  group('lastPracticeDateForPiece', () {
+    test('returns null before any sessions are logged', () async {
+      final added = await provider.addPiece(_piece());
+      expect(provider.lastPracticeDateForPiece(added!.id!), isNull);
+    });
+
+    test('returns a recent date after logging', () async {
+      final before = DateTime.now().subtract(const Duration(seconds: 1));
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!);
+      final date = provider.lastPracticeDateForPiece(added.id!);
+      expect(date, isNotNull);
+      expect(date!.isAfter(before), isTrue);
+    });
+
+    test('returns null for an unknown pieceId', () {
+      expect(provider.lastPracticeDateForPiece(99999), isNull);
+    });
+
+    test('tracks dates independently per piece', () async {
+      final a = await provider.addPiece(_piece(name: 'A'));
+      final b = await provider.addPiece(_piece(name: 'B'));
+      await provider.logPractice(a!.id!);
+      expect(provider.lastPracticeDateForPiece(a.id!), isNotNull);
+      expect(provider.lastPracticeDateForPiece(b!.id!), isNull);
+    });
+  });
 }

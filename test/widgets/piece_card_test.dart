@@ -77,6 +77,99 @@ void main() {
     });
   });
 
+  group('PieceCard name and composer display', () {
+    testWidgets('always shows piece name', (tester) async {
+      await tester.pumpWidget(_build(piece: _piece(name: 'La Campanella'), onTap: () {}));
+      expect(find.text('La Campanella'), findsOneWidget);
+    });
+
+    testWidgets('shows composer when present and non-empty', (tester) async {
+      await tester.pumpWidget(_build(piece: _piece(composer: 'Liszt'), onTap: () {}));
+      expect(find.text('Liszt'), findsOneWidget);
+    });
+
+    testWidgets('hides composer when null', (tester) async {
+      await tester.pumpWidget(_build(piece: _piece(composer: null), onTap: () {}));
+      // The default in _piece is 'Beethoven'; passing null should suppress it
+      expect(find.text('Beethoven'), findsNothing);
+    });
+
+    testWidgets('hides composer when empty string', (tester) async {
+      await tester.pumpWidget(_build(piece: _piece(name: 'Solo', composer: ''), onTap: () {}));
+      // Empty string matches the isNotEmpty guard — no composer row rendered
+      final texts = tester.widgetList<Text>(find.byType(Text))
+          .where((t) => t.data?.isEmpty == true)
+          .toList();
+      expect(texts, isEmpty);
+    });
+  });
+
+  group('PieceCard last practiced row', () {
+    testWidgets('hidden when lastPracticed is null', (tester) async {
+      await tester.pumpWidget(
+        _build(piece: _piece(), onTap: () {}, lastPracticed: null),
+      );
+      expect(find.byIcon(Icons.check_circle), findsNothing);
+      expect(find.byIcon(Icons.history), findsNothing);
+    });
+
+    testWidgets('shows "Today" with check_circle icon', (tester) async {
+      final now = DateTime.now();
+      await tester.pumpWidget(
+        _build(piece: _piece(), onTap: () {}, lastPracticed: now),
+      );
+      expect(find.textContaining('Today'), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    });
+
+    testWidgets('shows "Yesterday" with history icon', (tester) async {
+      final yesterday = DateTime.now().subtract(const Duration(days: 1));
+      await tester.pumpWidget(
+        _build(piece: _piece(), onTap: () {}, lastPracticed: yesterday),
+      );
+      expect(find.textContaining('Yesterday'), findsOneWidget);
+      expect(find.byIcon(Icons.history), findsOneWidget);
+    });
+
+    testWidgets('shows formatted month/day for older dates', (tester) async {
+      // Use a fixed past date that is definitely not today or yesterday
+      final older = DateTime(2023, 3, 15, 10, 30);
+      await tester.pumpWidget(
+        _build(piece: _piece(), onTap: () {}, lastPracticed: older),
+      );
+      // DateFormat('MMM d') → e.g. "Mar 15"
+      expect(find.textContaining('Mar'), findsOneWidget);
+      expect(find.byIcon(Icons.history), findsOneWidget);
+    });
+  });
+
+  group('PieceCard stage badge', () {
+    testWidgets('shows correct label for learning stage', (tester) async {
+      await tester.pumpWidget(_build(piece: _piece(status: kStagelearning), onTap: () {}));
+      expect(find.text('Learning'), findsOneWidget);
+    });
+
+    testWidgets('shows correct label for note perfection stage', (tester) async {
+      await tester.pumpWidget(
+        _build(piece: _piece(status: kStageNotePerfection), onTap: () {}),
+      );
+      expect(find.text('Note Perfection'), findsOneWidget);
+    });
+
+    testWidgets('shows star icon for repertoire stage', (tester) async {
+      await tester.pumpWidget(
+        _build(piece: _piece(status: kStageRepertoire), onTap: () {}),
+      );
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.text('Mastered'), findsOneWidget);
+    });
+
+    testWidgets('does not show star icon for non-repertoire stage', (tester) async {
+      await tester.pumpWidget(_build(piece: _piece(status: kStagelearning), onTap: () {}));
+      expect(find.byIcon(Icons.star), findsNothing);
+    });
+  });
+
   group('PieceCard practice button tap routing', () {
     testWidgets('tapping Practice calls onPractice, not onTap', (tester) async {
       var tapCalled = false;
