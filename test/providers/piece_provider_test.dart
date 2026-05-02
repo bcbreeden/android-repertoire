@@ -487,6 +487,46 @@ void main() {
     });
   });
 
+  // ── updatePracticeSession ─────────────────────────────────────────────────
+
+  group('updatePracticeSession', () {
+    test('updated fields are reflected in practiceSessions list', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!, notes: 'Before');
+      final session = provider.practiceSessions.first;
+      await provider.updatePracticeSession(session.copyWith(notes: 'After'));
+      expect(provider.practiceSessions.first.notes, 'After');
+    });
+
+    test('returns true on success', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!);
+      final session = provider.practiceSessions.first;
+      final result = await provider.updatePracticeSession(
+          session.copyWith(currentBpm: 120));
+      expect(result, isTrue);
+    });
+
+    test('does not change the number of sessions', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!);
+      await provider.logPractice(added.id!);
+      final session = provider.practiceSessions.first;
+      await provider.updatePracticeSession(session.copyWith(notes: 'Updated'));
+      expect(provider.practiceSessions.length, 2);
+    });
+
+    test('notifies listeners after update', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!);
+      final session = provider.practiceSessions.first;
+      var notified = false;
+      provider.addListener(() => notified = true);
+      await provider.updatePracticeSession(session.copyWith(notes: 'Changed'));
+      expect(notified, isTrue);
+    });
+  });
+
   // ── deletePracticeSession ─────────────────────────────────────────────────
 
   group('deletePracticeSession', () {

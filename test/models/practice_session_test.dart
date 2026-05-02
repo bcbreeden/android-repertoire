@@ -102,7 +102,7 @@ void main() {
       expect(s.durationSeconds, 2700);
     });
 
-    test('round-trip preserves all data', () {
+    test('round-trip through toMap/fromMap preserves all data', () {
       final original = PracticeSession(
         id: 5,
         pieceId: 10,
@@ -120,6 +120,64 @@ void main() {
       expect(result.currentBpm, original.currentBpm);
       expect(result.notes, original.notes);
       expect(result.durationSeconds, original.durationSeconds);
+    });
+  });
+
+  // ── copyWith ──────────────────────────────────────────────────────────────
+
+  group('PracticeSession.copyWith', () {
+    final base = PracticeSession(
+      id: 1,
+      pieceId: 10,
+      timestamp: DateTime(2024, 1, 1, 12, 0),
+      measuresLearned: 20,
+      currentBpm: 80,
+      notes: 'Original notes',
+      durationSeconds: 600,
+    );
+
+    test('returns equal object when no fields are changed', () {
+      final copy = base.copyWith();
+      expect(copy.id, base.id);
+      expect(copy.pieceId, base.pieceId);
+      expect(copy.timestamp, base.timestamp);
+      expect(copy.measuresLearned, base.measuresLearned);
+      expect(copy.currentBpm, base.currentBpm);
+      expect(copy.notes, base.notes);
+      expect(copy.durationSeconds, base.durationSeconds);
+    });
+
+    test('overrides only the specified fields', () {
+      final copy = base.copyWith(currentBpm: 100, notes: 'Updated');
+      expect(copy.currentBpm, 100);
+      expect(copy.notes, 'Updated');
+      expect(copy.measuresLearned, base.measuresLearned);
+      expect(copy.durationSeconds, base.durationSeconds);
+    });
+
+    test('clearMeasuresLearned sets measuresLearned to null', () {
+      final copy = base.copyWith(clearMeasuresLearned: true);
+      expect(copy.measuresLearned, isNull);
+    });
+
+    test('clearCurrentBpm sets currentBpm to null', () {
+      final copy = base.copyWith(clearCurrentBpm: true);
+      expect(copy.currentBpm, isNull);
+    });
+
+    test('clearNotes sets notes to null', () {
+      final copy = base.copyWith(clearNotes: true);
+      expect(copy.notes, isNull);
+    });
+
+    test('clearDurationSeconds sets durationSeconds to null', () {
+      final copy = base.copyWith(clearDurationSeconds: true);
+      expect(copy.durationSeconds, isNull);
+    });
+
+    test('clear flag takes priority over a simultaneously provided value', () {
+      final copy = base.copyWith(currentBpm: 999, clearCurrentBpm: true);
+      expect(copy.currentBpm, isNull);
     });
   });
 }
