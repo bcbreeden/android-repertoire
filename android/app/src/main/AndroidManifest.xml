@@ -4,7 +4,7 @@
     <application
         android:label="Repertoire"
         android:name="${applicationName}"
-        android:icon="@drawable/launch_background">
+        android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
             android:exported="true"

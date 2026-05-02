@@ -25,6 +25,14 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   sqflite_common_ffi: ^2.4.0+3
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon.png"
+  adaptive_icon_background: "#111318"
+  adaptive_icon_foreground: "assets/icon.png"
 
 flutter:
   uses-material-design: true
