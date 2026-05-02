@@ -180,7 +180,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SectionLabel('Basic Info'),
+              const _SectionLabel('Basic Info'),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _nameController,
@@ -215,7 +215,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                 },
               ),
               const SizedBox(height: 20),
-              _SectionLabel('Practice Progress'),
+              const _SectionLabel('Practice Progress'),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _measuresLearnedController,
@@ -271,7 +271,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              _SectionLabel('Stage'),
+              const _SectionLabel('Stage'),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -306,7 +306,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              _SectionLabel('Notes'),
+              const _SectionLabel('Notes'),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _notesController,

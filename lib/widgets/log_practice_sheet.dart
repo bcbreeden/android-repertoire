@@ -103,7 +103,9 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
 
     // Stop timer if still running or paused
     if (_timerState == _TimerState.running ||
-        _timerState == _TimerState.paused) _stopTimer();
+        _timerState == _TimerState.paused) {
+      _stopTimer();
+    }
 
     setState(() => _isSaving = true);
     final provider = context.read<PieceProvider>();

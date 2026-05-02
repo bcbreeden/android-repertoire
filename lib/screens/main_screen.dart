@@ -43,8 +43,8 @@ class _MainScreenState extends State<MainScreen>
         backgroundColor: kBackgroundColor,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.piano, color: kGoldColor, size: 24),
             SizedBox(width: 8),
             Text(

@@ -64,7 +64,7 @@ void main() {
   group('PracticeSession.fromMap', () {
     final baseTs = DateTime(2024, 5, 10, 14, 0);
 
-    Map<String, dynamic> _baseMap() => {
+    Map<String, dynamic> baseMap() => {
           'id': 7,
           'piece_id': 3,
           'timestamp': baseTs.toIso8601String(),
@@ -75,14 +75,14 @@ void main() {
         };
 
     test('deserialises id, pieceId, and timestamp', () {
-      final s = PracticeSession.fromMap(_baseMap());
+      final s = PracticeSession.fromMap(baseMap());
       expect(s.id, 7);
       expect(s.pieceId, 3);
       expect(s.timestamp, baseTs);
     });
 
     test('null optional fields remain null', () {
-      final s = PracticeSession.fromMap(_baseMap());
+      final s = PracticeSession.fromMap(baseMap());
       expect(s.measuresLearned, isNull);
       expect(s.currentBpm, isNull);
       expect(s.notes, isNull);
@@ -90,7 +90,7 @@ void main() {
     });
 
     test('deserialises all optional fields when present', () {
-      final map = _baseMap()
+      final map = baseMap()
         ..['measures_learned'] = 20
         ..['current_bpm'] = 96
         ..['notes'] = 'Smooth run-through'

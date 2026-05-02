@@ -335,10 +335,10 @@ void main() {
   });
 
   group('Piece.fromMap', () {
-    Piece _roundTrip(Piece p) => Piece.fromMap(p.toMap()..['id'] = p.id);
+    Piece roundTrip(Piece p) => Piece.fromMap(p.toMap()..['id'] = p.id);
 
     test('preserves name through round-trip', () {
-      expect(_roundTrip(_piece(name: 'Moonlight Sonata')).name, 'Moonlight Sonata');
+      expect(roundTrip(_piece(name: 'Moonlight Sonata')).name, 'Moonlight Sonata');
     });
 
     test('preserves all nullable fields through round-trip', () {
@@ -352,7 +352,7 @@ void main() {
         notes: 'Watch dynamics',
         notePerfectionAt: ts,
       );
-      final result = _roundTrip(p);
+      final result = roundTrip(p);
       expect(result.composer, 'Debussy');
       expect(result.measuresLearned, 30);
       expect(result.currentTempo, 72);
@@ -363,7 +363,7 @@ void main() {
 
     test('null optional fields remain null through round-trip', () {
       final p = _piece(composer: null, measuresLearned: null, currentTempo: null);
-      final result = _roundTrip(p);
+      final result = roundTrip(p);
       expect(result.composer, isNull);
       expect(result.measuresLearned, isNull);
       expect(result.currentTempo, isNull);

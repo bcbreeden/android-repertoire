@@ -292,7 +292,7 @@ class _HeroHeader extends StatelessWidget {
         color: isRepertoire
             ? const Color(0xFF1F1A0E)
             : kSurfaceColor,
-        border: Border(
+        border: const Border(
           bottom: BorderSide(color: kDividerColor),
         ),
       ),

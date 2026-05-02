@@ -45,12 +45,12 @@ class _PracticeTabState extends State<PracticeTab>
               SliverToBoxAdapter(
                 child: _SummaryCard(sessions: sessions),
               ),
-              SliverToBoxAdapter(
+              const SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, 6),
                   child: Text(
                     'Session History',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: kTextSecondary,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -245,7 +245,7 @@ class _DayGroup extends StatelessWidget {
               return Column(
                 children: [
                   if (i > 0)
-                    Divider(
+                    const Divider(
                         height: 1,
                         color: kDividerColor,
                         indent: 16,
