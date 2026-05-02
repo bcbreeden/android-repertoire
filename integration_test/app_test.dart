@@ -843,7 +843,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Exercise session appears in Practice tab
-      expect(find.text('Hanon No. 1'), findsOneWidget);
+      // findsAtLeastNWidgets because the Exercises tab card (kept alive via
+      // AutomaticKeepAliveClientMixin) also renders the exercise name in-tree.
+      expect(find.text('Hanon No. 1'), findsAtLeastNWidgets(1));
       expect(find.text('Session History'), findsOneWidget);
     });
   });
