@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../models/piece.dart';
 import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/piece_card.dart';
-import '../widgets/stats_card.dart';
 import '../widgets/log_practice_sheet.dart';
 import 'piece_detail_screen.dart';
 
@@ -66,22 +63,6 @@ class _PiecesTabState extends State<PiecesTab>
           child: CustomScrollView(
             key: const Key('pieces_scroll'),
             slivers: [
-              SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
-                    StatsCard(
-                      totalPieces: provider.totalCount,
-                      repertoireCount: provider.repertoireCount,
-                      streak: provider.streak,
-                      stageCounts: provider.stageCounts,
-                    ),
-                  ],
-                ),
-              ),
-              SliverToBoxAdapter(
-                  child: _RecentMilestones(provider: provider)),
               SliverToBoxAdapter(child: _FilterBar(provider: provider)),
               if (provider.filteredPieces.isEmpty)
                 SliverFillRemaining(
@@ -176,111 +157,6 @@ class _FilterBar extends StatelessWidget {
           );
         }).toList(),
       ),
-    );
-  }
-}
-
-// ── Recent milestones ─────────────────────────────────────────────────────────
-
-class _RecentMilestones extends StatelessWidget {
-  final PieceProvider provider;
-  const _RecentMilestones({required this.provider});
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: provider.recentMilestones,
-      builder: (context, snapshot) {
-        final milestones = snapshot.data;
-        if (milestones == null || milestones.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Text(
-                'Recent Milestones',
-                style: TextStyle(
-                  color: kTextSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: kCardColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: kDividerColor),
-              ),
-              child: Column(
-                children: List.generate(milestones.length, (index) {
-                  final milestone = milestones[index];
-                  final piece = milestone['piece'] as Piece;
-                  final stage = milestone['stage'] as String;
-                  final timestamp = milestone['timestamp'] as DateTime;
-                  final color = kStageColors[stage] ?? kGoldColor;
-                  final label = kStageLabels[stage] ?? stage;
-                  final dateStr = DateFormat('MMM d').format(timestamp);
-
-                  return Column(
-                    children: [
-                      if (index > 0)
-                        const Divider(
-                            height: 1,
-                            color: kDividerColor,
-                            indent: 16,
-                            endIndent: 16),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                  shape: BoxShape.circle, color: color),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    piece.name,
-                                    style: const TextStyle(
-                                        color: kTextPrimary,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(label,
-                                      style: TextStyle(
-                                          color: color, fontSize: 11)),
-                                ],
-                              ),
-                            ),
-                            Text(dateStr,
-                                style: const TextStyle(
-                                    color: kTextSecondary, fontSize: 11)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                }),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }
