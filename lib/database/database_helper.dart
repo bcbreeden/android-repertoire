@@ -1,5 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../models/exercise.dart';
+import '../models/exercise_session.dart';
 import '../models/piece.dart';
 import '../models/practice_session.dart';
 import '../utils/constants.dart';
@@ -20,7 +22,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'repertoire.db');
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createDatabase,
       onUpgrade: _onUpgrade,
     );
@@ -63,6 +65,26 @@ class DatabaseHelper {
         duration_seconds INTEGER
       )
     ''');
+    await db.execute('''
+      CREATE TABLE exercises (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        source TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE exercise_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        exercise_id INTEGER NOT NULL,
+        timestamp TEXT NOT NULL,
+        bpm INTEGER,
+        notes TEXT,
+        duration_seconds INTEGER
+      )
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -94,6 +116,28 @@ class DatabaseHelper {
           'ALTER TABLE practice_sessions ADD COLUMN duration_seconds INTEGER',
         );
       }
+    }
+    if (oldVersion < 5) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS exercises (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          source TEXT,
+          notes TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS exercise_sessions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          exercise_id INTEGER NOT NULL,
+          timestamp TEXT NOT NULL,
+          bpm INTEGER,
+          notes TEXT,
+          duration_seconds INTEGER
+        )
+      ''');
     }
   }
 
@@ -488,6 +532,85 @@ class DatabaseHelper {
     };
   }
 
+  // ── Exercise CRUD ───────────────────────────────────────────────────────────
+
+  Future<int> insertExercise(Exercise exercise) async {
+    final db = await database;
+    final map = exercise.toMap();
+    map.remove('id');
+    return await db.insert('exercises', map);
+  }
+
+  Future<List<Exercise>> getAllExercises() async {
+    final db = await database;
+    final maps = await db.query('exercises', orderBy: 'updated_at DESC');
+    return maps.map((m) => Exercise.fromMap(m)).toList();
+  }
+
+  Future<Exercise?> getExerciseById(int id) async {
+    final db = await database;
+    final maps = await db.query('exercises',
+        where: 'id = ?', whereArgs: [id], limit: 1);
+    if (maps.isEmpty) return null;
+    return Exercise.fromMap(maps.first);
+  }
+
+  Future<int> updateExercise(Exercise exercise) async {
+    final db = await database;
+    return await db.update(
+      'exercises',
+      exercise.toMap(),
+      where: 'id = ?',
+      whereArgs: [exercise.id],
+    );
+  }
+
+  Future<int> deleteExercise(int id) async {
+    final db = await database;
+    await db.delete('exercise_sessions',
+        where: 'exercise_id = ?', whereArgs: [id]);
+    return await db.delete('exercises', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // ── Exercise session methods ──────────────────────────────────────────────
+
+  Future<int> insertExerciseSession(ExerciseSession session) async {
+    final db = await database;
+    return await db.insert('exercise_sessions', session.toMap());
+  }
+
+  Future<List<ExerciseSession>> getAllExerciseSessions() async {
+    final db = await database;
+    final rows = await db.query('exercise_sessions', orderBy: 'timestamp DESC');
+    return rows.map((r) => ExerciseSession.fromMap(r)).toList();
+  }
+
+  Future<List<ExerciseSession>> getExerciseSessionsForExercise(
+      int exerciseId) async {
+    final db = await database;
+    final rows = await db.query(
+      'exercise_sessions',
+      where: 'exercise_id = ?',
+      whereArgs: [exerciseId],
+      orderBy: 'timestamp DESC',
+    );
+    return rows.map((r) => ExerciseSession.fromMap(r)).toList();
+  }
+
+  Future<Map<int, DateTime>> getAllLastExerciseSessionDates() async {
+    final db = await database;
+    final rows = await db.rawQuery(
+      'SELECT exercise_id, MAX(timestamp) as last_ts '
+      'FROM exercise_sessions GROUP BY exercise_id',
+    );
+    final map = <int, DateTime>{};
+    for (final row in rows) {
+      map[row['exercise_id'] as int] =
+          DateTime.parse(row['last_ts'] as String);
+    }
+    return map;
+  }
+
   Future<void> close() async {
     final db = _database;
     if (db != null) {
@@ -500,6 +623,8 @@ class DatabaseHelper {
   /// a clean state before each test group without re-opening the database.
   Future<void> resetForTesting() async {
     final db = await database;
+    await db.delete('exercise_sessions');
+    await db.delete('exercises');
     await db.delete('practice_sessions');
     await db.delete('pieces');
     await db.delete('app_opens');

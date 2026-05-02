@@ -1,0 +1,138 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/exercise_provider.dart';
+import '../utils/constants.dart';
+import '../widgets/exercise_card.dart';
+import '../widgets/log_exercise_sheet.dart';
+import 'exercise_detail_screen.dart';
+
+class ExercisesTab extends StatefulWidget {
+  const ExercisesTab({super.key});
+
+  @override
+  State<ExercisesTab> createState() => _ExercisesTabState();
+}
+
+class _ExercisesTabState extends State<ExercisesTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Consumer<ExerciseProvider>(
+      builder: (context, provider, _) {
+        if (provider.isLoading) {
+          return const Center(
+              child: CircularProgressIndicator(color: kGoldColor));
+        }
+
+        if (provider.error != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(provider.error!,
+                    style: const TextStyle(color: kTextSecondary)),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: provider.loadExercises,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (provider.exercises.isEmpty) {
+          return const _EmptyExerciseState();
+        }
+
+        return RefreshIndicator(
+          color: kGoldColor,
+          backgroundColor: kCardColor,
+          onRefresh: provider.loadExercises,
+          child: CustomScrollView(
+            key: const Key('exercises_scroll'),
+            slivers: [
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final exercise = provider.exercises[index];
+                    return ExerciseCard(
+                      key: ValueKey(exercise.id),
+                      exercise: exercise,
+                      lastPracticed: provider
+                          .lastSessionDateForExercise(exercise.id!),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ExerciseDetailScreen(exercise: exercise),
+                        ),
+                      ),
+                      onPlay: () => _showLogSheet(context, exercise.id!),
+                    );
+                  },
+                  childCount: provider.exercises.length,
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 88)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showLogSheet(BuildContext context, int exerciseId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: kCardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => LogExerciseSheet(exerciseId: exerciseId),
+    );
+  }
+}
+
+class _EmptyExerciseState extends StatelessWidget {
+  const _EmptyExerciseState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.fitness_center,
+              size: 64,
+              color: kTextSecondary.withOpacity(0.4),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No exercises yet',
+              style: TextStyle(
+                color: kTextPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Add scales, arpeggios, or any exercise\nyou want to keep practicing',
+              style: TextStyle(color: kTextSecondary, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

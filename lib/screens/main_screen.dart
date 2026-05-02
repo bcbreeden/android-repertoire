@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/exercise_provider.dart';
 import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/log_practice_sheet.dart';
 import '../widgets/paywall_sheet.dart';
+import 'exercise_form_screen.dart';
+import 'exercises_screen.dart';
 import 'home_screen.dart';
 import 'piece_form_screen.dart';
 import 'practice_screen.dart';
@@ -23,7 +26,7 @@ class _MainScreenState extends State<MainScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() => setState(() {}));
   }
 
@@ -33,7 +36,9 @@ class _MainScreenState extends State<MainScreen>
     super.dispose();
   }
 
-  bool get _isPracticeTab => _tabController.index == 1;
+  bool get _isSongsTab      => _tabController.index == 0;
+  bool get _isExercisesTab  => _tabController.index == 1;
+  bool get _isPracticeTab   => _tabController.index == 2;
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +89,7 @@ class _MainScreenState extends State<MainScreen>
           unselectedLabelStyle: const TextStyle(fontSize: 14),
           tabs: const [
             Tab(text: 'Songs'),
+            Tab(text: 'Exercises'),
             Tab(text: 'Practice'),
           ],
         ),
@@ -92,22 +98,44 @@ class _MainScreenState extends State<MainScreen>
         controller: _tabController,
         children: const [
           PiecesTab(),
+          ExercisesTab(),
           PracticeTab(),
         ],
       ),
-      floatingActionButton: Consumer<PieceProvider>(
-        builder: (context, provider, _) {
-          if (_isPracticeTab && provider.pieces.isEmpty) return const SizedBox.shrink();
-          return GestureDetector(
-            onLongPress: _isPracticeTab ? null : () => _showLogSheet(context),
-            child: FloatingActionButton(
-              onPressed: _isPracticeTab
-                  ? () => _showLogSheet(context)
-                  : () => _addPiece(context),
+      floatingActionButton: Consumer2<PieceProvider, ExerciseProvider>(
+        builder: (context, pieceProvider, exerciseProvider, _) {
+          if (_isPracticeTab &&
+              pieceProvider.pieces.isEmpty &&
+              exerciseProvider.exercises.isEmpty) {
+            return const SizedBox.shrink();
+          }
+          if (_isExercisesTab) {
+            return FloatingActionButton(
+              onPressed: () => _addExercise(context),
               backgroundColor: kGoldColor,
               foregroundColor: const Color(0xFF1A1200),
-              tooltip: _isPracticeTab ? 'Log Practice' : 'Add Song',
-              child: Icon(_isPracticeTab ? Icons.edit_note : Icons.add),
+              tooltip: 'Add Exercise',
+              child: const Icon(Icons.add),
+            );
+          }
+          if (_isPracticeTab) {
+            return FloatingActionButton(
+              onPressed: () => _showLogSheet(context),
+              backgroundColor: kGoldColor,
+              foregroundColor: const Color(0xFF1A1200),
+              tooltip: 'Log Practice',
+              child: const Icon(Icons.edit_note),
+            );
+          }
+          // Songs tab
+          return GestureDetector(
+            onLongPress: () => _showLogSheet(context),
+            child: FloatingActionButton(
+              onPressed: () => _addPiece(context),
+              backgroundColor: kGoldColor,
+              foregroundColor: const Color(0xFF1A1200),
+              tooltip: 'Add Song',
+              child: const Icon(Icons.add),
             ),
           );
         },
@@ -132,6 +160,13 @@ class _MainScreenState extends State<MainScreen>
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const PieceFormScreen()),
+    );
+  }
+
+  Future<void> _addExercise(BuildContext context) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ExerciseFormScreen()),
     );
   }
 

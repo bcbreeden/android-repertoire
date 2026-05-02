@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/exercise_provider.dart';
 import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
 import 'main_screen.dart';
@@ -41,7 +42,10 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _load() async {
-    await context.read<PieceProvider>().loadPieces();
+    await Future.wait([
+      context.read<PieceProvider>().loadPieces(),
+      context.read<ExerciseProvider>().loadExercises(),
+    ]);
     if (!mounted) return;
 
     // Complete the bar

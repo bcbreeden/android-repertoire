@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'providers/exercise_provider.dart';
 import 'providers/piece_provider.dart';
 import 'screens/main_screen.dart';
 import 'screens/splash_screen.dart';
@@ -26,8 +27,11 @@ class RepertoireApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => PieceProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PieceProvider()),
+        ChangeNotifierProvider(create: (_) => ExerciseProvider()),
+      ],
       child: MaterialApp(
         title: 'Repertoire',
         debugShowCheckedModeBanner: false,

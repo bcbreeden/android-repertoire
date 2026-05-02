@@ -1,0 +1,203 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/exercise.dart';
+import '../providers/exercise_provider.dart';
+import '../utils/constants.dart';
+
+class ExerciseFormScreen extends StatefulWidget {
+  final Exercise? exercise;
+  const ExerciseFormScreen({super.key, this.exercise});
+
+  @override
+  State<ExerciseFormScreen> createState() => _ExerciseFormScreenState();
+}
+
+class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  late final TextEditingController _nameController;
+  late final TextEditingController _sourceController;
+  late final TextEditingController _notesController;
+  bool _isSaving = false;
+
+  bool get isEditing => widget.exercise != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.exercise;
+    _nameController = TextEditingController(text: e?.name ?? '');
+    _sourceController = TextEditingController(text: e?.source ?? '');
+    _notesController = TextEditingController(text: e?.notes ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _sourceController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    final provider = context.read<ExerciseProvider>();
+
+    final name = _nameController.text.trim();
+    final source = _sourceController.text.trim();
+    final notes = _notesController.text.trim();
+    final now = DateTime.now();
+
+    if (isEditing) {
+      final updated = widget.exercise!.copyWith(
+        name: name,
+        source: source.isEmpty ? null : source,
+        notes: notes.isEmpty ? null : notes,
+        updatedAt: now,
+        clearSource: source.isEmpty,
+        clearNotes: notes.isEmpty,
+      );
+      await provider.updateExercise(updated);
+    } else {
+      final exercise = Exercise(
+        name: name,
+        source: source.isEmpty ? null : source,
+        notes: notes.isEmpty ? null : notes,
+        createdAt: now,
+        updatedAt: now,
+      );
+      await provider.addExercise(exercise);
+    }
+
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    if (provider.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(provider.error!),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      provider.clearError();
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: kBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: kBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          isEditing ? 'Edit Exercise' : 'New Exercise',
+          style: const TextStyle(
+            color: kTextPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: kTextPrimary),
+      ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            _label('Name'),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _nameController,
+              autofocus: !isEditing,
+              style: const TextStyle(color: kTextPrimary),
+              decoration: _inputDecoration('e.g. Scales, Hanon No. 1'),
+              textCapitalization: TextCapitalization.words,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+            ),
+            const SizedBox(height: 20),
+            _label('Source (optional)'),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _sourceController,
+              style: const TextStyle(color: kTextPrimary),
+              decoration: _inputDecoration('e.g. Hanon, Czerny, Original'),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 20),
+            _label('Notes (optional)'),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _notesController,
+              style: const TextStyle(color: kTextPrimary),
+              decoration: _inputDecoration('Any notes about this exercise…'),
+              maxLines: 4,
+              keyboardType: TextInputType.multiline,
+            ),
+            const SizedBox(height: 36),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kGoldColor,
+                  foregroundColor: const Color(0xFF1A1200),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  textStyle: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: kGoldColor, strokeWidth: 2),
+                      )
+                    : Text(isEditing ? 'Save Changes' : 'Add Exercise'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _label(String text) => Text(
+        text,
+        style: const TextStyle(color: kTextSecondary, fontSize: 13),
+      );
+
+  InputDecoration _inputDecoration(String hint) => InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: kTextSecondary.withOpacity(0.5)),
+        filled: true,
+        fillColor: kCardColor,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: kDividerColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: kDividerColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: kGoldColor, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.redAccent),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      );
+}
