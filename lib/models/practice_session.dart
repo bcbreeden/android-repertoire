@@ -17,6 +17,29 @@ class PracticeSession {
     this.durationSeconds,
   });
 
+  PracticeSession copyWith({
+    int? id,
+    int? pieceId,
+    DateTime? timestamp,
+    int? measuresLearned,
+    bool clearMeasuresLearned = false,
+    int? currentBpm,
+    bool clearCurrentBpm = false,
+    String? notes,
+    bool clearNotes = false,
+    int? durationSeconds,
+    bool clearDurationSeconds = false,
+  }) =>
+      PracticeSession(
+        id: id ?? this.id,
+        pieceId: pieceId ?? this.pieceId,
+        timestamp: timestamp ?? this.timestamp,
+        measuresLearned: clearMeasuresLearned ? null : (measuresLearned ?? this.measuresLearned),
+        currentBpm: clearCurrentBpm ? null : (currentBpm ?? this.currentBpm),
+        notes: clearNotes ? null : (notes ?? this.notes),
+        durationSeconds: clearDurationSeconds ? null : (durationSeconds ?? this.durationSeconds),
+      );
+
   Map<String, dynamic> toMap() => {
     if (id != null) 'id': id,
     'piece_id': pieceId,

@@ -235,6 +235,20 @@ class PieceProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> updatePracticeSession(PracticeSession session) async {
+    try {
+      await _db.updatePracticeSession(session);
+      final idx = _practiceSessions.indexWhere((s) => s.id == session.id);
+      if (idx >= 0) _practiceSessions[idx] = session;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = 'Failed to update session: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> deletePracticeSession(int sessionId) async {
     try {
       await _db.deletePracticeSession(sessionId);

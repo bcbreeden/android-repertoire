@@ -365,6 +365,16 @@ class DatabaseHelper {
     return rows.map((r) => PracticeSession.fromMap(r)).toList();
   }
 
+  Future<int> updatePracticeSession(PracticeSession session) async {
+    final db = await database;
+    return await db.update(
+      'practice_sessions',
+      session.toMap(),
+      where: 'id = ?',
+      whereArgs: [session.id],
+    );
+  }
+
   Future<int> insertPracticeSession(PracticeSession session) async {
     final db = await database;
     return await db.insert('practice_sessions', session.toMap());

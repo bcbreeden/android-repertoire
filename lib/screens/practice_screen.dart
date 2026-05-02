@@ -5,6 +5,7 @@ import '../models/practice_session.dart';
 import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/log_practice_sheet.dart';
+import 'practice_session_detail_screen.dart';
 
 class PracticeTab extends StatefulWidget {
   const PracticeTab({super.key});
@@ -235,7 +236,6 @@ class _DayGroup extends StatelessWidget {
         ),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
-          clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
             color: kCardColor,
             borderRadius: BorderRadius.circular(12),
@@ -244,35 +244,25 @@ class _DayGroup extends StatelessWidget {
           child: Column(
             children: List.generate(sessions.length, (i) {
               final session = sessions[i];
-              return Dismissible(
-                key: ValueKey(session.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  color: Colors.red.shade800,
-                  child: const Icon(Icons.delete_outline, color: Colors.white),
-                ),
-                onDismissed: (_) {
-                  provider.deletePracticeSession(session.id!);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Session deleted'),
-                      duration: Duration(seconds: 2),
+              return Column(
+                children: [
+                  if (i > 0)
+                    const Divider(
+                        height: 1,
+                        color: kDividerColor,
+                        indent: 16,
+                        endIndent: 16),
+                  InkWell(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PracticeSessionDetailScreen(
+                            session: session),
+                      ),
                     ),
-                  );
-                },
-                child: Column(
-                  children: [
-                    if (i > 0)
-                      const Divider(
-                          height: 1,
-                          color: kDividerColor,
-                          indent: 16,
-                          endIndent: 16),
-                    _SessionTile(session: session, provider: provider),
-                  ],
-                ),
+                    child: _SessionTile(session: session, provider: provider),
+                  ),
+                ],
               );
             }),
           ),
