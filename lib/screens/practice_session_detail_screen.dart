@@ -19,6 +19,7 @@ class _PracticeSessionDetailScreenState
     extends State<PracticeSessionDetailScreen> {
   late final TextEditingController _measuresController;
   late final TextEditingController _bpmController;
+  late final TextEditingController _minutesController;
   late final TextEditingController _notesController;
   bool _isSaving = false;
 
@@ -30,6 +31,10 @@ class _PracticeSessionDetailScreenState
         TextEditingController(text: s.measuresLearned?.toString() ?? '');
     _bpmController =
         TextEditingController(text: s.currentBpm?.toString() ?? '');
+    _minutesController = TextEditingController(
+        text: s.durationSeconds != null
+            ? (s.durationSeconds! ~/ 60).toString()
+            : '');
     _notesController = TextEditingController(text: s.notes ?? '');
   }
 
@@ -37,6 +42,7 @@ class _PracticeSessionDetailScreenState
   void dispose() {
     _measuresController.dispose();
     _bpmController.dispose();
+    _minutesController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -44,6 +50,7 @@ class _PracticeSessionDetailScreenState
   Future<void> _save() async {
     setState(() => _isSaving = true);
     final provider = context.read<PieceProvider>();
+    final minutesText = _minutesController.text.trim();
     final updated = widget.session.copyWith(
       measuresLearned: _measuresController.text.trim().isEmpty
           ? null
@@ -53,6 +60,10 @@ class _PracticeSessionDetailScreenState
           ? null
           : int.tryParse(_bpmController.text),
       clearCurrentBpm: _bpmController.text.trim().isEmpty,
+      durationSeconds: minutesText.isEmpty
+          ? null
+          : (int.tryParse(minutesText) ?? 0) * 60,
+      clearDurationSeconds: minutesText.isEmpty,
       notes: _notesController.text.trim().isEmpty
           ? null
           : _notesController.text.trim(),
@@ -197,22 +208,6 @@ class _PracticeSessionDetailScreenState
                             ),
                           ],
                         ),
-                        if (widget.session.durationSeconds != null) ...[
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(Icons.timer_outlined,
-                                  size: 12, color: kTextSecondary),
-                              const SizedBox(width: 4),
-                              Text(
-                                _formatDuration(
-                                    widget.session.durationSeconds!),
-                                style: const TextStyle(
-                                    color: kTextSecondary, fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -249,6 +244,14 @@ class _PracticeSessionDetailScreenState
                     controller: _bpmController,
                     label: 'Current BPM',
                     hint: 'e.g. 72',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _field(
+                    controller: _minutesController,
+                    label: 'Duration (min)',
+                    hint: 'e.g. 30',
                   ),
                 ),
               ],
@@ -289,14 +292,6 @@ class _PracticeSessionDetailScreenState
         ),
       ),
     );
-  }
-
-  String _formatDuration(int seconds) {
-    final h = seconds ~/ 3600;
-    final m = (seconds % 3600) ~/ 60;
-    final s = seconds % 60;
-    if (h > 0) return '${h}h ${m.toString().padLeft(2, '0')}m';
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   Widget _field({

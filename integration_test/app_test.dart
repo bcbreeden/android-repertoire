@@ -951,5 +951,67 @@ void main() {
       expect(find.text('Session History'), findsNothing);
       expect(find.text('Delete Session Piece'), findsNothing);
     });
+
+    testWidgets('editing duration in detail screen saves and reflects change',
+        (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      if (find.text('Next').evaluate().isEmpty) {
+        markTestSkipped('Paywall active.');
+        return;
+      }
+
+      await tester.enterText(find.byType(TextFormField).at(0), 'Duration Edit Piece');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(2), '32');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Song'));
+      await tester.pumpAndSettle();
+
+      final practiceBtn = find.descendant(
+        of: _cardFinder('Duration Edit Piece'),
+        matching: find.text('Practice'),
+      );
+      await tester.tap(practiceBtn);
+      await tester.pumpAndSettle();
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save Session'));
+      await tester.pumpAndSettle();
+
+      // Navigate to Practice tab and open the session
+      await tester.tap(find.widgetWithText(Tab, 'Practice'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Duration Edit Piece'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Session Details'), findsOneWidget);
+
+      // Enter 45 minutes — Duration (min) is the 3rd TextFormField (index 2)
+      await tester.tap(find.byType(TextFormField).at(2));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(2), '45');
+      await tester.pumpAndSettle();
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save Changes'));
+      await tester.pumpAndSettle();
+
+      // Re-open the session and verify the value persisted
+      await tester.tap(find.text('Duration Edit Piece'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Session Details'), findsOneWidget);
+      expect(find.widgetWithText(TextFormField, '45'), findsOneWidget);
+    });
   });
 }
