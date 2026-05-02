@@ -58,9 +58,27 @@ Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageInde
 - **Dark gold theme**: `kGoldColor = #C9A227`, `kBackgroundColor = #111318`. All UI uses the centralized theme from `main.dart`.
 - **Debug seed button**: `Icons.science_outlined` FAB visible only in `kDebugMode`. Seeds 40 pieces across all 5 stages with realistic data and practice sessions.
 
+## Development Workflow
+
+Follow this order for every feature or fix:
+
+1. **Build** the feature or fix.
+2. **Run existing tests** — unit tests first (fast, no device), then integration tests.
+3. **Write new tests** — unit/widget tests for logic and widget behaviour; integration tests for any new user-visible flow.
+4. **Run tests again** — all must be green before pushing.
+5. **Push.**
+
+```bash
+# Step 2 & 4 — unit + widget tests (no device needed)
+flutter test test/
+
+# Step 2 & 4 — integration tests
+flutter test integration_test/app_test.dart -d emulator-5554
+```
+
 ## Testing
 
-### Unit Tests (`test/`)
+### Unit & Widget Tests (`test/`)
 
 Run with:
 ```
@@ -75,8 +93,11 @@ Test files:
 - `test/utils/constants_test.dart` — nextStage, isLastStage, stageIndex, constant integrity
 - `test/database/database_helper_test.dart` — Full CRUD, stage advancement, streak, milestones
 - `test/providers/piece_provider_test.dart` — filteredPieces, overallProgressPct, canAddPiece, etc.
+- `test/widgets/piece_card_test.dart` — PieceCard button visibility and tap-routing behaviour
 
 Database tests use `sqflite_common_ffi` (dev dependency) with `databaseFactory = databaseFactoryFfi`. Each test file's `setUp` deletes all rows from `pieces`, `practice_sessions`, and `app_opens`. Each file has a `tearDownAll` that calls `DatabaseHelper.instance.close()`.
+
+Widget tests (e.g. `piece_card_test.dart`) wrap the widget under test in a plain `MaterialApp` + `Scaffold`. No SQLite or provider setup is needed.
 
 ### Integration Tests (`integration_test/`)
 
@@ -85,16 +106,24 @@ Run with:
 flutter test integration_test/app_test.dart -d <device-id>
 ```
 
-Key helpers in `app_test.dart`:
-- `_cardFinder(name)` — `find.byWidgetPredicate` matching `PieceCard.piece.name`. Uses `skipOffstage: false` for assertions (to catch cards in SliverList regardless of scroll position).
-- `_openPiece(tester, name)` — Uses `skipOffstage: true` (default) finder for `scrollUntilVisible` so `dragUntilVisible` loops correctly, then taps.
-- `_advanceOnce(tester)` — Taps "Advance to…" button and confirms.
+**DB isolation strategy:**
+- Groups whose tests intentionally share state (e.g. "Pieces") use `setUpAll` to reset once before the group.
+- Groups with independent tests use `setUp` to reset before each test.
+- `DatabaseHelper.instance.resetForTesting()` deletes all rows without closing the connection.
+- The "Stage advancement" group uses `setUpAll` to reset + seed once; both tests share that data.
 
-Integration test pitfalls to remember:
-- `_RecentMilestones` section at the top of the home screen always shows piece names — use `_cardFinder` not `find.text()` to avoid false positives.
-- `FilterChip`s scroll off-screen when the list is scrolled down; always call `tester.ensureVisible(chip)` before tapping a chip.
-- Scroll direction: `drag(Offset(0, negative))` = drag UP = scroll DOWN to reveal content below the fold.
-- `find.byType(Scrollable).first` targets the main `CustomScrollView` scrollable.
+Key helpers in `app_test.dart`:
+- `_cardFinder(name)` — `find.byWidgetPredicate` matching `PieceCard.piece.name`. Uses `skipOffstage: false` so assertions work regardless of scroll position.
+- `_piecesScrollable` — `find.descendant` targeting the `Scrollable` inside the `CustomScrollView` keyed `'pieces_scroll'`. Pass this as the `scrollable:` argument to `scrollUntilVisible`.
+- `_openPiece(tester, name)` — scrolls to a `PieceCard` by name using `_piecesScrollable` and taps it.
+- `_tapChip(tester, label)` — uses `skipOffstage: false` on the text finder and `ensureVisible` to handle chips that have scrolled off the top of the sliver.
+- `_advanceOnce(tester)` — taps "Advance to…", confirms, and dismisses any celebration screen.
+
+Integration test pitfalls:
+- `_RecentMilestones` at the top of the home screen renders piece names — use `_cardFinder`, not `find.text()`, to avoid false positives.
+- Filter chips live in a `SliverToBoxAdapter`. When the list is scrolled down, the sliver is disposed (not merely offstage). Use `_tapChip` which handles `ensureVisible`, and scroll back to the top with a large `drag(..., Offset(0, 10000))` after returning from a detail screen before interacting with chips.
+- `PiecesTab` uses `AutomaticKeepAliveClientMixin`, so scroll position is preserved across navigation. Always scroll to top before tapping chips after `_goBack`.
+- Scroll direction: `drag(Offset(0, negative))` = scroll DOWN; `drag(Offset(0, positive))` = scroll UP / back to top.
 
 ## Dependencies
 
@@ -116,14 +145,14 @@ dev_dependencies:
 ## Common Commands
 
 ```bash
-# Run unit tests
+# Unit + widget tests (no device)
 flutter test test/
 
-# Run integration tests on a specific device
+# Integration tests
 flutter test integration_test/app_test.dart -d emulator-5554
 
-# Run a single integration test by name
-flutter test integration_test/app_test.dart -d emulator-5554 --name "filter chips"
+# Run a single integration test group by name
+flutter test integration_test/app_test.dart -d emulator-5554 --name "Practice button"
 
 # List connected devices
 flutter devices
