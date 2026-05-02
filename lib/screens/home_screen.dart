@@ -25,9 +25,6 @@ class _PiecesTabState extends State<PiecesTab>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PieceProvider>().loadPieces();
-    });
   }
 
   @override

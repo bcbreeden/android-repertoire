@@ -19,6 +19,7 @@ lib/
   providers/
     piece_provider.dart      # PieceProvider (ChangeNotifier) — single source of truth
   screens/
+    splash_screen.dart       # Launch screen: logo, progress bar; calls loadPieces() then navigates to MainScreen
     main_screen.dart         # TabBarView: Songs + Practice tabs
     home_screen.dart         # CustomScrollView with slivers; filter chips; song list
     piece_detail_screen.dart # Stage badge, advance button, practice history
@@ -55,6 +56,7 @@ Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageInde
 - **Free tier cap**: `canAddPiece` returns false if `!isPremium && pieces.length >= 3`. Premium status is stored in `SharedPreferences` under key `'is_premium'`.
 - **Piece sorting**: `filteredPieces` sorts by last practice date descending; pieces with no sessions sort to the end.
 - **Portrait-only**: `SystemChrome.setPreferredOrientations` enforces this at startup.
+- **Startup flow**: `SplashScreen` is the initial route. It calls `loadPieces()`, shows an animated progress bar, then crossfades to `MainScreen`. `PiecesTab.initState()` does NOT call `loadPieces()` — pull-to-refresh still works via explicit `onRefresh` callbacks.
 - **Dark gold theme**: `kGoldColor = #C9A227`, `kBackgroundColor = #111318`. All UI uses the centralized theme from `main.dart`.
 - **Debug seed button**: `Icons.science_outlined` FAB visible only in `kDebugMode`. Seeds 40 pieces across all 5 stages with realistic data and practice sessions.
 - **Naming convention**: All user-facing UI strings use "song"/"songs" (e.g. "Add Song", "No songs yet"). Code identifiers, DB table names (`pieces`, `practice_sessions`), and widget keys (`Key('pieces_scroll')`) remain unchanged.
