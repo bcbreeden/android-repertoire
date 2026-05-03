@@ -136,6 +136,7 @@ class _SummaryRow extends StatelessWidget {
         _StatBox(
           label: 'Total Sessions',
           value: totalSessions.toString(),
+          unit: totalSessions == 1 ? 'session' : 'sessions',
           icon: Icons.event_note,
           color: kTextPrimary,
         ),
@@ -169,6 +170,7 @@ class _SummaryRow extends StatelessWidget {
 class _StatBox extends StatelessWidget {
   final String label;
   final String value;
+  final String? unit;
   final IconData icon;
   final Color color;
 
@@ -177,6 +179,7 @@ class _StatBox extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.color,
+    this.unit,
   });
 
   @override
@@ -217,6 +220,14 @@ class _StatBox extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            if (unit != null)
+              Text(
+                unit!,
+                style: const TextStyle(
+                    color: kTextSecondary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500),
+              ),
           ],
         ),
       ),
@@ -271,15 +282,15 @@ class _ThisWeekCard extends StatelessWidget {
       child: Row(
         children: [
           _InlineStatTile(
-            value: sessions.toString(),
-            label: 'sessions',
+            value: '$sessions ${sessions == 1 ? 'session' : 'sessions'}',
+            label: 'this week',
             icon: Icons.event_note,
             color: kTextPrimary,
           ),
           const SizedBox(width: 24),
           _InlineStatTile(
             value: timeStr,
-            label: 'practiced',
+            label: 'practiced this week',
             icon: Icons.timer_outlined,
             color: kGoldColor,
           ),
@@ -330,7 +341,7 @@ class _Last7DaysCard extends StatelessWidget {
     final maxCount = counts.values.fold(0, (a, b) => a > b ? a : b);
 
     return _Card(
-      label: 'LAST 7 DAYS',
+      label: 'LAST 7 DAYS · sessions',
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: days.map((day) {
@@ -422,14 +433,14 @@ class _SongProgressCard extends StatelessWidget {
           Row(
             children: [
               _InlineStatTile(
-                value: totalPieces.toString(),
-                label: 'total songs',
+                value: '$totalPieces ${totalPieces == 1 ? 'song' : 'songs'}',
+                label: 'total',
                 icon: Icons.library_music,
                 color: kTextPrimary,
               ),
               const SizedBox(width: 24),
               _InlineStatTile(
-                value: repertoireCount.toString(),
+                value: '$repertoireCount ${repertoireCount == 1 ? 'song' : 'songs'}',
                 label: 'mastered',
                 icon: Icons.star,
                 color: kGoldColor,
@@ -494,7 +505,7 @@ class _SongProgressCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${kStageLabels[stage] ?? stage}: ${stageCounts[stage]}',
+                          '${kStageLabels[stage] ?? stage}: ${stageCounts[stage]} ${stageCounts[stage] == 1 ? 'song' : 'songs'}',
                           style: const TextStyle(
                               color: kTextSecondary, fontSize: 10),
                         ),

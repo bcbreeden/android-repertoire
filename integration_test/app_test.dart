@@ -1084,7 +1084,7 @@ void main() {
 
       // Section headers
       expect(find.text('THIS WEEK'), findsOneWidget);
-      expect(find.text('LAST 7 DAYS'), findsOneWidget);
+      expect(find.text('LAST 7 DAYS · sessions'), findsOneWidget);
       expect(find.text('MOST PRACTICED'), findsOneWidget);
     });
   });
