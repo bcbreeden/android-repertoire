@@ -181,6 +181,36 @@ void main() {
     });
   });
 
+  // ── clearError ────────────────────────────────────────────────────────────
+  group('clearError', () {
+    test('clears error field and notifies listeners', () {
+      int notifyCount = 0;
+      provider.addListener(() => notifyCount++);
+      provider.clearError();
+      expect(provider.error, isNull);
+      expect(notifyCount, 1);
+    });
+  });
+
+  // ── deleteExercise cascade ────────────────────────────────────────────────
+  group('deleteExercise cascade', () {
+    test('removes sessions for deleted exercise from sessions list', () async {
+      final ex = await provider.addExercise(_exercise());
+      await provider.logSession(ex!.id!, bpm: 90);
+      expect(provider.sessions.length, 1);
+      await provider.deleteExercise(ex.id!);
+      expect(provider.sessions, isEmpty);
+    });
+
+    test('clears lastSessionDate for deleted exercise', () async {
+      final ex = await provider.addExercise(_exercise());
+      await provider.logSession(ex!.id!);
+      expect(provider.lastSessionDateForExercise(ex.id!), isNotNull);
+      await provider.deleteExercise(ex.id!);
+      expect(provider.lastSessionDateForExercise(ex.id!), isNull);
+    });
+  });
+
   // ── sorting ───────────────────────────────────────────────────────────────
   group('exercises sorting', () {
     test('exercises with recent sessions sort before unsessioned', () async {

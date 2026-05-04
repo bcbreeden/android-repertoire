@@ -630,4 +630,34 @@ void main() {
       expect(provider.lastPracticeDateForPiece(b!.id!), isNull);
     });
   });
+
+  // ── recentMilestones ──────────────────────────────────────────────────────
+
+  group('recentMilestones', () {
+    test('returns empty list when no pieces have stage timestamps', () async {
+      final milestones = await provider.recentMilestones;
+      expect(milestones, isEmpty);
+    });
+
+    test('returns milestone entries for pieces with stage timestamps', () async {
+      // addPiece always sets backlogAt, so one milestone entry is created
+      await provider.addPiece(_piece(name: 'Milestone Piece'));
+      final milestones = await provider.recentMilestones;
+      expect(milestones, isNotEmpty);
+      expect(
+        milestones.any((m) => (m['piece'] as Piece).name == 'Milestone Piece'),
+        isTrue,
+      );
+    });
+
+    test('milestone entries have required keys', () async {
+      await provider.addPiece(_piece(name: 'Key Check'));
+      final milestones = await provider.recentMilestones;
+      expect(milestones, isNotEmpty);
+      final entry = milestones.first;
+      expect(entry.containsKey('piece'), isTrue);
+      expect(entry.containsKey('stage'), isTrue);
+      expect(entry.containsKey('timestamp'), isTrue);
+    });
+  });
 }
