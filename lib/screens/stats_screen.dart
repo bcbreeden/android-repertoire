@@ -154,7 +154,6 @@ class _SummaryRow extends StatelessWidget {
         _StatBox(
           label: 'Total Sessions',
           value: totalSessions.toString(),
-          unit: totalSessions == 1 ? 'session' : 'sessions',
           icon: Icons.event_note,
           color: kTextPrimary,
         ),
@@ -288,14 +287,14 @@ class _ThisWeekCard extends StatelessWidget {
         children: [
           _InlineStatTile(
             value: '$sessions ${sessions == 1 ? 'session' : 'sessions'}',
-            label: 'this week',
+            label: 'sessions',
             icon: Icons.event_note,
             color: kTextPrimary,
           ),
           const SizedBox(width: 24),
           _InlineStatTile(
             value: timeStr,
-            label: 'practiced this week',
+            label: 'practiced',
             icon: Icons.timer_outlined,
             color: kGoldColor,
           ),
@@ -376,8 +375,9 @@ class _Last7DaysCard extends StatelessWidget {
                     height: 60,
                     child: Column(
                       children: [
-                        Flexible(flex: emptyFlex == 0 ? 1 : emptyFlex, child: const SizedBox()),
-                        Flexible(
+                        if (emptyFlex > 0)
+                          Expanded(flex: emptyFlex, child: const SizedBox()),
+                        Expanded(
                           flex: barFlex,
                           child: Container(
                             decoration: BoxDecoration(
