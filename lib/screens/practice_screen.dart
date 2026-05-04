@@ -335,13 +335,17 @@ class _SessionTile extends StatelessWidget {
                 if (session.measuresLearned != null)
                   _Chip(
                     icon: Icons.piano,
-                    label: '${session.measuresLearned} measures',
+                    label: piece?.measures != null
+                        ? '${session.measuresLearned} / ${piece!.measures} measures'
+                        : '${session.measuresLearned} measures',
                     color: stageColor,
                   ),
                 if (session.currentBpm != null)
                   _Chip(
                     icon: Icons.speed,
-                    label: '${session.currentBpm} BPM',
+                    label: piece?.targetTempo != null
+                        ? '${session.currentBpm} / ${piece!.targetTempo} BPM'
+                        : '${session.currentBpm} BPM',
                     color: stageColor,
                   ),
               ],

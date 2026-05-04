@@ -17,6 +17,7 @@ Piece _piece({
   int measures = 80,
   int? measuresLearned = 40,
   int? currentTempo = 72,
+  int? targetTempo,
 }) {
   final now = DateTime(2024, 1, 1, 12, 0);
   return Piece(
@@ -25,6 +26,7 @@ Piece _piece({
     measures: measures,
     measuresLearned: measuresLearned,
     currentTempo: currentTempo,
+    targetTempo: targetTempo,
     status: kStageBacklog,
     createdAt: now,
     updatedAt: now,
@@ -317,6 +319,172 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('—'), findsOneWidget);
+    });
+
+    testWidgets('shows total measures when piece is selected', (tester) async {
+      final provider = _emptyProvider();
+      late int pid;
+      await tester.runAsync(() async {
+        final db = await DatabaseHelper.instance.database;
+        await db.delete('practice_sessions');
+        await db.delete('pieces');
+        final added = await provider.addPiece(_piece(measures: 120));
+        pid = added!.id!;
+      });
+
+      await tester.pumpWidget(_buildSheet(provider, pieceId: pid));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('120 measures total'), findsOneWidget);
+    });
+
+    testWidgets('shows target BPM when piece has targetTempo', (tester) async {
+      final provider = _emptyProvider();
+      late int pid;
+      await tester.runAsync(() async {
+        final db = await DatabaseHelper.instance.database;
+        await db.delete('practice_sessions');
+        await db.delete('pieces');
+        final added = await provider.addPiece(_piece(targetTempo: 108));
+        pid = added!.id!;
+      });
+
+      await tester.pumpWidget(_buildSheet(provider, pieceId: pid));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Target: 108 BPM'), findsOneWidget);
+    });
+
+    testWidgets('hides target BPM row when piece has no targetTempo', (tester) async {
+      final provider = _emptyProvider();
+      late int pid;
+      await tester.runAsync(() async {
+        final db = await DatabaseHelper.instance.database;
+        await db.delete('practice_sessions');
+        await db.delete('pieces');
+        final added = await provider.addPiece(_piece(targetTempo: null));
+        pid = added!.id!;
+      });
+
+      await tester.pumpWidget(_buildSheet(provider, pieceId: pid));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Target:'), findsNothing);
+    });
+  });
+
+  // ── Validation ────────────────────────────────────────────────────────────
+
+  group('LogPracticeSheet validation', () {
+    testWidgets('shows error when measures exceed total', (tester) async {
+      final provider = _emptyProvider();
+      late int pid;
+      await tester.runAsync(() async {
+        final db = await DatabaseHelper.instance.database;
+        await db.delete('practice_sessions');
+        await db.delete('pieces');
+        final added = await provider.addPiece(_piece(measures: 50));
+        pid = added!.id!;
+      });
+
+      await tester.pumpWidget(_buildSheet(provider, pieceId: pid));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(TextFormField).first);
+      await tester.enterText(find.byType(TextFormField).first, '99');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Save Session'));
+      await tester.tap(find.text('Save Session'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Max 50'), findsOneWidget);
+    });
+
+    testWidgets('shows error when BPM exceeds target', (tester) async {
+      final provider = _emptyProvider();
+      late int pid;
+      await tester.runAsync(() async {
+        final db = await DatabaseHelper.instance.database;
+        await db.delete('practice_sessions');
+        await db.delete('pieces');
+        final added = await provider.addPiece(_piece(targetTempo: 100));
+        pid = added!.id!;
+      });
+
+      await tester.pumpWidget(_buildSheet(provider, pieceId: pid));
+      await tester.pumpAndSettle();
+
+      final bpmField = find.byType(TextFormField).at(1);
+      await tester.tap(bpmField);
+      await tester.enterText(bpmField, '150');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Save Session'));
+      await tester.tap(find.text('Save Session'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Max 100'), findsOneWidget);
+    });
+
+    testWidgets('allows saving when values are within limits', (tester) async {
+      final provider = _emptyProvider();
+      late int pid;
+      await tester.runAsync(() async {
+        final db = await DatabaseHelper.instance.database;
+        await db.delete('practice_sessions');
+        await db.delete('pieces');
+        final added = await provider.addPiece(
+            _piece(measures: 80, targetTempo: 120));
+        pid = added!.id!;
+      });
+
+      await tester.pumpWidget(_buildSheet(provider, pieceId: pid));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(TextFormField).first);
+      await tester.enterText(find.byType(TextFormField).first, '40');
+      final bpmField = find.byType(TextFormField).at(1);
+      await tester.tap(bpmField);
+      await tester.enterText(bpmField, '100');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Save Session'));
+      await tester.tap(find.text('Save Session'));
+      await tester.pump();
+
+      expect(find.text('Max 80'), findsNothing);
+      expect(find.text('Max 120'), findsNothing);
+    });
+
+    testWidgets('no BPM error when piece has no targetTempo', (tester) async {
+      final provider = _emptyProvider();
+      late int pid;
+      await tester.runAsync(() async {
+        final db = await DatabaseHelper.instance.database;
+        await db.delete('practice_sessions');
+        await db.delete('pieces');
+        final added = await provider.addPiece(_piece(targetTempo: null));
+        pid = added!.id!;
+      });
+
+      await tester.pumpWidget(_buildSheet(provider, pieceId: pid));
+      await tester.pumpAndSettle();
+
+      final bpmField = find.byType(TextFormField).at(1);
+      await tester.tap(bpmField);
+      await tester.enterText(bpmField, '9999');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Save Session'));
+      await tester.tap(find.text('Save Session'));
+      await tester.pump(); // just enough to render validation errors if any
+
+      expect(find.textContaining('Max'), findsNothing);
     });
   });
 

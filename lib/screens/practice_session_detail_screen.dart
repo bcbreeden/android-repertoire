@@ -21,6 +21,7 @@ class _PracticeSessionDetailScreenState
   late final TextEditingController _bpmController;
   late final TextEditingController _minutesController;
   late final TextEditingController _notesController;
+  final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
 
   @override
@@ -48,6 +49,7 @@ class _PracticeSessionDetailScreenState
   }
 
   Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
     final provider = context.read<PieceProvider>();
     final minutesText = _minutesController.text.trim();
@@ -149,9 +151,11 @@ class _PracticeSessionDetailScreenState
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        child: Column(
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Info card ─────────────────────────────────────────────────
@@ -227,6 +231,32 @@ class _PracticeSessionDetailScreenState
                 letterSpacing: 0.5,
               ),
             ),
+            if (piece != null &&
+                (piece.measures > 0 || piece.targetTempo != null)) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.music_note,
+                      size: 13, color: kTextSecondary),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${piece.measures} measures total',
+                    style: const TextStyle(
+                        color: kTextSecondary, fontSize: 12),
+                  ),
+                  if (piece.targetTempo != null) ...[
+                    const SizedBox(width: 16),
+                    const Icon(Icons.speed, size: 13, color: kTextSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Target: ${piece.targetTempo} BPM',
+                      style: const TextStyle(
+                          color: kTextSecondary, fontSize: 12),
+                    ),
+                  ],
+                ],
+              ),
+            ],
             const SizedBox(height: 12),
 
             Row(
@@ -236,6 +266,15 @@ class _PracticeSessionDetailScreenState
                     controller: _measuresController,
                     label: 'Measures Learned',
                     hint: 'e.g. 32',
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return null;
+                      final n = int.tryParse(v);
+                      if (n == null) return 'Invalid';
+                      if (piece != null && n > piece.measures) {
+                        return 'Max ${piece.measures}';
+                      }
+                      return null;
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -244,6 +283,16 @@ class _PracticeSessionDetailScreenState
                     controller: _bpmController,
                     label: 'Current BPM',
                     hint: 'e.g. 72',
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return null;
+                      final n = int.tryParse(v);
+                      if (n == null) return 'Invalid';
+                      if (piece?.targetTempo != null &&
+                          n > piece!.targetTempo!) {
+                        return 'Max ${piece.targetTempo}';
+                      }
+                      return null;
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -289,6 +338,7 @@ class _PracticeSessionDetailScreenState
               ),
             ),
           ],
+          ),
         ),
       ),
     );
@@ -300,6 +350,7 @@ class _PracticeSessionDetailScreenState
     required String hint,
     int maxLines = 1,
     bool isNumeric = true,
+    String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,6 +365,7 @@ class _PracticeSessionDetailScreenState
           inputFormatters:
               isNumeric ? [FilteringTextInputFormatter.digitsOnly] : null,
           maxLines: maxLines,
+          validator: validator,
           style: const TextStyle(color: kTextPrimary),
           decoration: InputDecoration(
             hintText: hint,

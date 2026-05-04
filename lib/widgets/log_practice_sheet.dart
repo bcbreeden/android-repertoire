@@ -17,6 +17,7 @@ class LogPracticeSheet extends StatefulWidget {
 }
 
 class _LogPracticeSheetState extends State<LogPracticeSheet> {
+  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _measuresController;
   late final TextEditingController _bpmController;
   late final TextEditingController _notesController;
@@ -100,6 +101,7 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
   Future<void> _save() async {
     final pieceId = _selectedPieceId;
     if (pieceId == null) return;
+    if (!_formKey.currentState!.validate()) return;
 
     // Stop timer if still running or paused
     if (_timerState == _TimerState.running ||
@@ -149,8 +151,10 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: SingleChildScrollView(
-        child: Container(
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Container(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -271,6 +275,32 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
                   ),
                 ),
               ],
+              // Song details (total measures + target BPM)
+              if (selectedPiece != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.music_note,
+                        size: 13, color: kTextSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${selectedPiece.measures} measures total',
+                      style: const TextStyle(
+                          color: kTextSecondary, fontSize: 12),
+                    ),
+                    if (selectedPiece.targetTempo != null) ...[
+                      const SizedBox(width: 16),
+                      const Icon(Icons.speed, size: 13, color: kTextSecondary),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Target: ${selectedPiece.targetTempo} BPM',
+                        style: const TextStyle(
+                            color: kTextSecondary, fontSize: 12),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
               const SizedBox(height: 16),
 
               // Measures + BPM
@@ -281,6 +311,15 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
                       controller: _measuresController,
                       label: 'Measures Learned',
                       hint: 'e.g. 32',
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return null;
+                        final n = int.tryParse(v);
+                        if (n == null) return 'Invalid number';
+                        if (selectedPiece != null && n > selectedPiece.measures) {
+                          return 'Max ${selectedPiece.measures}';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -289,6 +328,16 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
                       controller: _bpmController,
                       label: 'Current BPM',
                       hint: 'e.g. 72',
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return null;
+                        final n = int.tryParse(v);
+                        if (n == null) return 'Invalid number';
+                        if (selectedPiece?.targetTempo != null &&
+                            n > selectedPiece!.targetTempo!) {
+                          return 'Max ${selectedPiece.targetTempo}';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                 ],
@@ -332,7 +381,8 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _field({
@@ -341,6 +391,7 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
     required String hint,
     int maxLines = 1,
     bool isNumeric = true,
+    String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,6 +406,7 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
           inputFormatters:
               isNumeric ? [FilteringTextInputFormatter.digitsOnly] : null,
           maxLines: maxLines,
+          validator: validator,
           style: const TextStyle(color: kTextPrimary),
           decoration: InputDecoration(
             hintText: hint,
