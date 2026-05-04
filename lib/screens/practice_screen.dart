@@ -89,9 +89,6 @@ class _PracticeTabState extends State<PracticeTab>
           },
           child: CustomScrollView(
             slivers: [
-              SliverToBoxAdapter(
-                child: _SummaryCard(entries: entries),
-              ),
               const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(16, 16, 16, 6),
@@ -142,89 +139,6 @@ class _PracticeTabState extends State<PracticeTab>
 }
 
 // ── Summary card ──────────────────────────────────────────────────────────────
-
-class _SummaryCard extends StatelessWidget {
-  final List<_Entry> entries;
-  const _SummaryCard({required this.entries});
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final thisWeek = entries.where((e) =>
-        e.timestamp.isAfter(weekStart.subtract(const Duration(days: 1)))).length;
-    final today = entries.where((e) {
-      final d = e.timestamp;
-      return d.year == now.year && d.month == now.month && d.day == now.day;
-    }).length;
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: kCardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kDividerColor),
-      ),
-      child: Row(
-        children: [
-          _StatCell(label: 'Today', value: today.toString(),
-              icon: Icons.today, color: kGoldColor),
-          _divider(),
-          _StatCell(label: 'This Week', value: thisWeek.toString(),
-              icon: Icons.date_range, color: const Color(0xFF64B5F6)),
-          _divider(),
-          _StatCell(label: 'Total', value: entries.length.toString(),
-              icon: Icons.history, color: const Color(0xFF81C784)),
-        ],
-      ),
-    );
-  }
-
-  Widget _divider() => Container(
-        width: 1, height: 40, margin: const EdgeInsets.symmetric(horizontal: 8),
-        color: kDividerColor,
-      );
-}
-
-class _StatCell extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _StatCell({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 13, color: color),
-              const SizedBox(width: 4),
-              Text(label,
-                  style: const TextStyle(color: kTextSecondary, fontSize: 11)),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: TextStyle(
-                color: color, fontSize: 22, fontWeight: FontWeight.w700),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ── Day group ─────────────────────────────────────────────────────────────────
 
