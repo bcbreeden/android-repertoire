@@ -86,6 +86,24 @@ class StatsTab extends StatelessWidget {
   }
 }
 
+// ── Duration formatting ────────────────────────────────────────────────────────
+
+String _formatPracticeDuration(int seconds) {
+  if (seconds == 0) return '0 min';
+  final totalMinutes = seconds ~/ 60;
+  final totalHours = seconds ~/ 3600;
+  if (totalHours >= 24) {
+    final d = seconds ~/ 86400;
+    final h = (seconds % 86400) ~/ 3600;
+    return h > 0 ? '${d}d ${h}h' : '${d}d';
+  }
+  if (totalHours > 0) {
+    final m = (seconds % 3600) ~/ 60;
+    return m > 0 ? '${totalHours}h ${m}m' : '${totalHours}h';
+  }
+  return '${totalMinutes}m';
+}
+
 // ── Empty state ────────────────────────────────────────────────────────────────
 
 class _EmptyStats extends StatelessWidget {
@@ -143,7 +161,7 @@ class _SummaryRow extends StatelessWidget {
         const SizedBox(width: 10),
         _StatBox(
           label: 'Total Time',
-          value: _formatDuration(totalSeconds),
+          value: _formatPracticeDuration(totalSeconds),
           icon: Icons.timer_outlined,
           color: kGoldColor,
         ),
@@ -158,13 +176,6 @@ class _SummaryRow extends StatelessWidget {
     );
   }
 
-  String _formatDuration(int seconds) {
-    if (seconds == 0) return '0m';
-    final h = seconds ~/ 3600;
-    final m = (seconds % 3600) ~/ 60;
-    if (h > 0) return '${h}h ${m}m';
-    return '${m}m';
-  }
 }
 
 class _StatBox extends StatelessWidget {
@@ -269,13 +280,7 @@ class _ThisWeekCard extends StatelessWidget {
       }
     }
 
-    final h = seconds ~/ 3600;
-    final m = (seconds % 3600) ~/ 60;
-    final timeStr = seconds == 0
-        ? '0 min'
-        : h > 0
-            ? '${h}h ${m}m'
-            : '${m} min';
+    final timeStr = _formatPracticeDuration(seconds);
 
     return _Card(
       label: 'THIS WEEK',
