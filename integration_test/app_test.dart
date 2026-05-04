@@ -632,8 +632,8 @@ void main() {
       await tester.tap(find.widgetWithText(Tab, 'Practice'));
       await tester.pumpAndSettle();
 
-      // The measures chip should show "55 measures"
-      expect(find.text('55 measures'), findsOneWidget);
+      // The measures chip should show "55 / 80 measures"
+      expect(find.text('55 / 80 measures'), findsOneWidget);
     });
   });
 
