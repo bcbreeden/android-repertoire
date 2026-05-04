@@ -103,7 +103,7 @@ class PieceProvider extends ChangeNotifier {
       final newPiece = piece.copyWith(
         createdAt: now,
         updatedAt: now,
-        learningAt: now, // Always set learning_at on creation
+        backlogAt: now, // Always set backlog_at on creation
       );
       final id = await _db.insertPiece(newPiece);
       final created = newPiece.copyWith(id: id);

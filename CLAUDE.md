@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Repertoire** is a Flutter mobile app for pianists to track their practice progress through a 5-stage learning pipeline. Users add pieces, log practice sessions, and advance pieces stage by stage until they reach "Mastered" (repertoire).
+**Repertoire** is a Flutter mobile app for pianists to track their practice progress through a 3-stage learning pipeline. Users add pieces, log practice sessions, and advance pieces stage by stage until they reach "Repertoire".
 
 Target platform: Android (portrait-only). iOS is not a current target.
 
@@ -17,7 +17,7 @@ lib/
     exercise.dart            # Exercise model (name, source, notes — no stages)
     exercise_session.dart    # ExerciseSession model (exerciseId, bpm, notes, duration)
   database/
-    database_helper.dart     # SQLite singleton (sqflite), schema version 5
+    database_helper.dart     # SQLite singleton (sqflite), schema version 6
   providers/
     piece_provider.dart      # PieceProvider (ChangeNotifier) — single source of truth for songs
     exercise_provider.dart   # ExerciseProvider (ChangeNotifier) — single source of truth for exercises
@@ -28,7 +28,7 @@ lib/
     piece_detail_screen.dart # Stage badge, advance button, practice history
     piece_form_screen.dart   # Add/edit piece wizard
     practice_screen.dart     # Practice session history (songs only)
-    celebration_screen.dart  # Shown when piece reaches Mastered
+    celebration_screen.dart  # Shown when piece reaches Repertoire
     exercises_screen.dart    # ExercisesTab: list of exercises with Play buttons
     exercise_detail_screen.dart  # Exercise info + session history + Log Session FAB
     exercise_form_screen.dart    # Add/edit exercise (single-page form)
@@ -47,13 +47,11 @@ lib/
 ## Stage Pipeline
 
 Stages in order (defined in `kStageOrder`):
-1. `learning` — Learning notes measure by measure
-2. `note_perfection` — All notes correct
-3. `dynamics_perfection` — Correct dynamics
-4. `tempo_perfection` — Correct dynamics at any tempo
-5. `repertoire` — All notes, dynamics, at target tempo ("Mastered")
+1. `backlog` — Added but not yet being actively learned
+2. `learning` — Actively learning notes, measures, dynamics, tempo
+3. `repertoire` — Performance-ready ("Mastered")
 
-Stage constants: `kStagelearning`, `kStageNotePerfection`, `kStageDynamicsPerfection`, `kStageTempoPerfection`, `kStageRepertoire`.
+Stage constants: `kStageBacklog`, `kStageLearning`, `kStageRepertoire`.
 
 Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageIndex()`.
 
@@ -66,10 +64,10 @@ Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageInde
 - **Portrait-only**: `SystemChrome.setPreferredOrientations` enforces this at startup.
 - **Startup flow**: `SplashScreen` is the initial route. It parallel-loads both `PieceProvider.loadPieces()` and `ExerciseProvider.loadExercises()` via `Future.wait`, shows an animated progress bar, then crossfades to `MainScreen`. Neither `PiecesTab` nor `ExercisesTab` call load in `initState` — pull-to-refresh still works via explicit `onRefresh` callbacks.
 - **Exercises tab**: Middle tab (index 1) in a 3-tab layout (Songs=0, Exercises=1, Practice=2). Exercises have no stages — just a name, optional source (e.g. "Hanon"), and optional notes. Sessions record BPM, notes, and duration. The Play button on each `ExerciseCard` is always visible (unconditional). Session history lives in `ExerciseDetailScreen`, not in `PracticeTab`.
-- **DB schema v5**: Adds `exercises` and `exercise_sessions` tables. `deleteExercise` also cascades to `exercise_sessions`. `resetForTesting()` clears both new tables.
+- **DB schema v6**: Adds `backlog_at` column to `pieces`. Migration from v5: copies `learning_at` → `backlog_at`, clears `learning_at` for old `learning` pieces (which become `backlog`), maps `note_perfection`/`dynamics_perfection`/`tempo_perfection` → `learning`. Old timestamp columns remain in DB (unused, harmless).
 - **FAB per tab**: Songs tab → Add Song (with long-press shortcut to Log Practice), Exercises tab → Add Exercise, Practice tab → Log Practice. Uses `Consumer2<PieceProvider, ExerciseProvider>`. Practice FAB hides only when BOTH providers have zero items.
 - **Dark gold theme**: `kGoldColor = #C9A227`, `kBackgroundColor = #111318`. All UI uses the centralized theme from `main.dart`.
-- **Debug seed button**: `Icons.science_outlined` FAB visible only in `kDebugMode`. Seeds 40 pieces across all 5 stages with realistic data and practice sessions.
+- **Debug seed button**: `Icons.science_outlined` FAB visible only in `kDebugMode`. Seeds 40 pieces across all 3 stages (15 Backlog, 15 Learning, 10 Repertoire) with realistic data and practice sessions.
 - **Naming convention**: All user-facing UI strings use "song"/"songs" (e.g. "Add Song", "No songs yet"). Code identifiers, DB table names (`pieces`, `practice_sessions`), and widget keys (`Key('pieces_scroll')`) remain unchanged.
 - **Practice pill button**: `PieceCard` accepts an optional `onPractice` callback. When provided, a small "Practice" pill renders below the stage badge. Tapping it opens `LogPracticeSheet` pre-filled for that piece (name + composer shown, dropdown hidden). When `onPractice` is null the pill is absent and tapping the card navigates normally.
 - **Practice session deletion**: In `PracticeTab`, each `_SessionTile` is wrapped in a `Dismissible` (swipe left-to-right to reveal red delete background). `onDismissed` calls `PieceProvider.deletePracticeSession(id)`, which removes the session from `_practiceSessions`, refreshes `_lastPracticeDates` via DB, and notifies listeners. A "Session deleted" `SnackBar` confirms the action. The outer session-group `Container` uses `clipBehavior: Clip.hardEdge` to keep the red dismiss background within the rounded corners.

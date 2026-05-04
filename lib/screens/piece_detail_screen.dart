@@ -11,16 +11,12 @@ import 'piece_form_screen.dart';
 
 String _motivationalText(String status) {
   switch (status) {
-    case kStagelearning:
+    case kStageBacklog:
+      return 'Ready to start!';
+    case kStageLearning:
       return 'Keep practicing!';
-    case kStageNotePerfection:
-      return 'Getting it down!';
-    case kStageDynamicsPerfection:
-      return 'Sounding great!';
-    case kStageTempoPerfection:
-      return 'Almost there!';
     case kStageRepertoire:
-      return 'Mastered!';
+      return 'In your repertoire!';
     default:
       return '';
   }
@@ -576,7 +572,7 @@ class _StageActions extends StatelessWidget {
                   Icon(Icons.star, color: kGoldColor),
                   SizedBox(width: 8),
                   Text(
-                    'Mastered!',
+                    'In Repertoire!',
                     style: TextStyle(
                       color: kGoldColor,
                       fontSize: 15,

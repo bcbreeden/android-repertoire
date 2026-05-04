@@ -13,11 +13,9 @@ Piece _piece({
   int? currentTempo,
   int? targetTempo,
   String? notes,
-  String status = kStagelearning,
+  String status = kStageBacklog,
+  DateTime? backlogAt,
   DateTime? learningAt,
-  DateTime? notePerfectionAt,
-  DateTime? dynamicsPerfectionAt,
-  DateTime? tempoPerfectionAt,
   DateTime? repertoireAt,
 }) {
   final now = DateTime(2024, 6, 15, 12, 0);
@@ -33,10 +31,8 @@ Piece _piece({
     status: status,
     createdAt: now,
     updatedAt: now,
+    backlogAt: backlogAt,
     learningAt: learningAt,
-    notePerfectionAt: notePerfectionAt,
-    dynamicsPerfectionAt: dynamicsPerfectionAt,
-    tempoPerfectionAt: tempoPerfectionAt,
     repertoireAt: repertoireAt,
   );
 }
@@ -124,28 +120,28 @@ void main() {
 
   group('Piece.daysAtStage', () {
     test('returns 0 when no timestamp is set for current status', () {
-      final p = _piece(status: kStagelearning, learningAt: null);
+      final p = _piece(status: kStageBacklog, backlogAt: null);
       expect(p.daysAtStage, 0);
     });
 
     test('returns 0 when timestamp is today', () {
       final today = DateTime.now();
-      final p = _piece(status: kStagelearning, learningAt: today);
+      final p = _piece(status: kStageBacklog, backlogAt: today);
       expect(p.daysAtStage, 0);
     });
 
     test('returns correct days for a past timestamp', () {
       final fiveDaysAgo = DateTime.now().subtract(const Duration(days: 5));
-      final p = _piece(status: kStagelearning, learningAt: fiveDaysAgo);
+      final p = _piece(status: kStageBacklog, backlogAt: fiveDaysAgo);
       expect(p.daysAtStage, 5);
     });
 
     test('uses timestamp for the correct current stage', () {
       final threeDaysAgo = DateTime.now().subtract(const Duration(days: 3));
       final p = _piece(
-        status: kStageNotePerfection,
-        learningAt: DateTime.now().subtract(const Duration(days: 30)),
-        notePerfectionAt: threeDaysAgo,
+        status: kStageLearning,
+        backlogAt: DateTime.now().subtract(const Duration(days: 30)),
+        learningAt: threeDaysAgo,
       );
       expect(p.daysAtStage, 3);
     });
@@ -159,13 +155,13 @@ void main() {
       expect(p.isRepertoire, isTrue);
     });
 
-    test('false when status is learning', () {
-      final p = _piece(status: kStagelearning);
+    test('false when status is backlog', () {
+      final p = _piece(status: kStageBacklog);
       expect(p.isRepertoire, isFalse);
     });
 
-    test('false when status is note_perfection', () {
-      final p = _piece(status: kStageNotePerfection);
+    test('false when status is learning', () {
+      final p = _piece(status: kStageLearning);
       expect(p.isRepertoire, isFalse);
     });
   });
@@ -173,24 +169,16 @@ void main() {
   // ── stageIndex ────────────────────────────────────────────────────────────
 
   group('Piece.stageIndex', () {
-    test('returns 0 for learning', () {
-      expect(_piece(status: kStagelearning).stageIndex, 0);
+    test('returns 0 for backlog', () {
+      expect(_piece(status: kStageBacklog).stageIndex, 0);
     });
 
-    test('returns 1 for note_perfection', () {
-      expect(_piece(status: kStageNotePerfection).stageIndex, 1);
+    test('returns 1 for learning', () {
+      expect(_piece(status: kStageLearning).stageIndex, 1);
     });
 
-    test('returns 2 for dynamics_perfection', () {
-      expect(_piece(status: kStageDynamicsPerfection).stageIndex, 2);
-    });
-
-    test('returns 3 for tempo_perfection', () {
-      expect(_piece(status: kStageTempoPerfection).stageIndex, 3);
-    });
-
-    test('returns 4 for repertoire', () {
-      expect(_piece(status: kStageRepertoire).stageIndex, 4);
+    test('returns 2 for repertoire', () {
+      expect(_piece(status: kStageRepertoire).stageIndex, 2);
     });
 
     test('returns -1 for an unrecognised status', () {
@@ -203,24 +191,14 @@ void main() {
   group('Piece.timestampForStage', () {
     final ts = DateTime(2024, 1, 10);
 
+    test('returns backlogAt for backlog', () {
+      final p = _piece(backlogAt: ts);
+      expect(p.timestampForStage(kStageBacklog), ts);
+    });
+
     test('returns learningAt for learning', () {
       final p = _piece(learningAt: ts);
-      expect(p.timestampForStage(kStagelearning), ts);
-    });
-
-    test('returns notePerfectionAt for note_perfection', () {
-      final p = _piece(notePerfectionAt: ts);
-      expect(p.timestampForStage(kStageNotePerfection), ts);
-    });
-
-    test('returns dynamicsPerfectionAt for dynamics_perfection', () {
-      final p = _piece(dynamicsPerfectionAt: ts);
-      expect(p.timestampForStage(kStageDynamicsPerfection), ts);
-    });
-
-    test('returns tempoPerfectionAt for tempo_perfection', () {
-      final p = _piece(tempoPerfectionAt: ts);
-      expect(p.timestampForStage(kStageTempoPerfection), ts);
+      expect(p.timestampForStage(kStageLearning), ts);
     });
 
     test('returns repertoireAt for repertoire', () {
@@ -229,12 +207,12 @@ void main() {
     });
 
     test('returns null when timestamp for stage is not set', () {
-      final p = _piece(notePerfectionAt: null);
-      expect(p.timestampForStage(kStageNotePerfection), isNull);
+      final p = _piece(learningAt: null);
+      expect(p.timestampForStage(kStageLearning), isNull);
     });
 
     test('returns null for an unrecognised stage', () {
-      final p = _piece(learningAt: ts);
+      final p = _piece(backlogAt: ts);
       expect(p.timestampForStage('unknown'), isNull);
     });
   });
@@ -321,16 +299,15 @@ void main() {
     test('nullable stage timestamps serialise to null when unset', () {
       final p = _piece();
       final map = p.toMap();
-      expect(map['note_perfection_at'], isNull);
-      expect(map['dynamics_perfection_at'], isNull);
-      expect(map['tempo_perfection_at'], isNull);
+      expect(map['backlog_at'], isNull);
+      expect(map['learning_at'], isNull);
       expect(map['repertoire_at'], isNull);
     });
 
     test('nullable stage timestamps serialise to ISO-8601 when set', () {
       final ts = DateTime(2024, 2, 20);
-      final p = _piece(notePerfectionAt: ts);
-      expect(p.toMap()['note_perfection_at'], ts.toIso8601String());
+      final p = _piece(learningAt: ts);
+      expect(p.toMap()['learning_at'], ts.toIso8601String());
     });
   });
 
@@ -350,7 +327,7 @@ void main() {
         currentTempo: 72,
         targetTempo: 96,
         notes: 'Watch dynamics',
-        notePerfectionAt: ts,
+        learningAt: ts,
       );
       final result = roundTrip(p);
       expect(result.composer, 'Debussy');
@@ -358,7 +335,7 @@ void main() {
       expect(result.currentTempo, 72);
       expect(result.targetTempo, 96);
       expect(result.notes, 'Watch dynamics');
-      expect(result.notePerfectionAt, ts);
+      expect(result.learningAt, ts);
     });
 
     test('null optional fields remain null through round-trip', () {
@@ -369,7 +346,7 @@ void main() {
       expect(result.currentTempo, isNull);
     });
 
-    test('defaults status to learning when key is absent from map', () {
+    test('defaults status to backlog when key is absent from map', () {
       final map = {
         'name': 'Test',
         'measures': 50,
@@ -377,7 +354,7 @@ void main() {
         'updated_at': DateTime(2024, 1, 1).toIso8601String(),
       };
       final p = Piece.fromMap(map);
-      expect(p.status, kStagelearning);
+      expect(p.status, kStageBacklog);
     });
 
     test('parses date strings from ISO-8601', () {

@@ -82,7 +82,7 @@ class _CelebrationScreenState extends State<CelebrationScreen>
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          'has been Mastered!',
+                          'is now in your Repertoire!',
                           style: TextStyle(
                             color: kTextPrimary,
                             fontSize: 20,

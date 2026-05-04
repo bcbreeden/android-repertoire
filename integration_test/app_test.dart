@@ -43,7 +43,7 @@ Future<void> _openPiece(WidgetTester tester, String name) async {
 }
 
 /// Taps the Advance button on the detail screen once and confirms the dialog.
-/// Handles the CelebrationScreen that appears when advancing to Mastered.
+/// Handles the CelebrationScreen that appears when advancing to Repertoire.
 Future<void> _advanceOnce(WidgetTester tester) async {
   await tester.ensureVisible(find.textContaining('Advance to').first);
   await tester.pumpAndSettle();
@@ -139,15 +139,15 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      // Tap Note Perfection chip — chip always exists even with 0 pieces in stage
-      await tester.tap(find.textContaining('Note Perfection').first);
+      // Tap Backlog chip — chip always exists even with 0 pieces in stage
+      await _tapChip(tester, 'Backlog');
       await tester.pumpAndSettle();
 
       // All chip should still be visible in the filter bar
       expect(find.textContaining('All'), findsOneWidget);
 
       // Restore
-      await tester.tap(find.textContaining('All').first);
+      await _tapChip(tester, 'All');
       await tester.pumpAndSettle();
     });
 
@@ -352,7 +352,7 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      expect(find.text('Repertoire'), findsOneWidget);
+      expect(find.text('Repertoire'), findsAtLeastNWidgets(1));
     });
   });
 
@@ -371,67 +371,41 @@ void main() {
       await tester.pumpAndSettle();
 
       // Each stage chip should show a count from the seeded data
+      expect(find.textContaining('Backlog'), findsAtLeastNWidgets(1));
       expect(find.textContaining('Learning'), findsAtLeastNWidgets(1));
-      expect(find.textContaining('Note Perfection'), findsAtLeastNWidgets(1));
-      expect(find.textContaining('Dynamics Perfection'), findsAtLeastNWidgets(1));
-      expect(find.textContaining('Tempo Perfection'), findsAtLeastNWidgets(1));
-      expect(find.textContaining('Mastered'), findsAtLeastNWidgets(1));
+      expect(find.textContaining('Repertoire'), findsAtLeastNWidgets(1));
 
-      // ── Learning filter ───────────────────────────────────────────────────
-      await _tapChip(tester, 'Learning');
+      // ── Backlog filter ────────────────────────────────────────────────────
+      await _tapChip(tester, 'Backlog');
       await tester.scrollUntilVisible(
         _cardFinder('Clair de Lune'),
         -500,
         scrollable: _piecesScrollable,
       );
       expect(_cardFinder('Clair de Lune'), findsAtLeastNWidgets(1));
-      expect(_cardFinder('Ballade No. 1'), findsNothing);      // Note Perfection
-      expect(_cardFinder('Waldstein Sonata'), findsNothing);   // Dynamics Perfection
-      expect(_cardFinder('Pathetique Sonata'), findsNothing);  // Tempo Perfection
-      expect(_cardFinder('Prelude in C# Minor'), findsNothing); // Mastered
+      expect(_cardFinder('Ballade No. 1'), findsNothing);       // Learning
+      expect(_cardFinder('Prelude in C# Minor'), findsNothing); // Repertoire
 
-      // ── Note Perfection filter ────────────────────────────────────────────
-      await _tapChip(tester, 'Note Perfection');
+      // ── Learning filter ───────────────────────────────────────────────────
+      await _tapChip(tester, 'Learning');
       await tester.scrollUntilVisible(
-        _cardFinder('Sonatina in G'),
+        _cardFinder('Ballade No. 1'),
         -500,
         scrollable: _piecesScrollable,
       );
-      expect(_cardFinder('Sonatina in G'), findsAtLeastNWidgets(1));
+      expect(_cardFinder('Ballade No. 1'), findsAtLeastNWidgets(1));
       expect(_cardFinder('Clair de Lune'), findsNothing);
-      expect(_cardFinder('Waldstein Sonata'), findsNothing);
-
-      // ── Dynamics Perfection filter ────────────────────────────────────────
-      await _tapChip(tester, 'Dynamics Perfection');
-      await tester.scrollUntilVisible(
-        _cardFinder('Minuet in G'),
-        -500,
-        scrollable: _piecesScrollable,
-      );
-      expect(_cardFinder('Minuet in G'), findsAtLeastNWidgets(1));
-      expect(_cardFinder('Sonatina in G'), findsNothing);
-      expect(_cardFinder('Pathetique Sonata'), findsNothing);
-
-      // ── Tempo Perfection filter ───────────────────────────────────────────
-      await _tapChip(tester, 'Tempo Perfection');
-      await tester.scrollUntilVisible(
-        _cardFinder('Pathetique Sonata'),
-        -500,
-        scrollable: _piecesScrollable,
-      );
-      expect(_cardFinder('Pathetique Sonata'), findsAtLeastNWidgets(1));
-      expect(_cardFinder('Minuet in G'), findsNothing);
       expect(_cardFinder('Prelude in C# Minor'), findsNothing);
 
-      // ── Mastered filter ───────────────────────────────────────────────────
-      await _tapChip(tester, 'Mastered');
+      // ── Repertoire filter ─────────────────────────────────────────────────
+      await _tapChip(tester, 'Repertoire');
       await tester.scrollUntilVisible(
         _cardFinder('Gymnopédie No. 3'),
         -500,
         scrollable: _piecesScrollable,
       );
       expect(_cardFinder('Gymnopédie No. 3'), findsAtLeastNWidgets(1));
-      expect(_cardFinder('Pathetique Sonata'), findsNothing);
+      expect(_cardFinder('Ballade No. 1'), findsNothing);
       expect(_cardFinder('Clair de Lune'), findsNothing);
 
       // ── All filter restores the full list ─────────────────────────────────
@@ -443,16 +417,16 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      // 'Clair de Lune' is in Learning — near top of sorted list
+      // 'Clair de Lune' is in Backlog — near top of sorted list
       await _openPiece(tester, 'Clair de Lune');
 
       expect(find.text('Log Practice'), findsOneWidget);
 
-      // Advance from Learning → Note Perfection
+      // Advance from Backlog → Learning
       await _advanceOnce(tester);
 
-      // Stage badge on detail screen now shows Note Perfection
-      expect(find.textContaining('Note Perfection'), findsAtLeastNWidgets(1));
+      // Stage badge on detail screen now shows Learning
+      expect(find.textContaining('Learning'), findsAtLeastNWidgets(1));
 
       await _goBack(tester);
 
@@ -462,12 +436,12 @@ void main() {
       await tester.drag(find.byKey(_piecesScrollKey), const Offset(0, 10000));
       await tester.pumpAndSettle();
 
-      // Learning filter should no longer contain Clair de Lune
-      await _tapChip(tester, 'Learning');
+      // Backlog filter should no longer contain Clair de Lune
+      await _tapChip(tester, 'Backlog');
       expect(_cardFinder('Clair de Lune'), findsNothing);
 
-      // Note Perfection filter should now contain it
-      await _tapChip(tester, 'Note Perfection');
+      // Learning filter should now contain it
+      await _tapChip(tester, 'Learning');
       await tester.scrollUntilVisible(
         _cardFinder('Clair de Lune'),
         -500,

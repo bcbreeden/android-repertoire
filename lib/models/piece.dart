@@ -14,10 +14,8 @@ class Piece {
   final DateTime updatedAt;
 
   // Stage achievement timestamps (set once when first reached)
+  final DateTime? backlogAt;
   final DateTime? learningAt;
-  final DateTime? notePerfectionAt;
-  final DateTime? dynamicsPerfectionAt;
-  final DateTime? tempoPerfectionAt;
   final DateTime? repertoireAt;
 
   const Piece({
@@ -29,13 +27,11 @@ class Piece {
     this.currentTempo,
     this.targetTempo,
     this.notes,
-    this.status = kStagelearning,
+    this.status = kStageBacklog,
     required this.createdAt,
     required this.updatedAt,
+    this.backlogAt,
     this.learningAt,
-    this.notePerfectionAt,
-    this.dynamicsPerfectionAt,
-    this.tempoPerfectionAt,
     this.repertoireAt,
   });
 
@@ -64,14 +60,10 @@ class Piece {
 
   DateTime? timestampForStage(String stage) {
     switch (stage) {
-      case kStagelearning:
+      case kStageBacklog:
+        return backlogAt;
+      case kStageLearning:
         return learningAt;
-      case kStageNotePerfection:
-        return notePerfectionAt;
-      case kStageDynamicsPerfection:
-        return dynamicsPerfectionAt;
-      case kStageTempoPerfection:
-        return tempoPerfectionAt;
       case kStageRepertoire:
         return repertoireAt;
       default:
@@ -91,10 +83,8 @@ class Piece {
     String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? backlogAt,
     DateTime? learningAt,
-    DateTime? notePerfectionAt,
-    DateTime? dynamicsPerfectionAt,
-    DateTime? tempoPerfectionAt,
     DateTime? repertoireAt,
     bool clearComposer = false,
     bool clearMeasuresLearned = false,
@@ -117,10 +107,8 @@ class Piece {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      backlogAt: backlogAt ?? this.backlogAt,
       learningAt: learningAt ?? this.learningAt,
-      notePerfectionAt: notePerfectionAt ?? this.notePerfectionAt,
-      dynamicsPerfectionAt: dynamicsPerfectionAt ?? this.dynamicsPerfectionAt,
-      tempoPerfectionAt: tempoPerfectionAt ?? this.tempoPerfectionAt,
       repertoireAt: repertoireAt ?? this.repertoireAt,
     );
   }
@@ -138,10 +126,8 @@ class Piece {
       'status': status,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'backlog_at': backlogAt?.toIso8601String(),
       'learning_at': learningAt?.toIso8601String(),
-      'note_perfection_at': notePerfectionAt?.toIso8601String(),
-      'dynamics_perfection_at': dynamicsPerfectionAt?.toIso8601String(),
-      'tempo_perfection_at': tempoPerfectionAt?.toIso8601String(),
       'repertoire_at': repertoireAt?.toIso8601String(),
     };
   }
@@ -156,20 +142,14 @@ class Piece {
       currentTempo: map['current_tempo'] as int?,
       targetTempo: map['target_tempo'] as int?,
       notes: map['notes'] as String?,
-      status: map['status'] as String? ?? kStagelearning,
+      status: map['status'] as String? ?? kStageBacklog,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
+      backlogAt: map['backlog_at'] != null
+          ? DateTime.parse(map['backlog_at'] as String)
+          : null,
       learningAt: map['learning_at'] != null
           ? DateTime.parse(map['learning_at'] as String)
-          : null,
-      notePerfectionAt: map['note_perfection_at'] != null
-          ? DateTime.parse(map['note_perfection_at'] as String)
-          : null,
-      dynamicsPerfectionAt: map['dynamics_perfection_at'] != null
-          ? DateTime.parse(map['dynamics_perfection_at'] as String)
-          : null,
-      tempoPerfectionAt: map['tempo_perfection_at'] != null
-          ? DateTime.parse(map['tempo_perfection_at'] as String)
           : null,
       repertoireAt: map['repertoire_at'] != null
           ? DateTime.parse(map['repertoire_at'] as String)

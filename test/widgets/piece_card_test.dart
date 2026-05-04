@@ -11,7 +11,7 @@ Piece _piece({
   String? composer = 'Beethoven',
   int? measuresLearned = 80,
   int? currentTempo = 72,
-  String status = kStagelearning,
+  String status = kStageBacklog,
 }) {
   final now = DateTime(2024, 6, 1, 12, 0);
   return Piece(
@@ -144,16 +144,16 @@ void main() {
   });
 
   group('PieceCard stage badge', () {
-    testWidgets('shows correct label for learning stage', (tester) async {
-      await tester.pumpWidget(_build(piece: _piece(status: kStagelearning), onTap: () {}));
-      expect(find.text('Learning'), findsOneWidget);
+    testWidgets('shows correct label for backlog stage', (tester) async {
+      await tester.pumpWidget(_build(piece: _piece(status: kStageBacklog), onTap: () {}));
+      expect(find.text('Backlog'), findsOneWidget);
     });
 
-    testWidgets('shows correct label for note perfection stage', (tester) async {
+    testWidgets('shows correct label for learning stage', (tester) async {
       await tester.pumpWidget(
-        _build(piece: _piece(status: kStageNotePerfection), onTap: () {}),
+        _build(piece: _piece(status: kStageLearning), onTap: () {}),
       );
-      expect(find.text('Note Perfection'), findsOneWidget);
+      expect(find.text('Learning'), findsOneWidget);
     });
 
     testWidgets('shows star icon for repertoire stage', (tester) async {
@@ -161,11 +161,11 @@ void main() {
         _build(piece: _piece(status: kStageRepertoire), onTap: () {}),
       );
       expect(find.byIcon(Icons.star), findsOneWidget);
-      expect(find.text('Mastered'), findsOneWidget);
+      expect(find.text('Repertoire'), findsOneWidget);
     });
 
     testWidgets('does not show star icon for non-repertoire stage', (tester) async {
-      await tester.pumpWidget(_build(piece: _piece(status: kStagelearning), onTap: () {}));
+      await tester.pumpWidget(_build(piece: _piece(status: kStageBacklog), onTap: () {}));
       expect(find.byIcon(Icons.star), findsNothing);
     });
   });

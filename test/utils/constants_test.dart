@@ -5,20 +5,12 @@ void main() {
   // ── nextStage ─────────────────────────────────────────────────────────────
 
   group('nextStage', () {
-    test('learning → note_perfection', () {
-      expect(nextStage(kStagelearning), kStageNotePerfection);
+    test('backlog → learning', () {
+      expect(nextStage(kStageBacklog), kStageLearning);
     });
 
-    test('note_perfection → dynamics_perfection', () {
-      expect(nextStage(kStageNotePerfection), kStageDynamicsPerfection);
-    });
-
-    test('dynamics_perfection → tempo_perfection', () {
-      expect(nextStage(kStageDynamicsPerfection), kStageTempoPerfection);
-    });
-
-    test('tempo_perfection → repertoire', () {
-      expect(nextStage(kStageTempoPerfection), kStageRepertoire);
+    test('learning → repertoire', () {
+      expect(nextStage(kStageLearning), kStageRepertoire);
     });
 
     test('repertoire → repertoire (already last, no change)', () {
@@ -41,20 +33,12 @@ void main() {
       expect(isLastStage(kStageRepertoire), isTrue);
     });
 
+    test('returns false for backlog', () {
+      expect(isLastStage(kStageBacklog), isFalse);
+    });
+
     test('returns false for learning', () {
-      expect(isLastStage(kStagelearning), isFalse);
-    });
-
-    test('returns false for note_perfection', () {
-      expect(isLastStage(kStageNotePerfection), isFalse);
-    });
-
-    test('returns false for dynamics_perfection', () {
-      expect(isLastStage(kStageDynamicsPerfection), isFalse);
-    });
-
-    test('returns false for tempo_perfection', () {
-      expect(isLastStage(kStageTempoPerfection), isFalse);
+      expect(isLastStage(kStageLearning), isFalse);
     });
 
     test('returns false for an invalid stage', () {
@@ -65,24 +49,16 @@ void main() {
   // ── stageIndex ────────────────────────────────────────────────────────────
 
   group('stageIndex', () {
-    test('learning is index 0', () {
-      expect(stageIndex(kStagelearning), 0);
+    test('backlog is index 0', () {
+      expect(stageIndex(kStageBacklog), 0);
     });
 
-    test('note_perfection is index 1', () {
-      expect(stageIndex(kStageNotePerfection), 1);
+    test('learning is index 1', () {
+      expect(stageIndex(kStageLearning), 1);
     });
 
-    test('dynamics_perfection is index 2', () {
-      expect(stageIndex(kStageDynamicsPerfection), 2);
-    });
-
-    test('tempo_perfection is index 3', () {
-      expect(stageIndex(kStageTempoPerfection), 3);
-    });
-
-    test('repertoire is index 4', () {
-      expect(stageIndex(kStageRepertoire), 4);
+    test('repertoire is index 2', () {
+      expect(stageIndex(kStageRepertoire), 2);
     });
 
     test('invalid stage returns -1', () {
@@ -97,12 +73,12 @@ void main() {
   // ── kStageOrder integrity ─────────────────────────────────────────────────
 
   group('kStageOrder', () {
-    test('contains exactly 5 stages', () {
-      expect(kStageOrder.length, 5);
+    test('contains exactly 3 stages', () {
+      expect(kStageOrder.length, 3);
     });
 
     test('stages are in ascending progression order', () {
-      expect(kStageOrder.first, kStagelearning);
+      expect(kStageOrder.first, kStageBacklog);
       expect(kStageOrder.last, kStageRepertoire);
     });
   });
