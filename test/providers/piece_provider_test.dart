@@ -305,21 +305,8 @@ void main() {
   // ── canAddPiece ───────────────────────────────────────────────────────────
 
   group('canAddPiece', () {
-    test('true when piece count is below 3 (free tier)', () async {
+    test('always true while cap is disabled', () async {
       await provider.addPiece(_piece());
-      await provider.addPiece(_piece());
-      expect(provider.canAddPiece, isTrue);
-    });
-
-    test('false when piece count reaches 3 and user is not premium', () async {
-      await provider.addPiece(_piece());
-      await provider.addPiece(_piece());
-      await provider.addPiece(_piece());
-      expect(provider.canAddPiece, isFalse);
-    });
-
-    test('true when premium and piece count is 3 or more', () async {
-      await provider.setPremium(true);
       await provider.addPiece(_piece());
       await provider.addPiece(_piece());
       await provider.addPiece(_piece());

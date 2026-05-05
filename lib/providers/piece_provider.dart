@@ -62,7 +62,7 @@ class PieceProvider extends ChangeNotifier {
     return map;
   }
 
-  bool get canAddPiece => _isPremium || _pieces.length < 3;
+  bool get canAddPiece => true; // cap disabled during testing
 
   DateTime? lastPracticeDateForPiece(int pieceId) => _lastPracticeDates[pieceId];
 
