@@ -23,11 +23,13 @@ class _PracticeSessionDetailScreenState
   late final TextEditingController _notesController;
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
+  late DateTime _timestamp;
 
   @override
   void initState() {
     super.initState();
     final s = widget.session;
+    _timestamp = s.timestamp;
     _measuresController =
         TextEditingController(text: s.measuresLearned?.toString() ?? '');
     _bpmController =
@@ -37,6 +39,56 @@ class _PracticeSessionDetailScreenState
             ? (s.durationSeconds! ~/ 60).toString()
             : '');
     _notesController = TextEditingController(text: s.notes ?? '');
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _timestamp,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.dark(
+            primary: kGoldColor,
+            surface: kCardColor,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        _timestamp = DateTime(
+          picked.year, picked.month, picked.day,
+          _timestamp.hour, _timestamp.minute, _timestamp.second,
+        );
+      });
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_timestamp),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.dark(
+            primary: kGoldColor,
+            surface: kCardColor,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        _timestamp = DateTime(
+          _timestamp.year, _timestamp.month, _timestamp.day,
+          picked.hour, picked.minute,
+        );
+      });
+    }
   }
 
   @override
@@ -54,6 +106,7 @@ class _PracticeSessionDetailScreenState
     final provider = context.read<PieceProvider>();
     final minutesText = _minutesController.text.trim();
     final updated = widget.session.copyWith(
+      timestamp: _timestamp,
       measuresLearned: _measuresController.text.trim().isEmpty
           ? null
           : int.tryParse(_measuresController.text),
@@ -125,9 +178,8 @@ class _PracticeSessionDetailScreenState
     final piece = provider.getPieceById(widget.session.pieceId);
     final stageColor =
         piece != null ? (kStageColors[piece.status] ?? kGoldColor) : kGoldColor;
-    final dateStr =
-        DateFormat('MMMM d, yyyy').format(widget.session.timestamp);
-    final timeStr = DateFormat('h:mm a').format(widget.session.timestamp);
+    final dateStr = DateFormat('MMM d, yyyy').format(_timestamp);
+    final timeStr = DateFormat('h:mm a').format(_timestamp);
 
     return Scaffold(
       backgroundColor: kBackgroundColor,
@@ -202,13 +254,16 @@ class _PracticeSessionDetailScreenState
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(Icons.calendar_today,
-                                size: 12, color: kTextSecondary),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$dateStr at $timeStr',
-                              style: const TextStyle(
-                                  color: kTextSecondary, fontSize: 12),
+                            _DateTimeChip(
+                              icon: Icons.calendar_today,
+                              label: dateStr,
+                              onTap: _pickDate,
+                            ),
+                            const SizedBox(width: 8),
+                            _DateTimeChip(
+                              icon: Icons.access_time,
+                              label: timeStr,
+                              onTap: _pickTime,
                             ),
                           ],
                         ),
@@ -390,6 +445,46 @@ class _PracticeSessionDetailScreenState
           ),
         ),
       ],
+    );
+  }
+}
+
+class _DateTimeChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _DateTimeChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: kBackgroundColor,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: kDividerColor),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 11, color: kGoldColor),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(color: kTextSecondary, fontSize: 12),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.edit, size: 10, color: kTextSecondary),
+          ],
+        ),
+      ),
     );
   }
 }
