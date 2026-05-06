@@ -1043,13 +1043,12 @@ void main() {
       await tester.pumpAndSettle();
 
       // Summary stats are present
-      expect(find.text('Total Sessions'), findsOneWidget);
       expect(find.text('Total Time'), findsOneWidget);
       expect(find.text('Streak'), findsOneWidget);
 
       // Section headers
       expect(find.text('THIS WEEK'), findsOneWidget);
-      expect(find.text('LAST 7 DAYS · sessions'), findsOneWidget);
+      expect(find.text('LAST 7 DAYS · time'), findsOneWidget);
       expect(find.text('MOST PRACTICED'), findsOneWidget);
     });
   });

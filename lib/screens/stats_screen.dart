@@ -17,11 +17,10 @@ class StatsTab extends StatelessWidget {
         final allSongSessions = pieces.practiceSessions;
         final allExSessions = exercises.sessions;
 
-        final totalSessions = allSongSessions.length + allExSessions.length;
         final totalSeconds = _totalSeconds(allSongSessions, allExSessions);
         final streak = pieces.streak;
 
-        if (totalSessions == 0 && pieces.totalCount == 0) {
+        if (allSongSessions.isEmpty && allExSessions.isEmpty && pieces.totalCount == 0) {
           return const _EmptyStats();
         }
 
@@ -30,7 +29,6 @@ class StatsTab extends StatelessWidget {
           children: [
             // ── Summary row ───────────────────────────────────────────────
             _SummaryRow(
-              totalSessions: totalSessions,
               totalSeconds: totalSeconds,
               streak: streak,
             ),
@@ -137,12 +135,10 @@ class _EmptyStats extends StatelessWidget {
 // ── Summary row ────────────────────────────────────────────────────────────────
 
 class _SummaryRow extends StatelessWidget {
-  final int totalSessions;
   final int totalSeconds;
   final int streak;
 
   const _SummaryRow({
-    required this.totalSessions,
     required this.totalSeconds,
     required this.streak,
   });
@@ -151,13 +147,6 @@ class _SummaryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _StatBox(
-          label: 'Total Sessions',
-          value: totalSessions.toString(),
-          icon: Icons.event_note,
-          color: kTextPrimary,
-        ),
-        const SizedBox(width: 10),
         _StatBox(
           label: 'Total Time',
           value: _formatPracticeDuration(totalSeconds),
@@ -174,7 +163,6 @@ class _SummaryRow extends StatelessWidget {
       ],
     );
   }
-
 }
 
 class _StatBox extends StatelessWidget {
@@ -263,18 +251,15 @@ class _ThisWeekCard extends StatelessWidget {
     final weekStart =
         DateTime(now.year, now.month, now.day - (now.weekday - 1));
 
-    int sessions = 0;
     int seconds = 0;
 
     for (final s in songSessions) {
       if (!s.timestamp.isBefore(weekStart)) {
-        sessions++;
         seconds += s.durationSeconds ?? 0;
       }
     }
     for (final s in exSessions) {
       if (!s.timestamp.isBefore(weekStart)) {
-        sessions++;
         seconds += s.durationSeconds ?? 0;
       }
     }
@@ -283,22 +268,11 @@ class _ThisWeekCard extends StatelessWidget {
 
     return _Card(
       label: 'THIS WEEK',
-      child: Row(
-        children: [
-          _InlineStatTile(
-            value: '$sessions ${sessions == 1 ? 'session' : 'sessions'}',
-            label: 'sessions',
-            icon: Icons.event_note,
-            color: kTextPrimary,
-          ),
-          const SizedBox(width: 24),
-          _InlineStatTile(
-            value: timeStr,
-            label: 'practiced',
-            icon: Icons.timer_outlined,
-            color: kGoldColor,
-          ),
-        ],
+      child: _InlineStatTile(
+        value: timeStr,
+        label: 'practiced',
+        icon: Icons.timer_outlined,
+        color: kGoldColor,
       ),
     );
   }
@@ -323,9 +297,10 @@ class _Last7DaysCard extends StatelessWidget {
       return DateTime(d.year, d.month, d.day);
     });
 
-    final counts = <DateTime, int>{};
+    // seconds per day
+    final minuteMap = <DateTime, int>{};
     for (final d in days) {
-      counts[d] = 0;
+      minuteMap[d] = 0;
     }
 
     bool _sameDay(DateTime a, DateTime b) =>
@@ -334,34 +309,39 @@ class _Last7DaysCard extends StatelessWidget {
     for (final s in songSessions) {
       final day =
           DateTime(s.timestamp.year, s.timestamp.month, s.timestamp.day);
-      if (counts.containsKey(day)) counts[day] = counts[day]! + 1;
+      if (minuteMap.containsKey(day)) {
+        minuteMap[day] = minuteMap[day]! + (s.durationSeconds ?? 0);
+      }
     }
     for (final s in exSessions) {
       final day =
           DateTime(s.timestamp.year, s.timestamp.month, s.timestamp.day);
-      if (counts.containsKey(day)) counts[day] = counts[day]! + 1;
+      if (minuteMap.containsKey(day)) {
+        minuteMap[day] = minuteMap[day]! + (s.durationSeconds ?? 0);
+      }
     }
 
-    final maxCount = counts.values.fold(0, (a, b) => a > b ? a : b);
+    final maxSeconds = minuteMap.values.fold(0, (a, b) => a > b ? a : b);
 
     return _Card(
-      label: 'LAST 7 DAYS · sessions',
+      label: 'LAST 7 DAYS · time',
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: days.map((day) {
-          final count = counts[day] ?? 0;
+          final secs = minuteMap[day] ?? 0;
+          final mins = secs ~/ 60;
           final isToday = _sameDay(day, now);
-          final barFlex = maxCount == 0 ? 1 : (count == 0 ? 1 : count);
-          final emptyFlex = maxCount == 0 ? 0 : (maxCount - count);
+          final barFlex = maxSeconds == 0 ? 1 : (secs == 0 ? 1 : secs);
+          final emptyFlex = maxSeconds == 0 ? 0 : (maxSeconds - secs);
 
           return Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
               child: Column(
                 children: [
-                  if (count > 0)
+                  if (mins > 0)
                     Text(
-                      count.toString(),
+                      '${mins}m',
                       style: TextStyle(
                         color: isToday ? kGoldColor : kTextPrimary,
                         fontSize: 10,
@@ -381,7 +361,7 @@ class _Last7DaysCard extends StatelessWidget {
                           flex: barFlex,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: count == 0
+                              color: secs == 0
                                   ? kDividerColor
                                   : isToday
                                       ? kGoldColor
@@ -546,12 +526,12 @@ class _MostPracticedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Group by pieceId
-    final counts = <int, int>{};
+    // Group total durationSeconds by pieceId
+    final seconds = <int, int>{};
     for (final s in sessions) {
-      counts[s.pieceId] = (counts[s.pieceId] ?? 0) + 1;
+      seconds[s.pieceId] = (seconds[s.pieceId] ?? 0) + (s.durationSeconds ?? 0);
     }
-    final sorted = counts.entries.toList()
+    final sorted = seconds.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final top = sorted.take(5).toList();
 
@@ -567,7 +547,7 @@ class _MostPracticedCard extends StatelessWidget {
             _MostPracticedRow(
               rank: i + 1,
               piece: pieces.getPieceById(top[i].key),
-              sessionCount: top[i].value,
+              totalSeconds: top[i].value,
             ),
           ],
         ],
@@ -579,12 +559,12 @@ class _MostPracticedCard extends StatelessWidget {
 class _MostPracticedRow extends StatelessWidget {
   final int rank;
   final dynamic piece; // Piece?
-  final int sessionCount;
+  final int totalSeconds;
 
   const _MostPracticedRow({
     required this.rank,
     required this.piece,
-    required this.sessionCount,
+    required this.totalSeconds,
   });
 
   @override
@@ -635,7 +615,7 @@ class _MostPracticedRow extends StatelessWidget {
           ),
         ),
         Text(
-          '$sessionCount ${sessionCount == 1 ? 'session' : 'sessions'}',
+          _formatPracticeDuration(totalSeconds),
           style: const TextStyle(color: kTextSecondary, fontSize: 11),
         ),
       ],
