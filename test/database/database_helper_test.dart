@@ -11,11 +11,10 @@ Piece _piece({
   String name = 'Test Piece',
   String? composer,
   int measures = 100,
-  String status = kStageBacklog,
+  String status = kStageLearning,
   int? measuresLearned,
   int? currentTempo,
   int? targetTempo,
-  DateTime? backlogAt,
   DateTime? learningAt,
   DateTime? repertoireAt,
 }) {
@@ -30,8 +29,7 @@ Piece _piece({
     targetTempo: targetTempo,
     createdAt: now,
     updatedAt: now,
-    backlogAt: backlogAt ?? now,
-    learningAt: learningAt,
+    learningAt: learningAt ?? now,
     repertoireAt: repertoireAt,
   );
 }
@@ -91,7 +89,6 @@ void main() {
         status: kStageLearning,
         createdAt: ts,
         updatedAt: ts,
-        backlogAt: ts,
         learningAt: ts,
       );
       final id = await DatabaseHelper.instance.insertPiece(original);
@@ -126,10 +123,10 @@ void main() {
       final early = DateTime(2024, 1, 1);
       final late_ = DateTime(2024, 6, 1);
       await DatabaseHelper.instance.insertPiece(
-        Piece(name: 'Older', measures: 50, createdAt: early, updatedAt: early, backlogAt: early),
+        Piece(name: 'Older', measures: 50, createdAt: early, updatedAt: early),
       );
       await DatabaseHelper.instance.insertPiece(
-        Piece(name: 'Newer', measures: 50, createdAt: late_, updatedAt: late_, backlogAt: late_),
+        Piece(name: 'Newer', measures: 50, createdAt: late_, updatedAt: late_),
       );
       final pieces = await DatabaseHelper.instance.getAllPieces();
       expect(pieces.first.name, 'Newer');
@@ -141,16 +138,16 @@ void main() {
 
   group('getPiecesByStatus', () {
     test('returns only pieces matching the given status', () async {
-      await DatabaseHelper.instance.insertPiece(_piece(name: 'B1', status: kStageBacklog));
       await DatabaseHelper.instance.insertPiece(_piece(name: 'L1', status: kStageLearning));
       await DatabaseHelper.instance.insertPiece(_piece(name: 'L2', status: kStageLearning));
+      await DatabaseHelper.instance.insertPiece(_piece(name: 'R1', status: kStageRepertoire));
       final results = await DatabaseHelper.instance.getPiecesByStatus(kStageLearning);
       expect(results.length, 2);
       expect(results.every((p) => p.status == kStageLearning), isTrue);
     });
 
     test('returns empty list when no pieces match the status', () async {
-      await DatabaseHelper.instance.insertPiece(_piece(status: kStageBacklog));
+      await DatabaseHelper.instance.insertPiece(_piece(status: kStageLearning));
       final results = await DatabaseHelper.instance.getPiecesByStatus(kStageRepertoire);
       expect(results, isEmpty);
     });
@@ -204,28 +201,28 @@ void main() {
   // ── advancePieceStage ─────────────────────────────────────────────────────
 
   group('advancePieceStage', () {
-    test('advances backlog piece to learning', () async {
-      final id = await DatabaseHelper.instance.insertPiece(_piece(status: kStageBacklog));
+    test('advances learning piece to repertoire', () async {
+      final id = await DatabaseHelper.instance.insertPiece(_piece(status: kStageLearning));
       final p = await DatabaseHelper.instance.getPieceById(id);
       final result = await DatabaseHelper.instance.advancePieceStage(p!);
-      expect(result!.status, kStageLearning);
+      expect(result!.status, kStageRepertoire);
     });
 
-    test('sets learningAt timestamp on first advance to learning', () async {
-      final id = await DatabaseHelper.instance.insertPiece(_piece(status: kStageBacklog));
+    test('sets repertoireAt timestamp on first advance to repertoire', () async {
+      final id = await DatabaseHelper.instance.insertPiece(_piece(status: kStageLearning));
       final p = await DatabaseHelper.instance.getPieceById(id);
       final result = await DatabaseHelper.instance.advancePieceStage(p!);
-      expect(result!.learningAt, isNotNull);
+      expect(result!.repertoireAt, isNotNull);
     });
 
-    test('preserves existing learningAt timestamp on re-advance', () async {
+    test('preserves existing repertoireAt timestamp on re-advance', () async {
       final existingTs = DateTime(2023, 12, 1);
       final id = await DatabaseHelper.instance.insertPiece(
-        _piece(status: kStageBacklog, learningAt: existingTs),
+        _piece(status: kStageLearning, repertoireAt: existingTs),
       );
       final p = await DatabaseHelper.instance.getPieceById(id);
       final result = await DatabaseHelper.instance.advancePieceStage(p!);
-      expect(result!.learningAt, existingTs);
+      expect(result!.repertoireAt, existingTs);
     });
 
     test('returns piece unchanged when already at repertoire (last stage)', () async {
@@ -238,11 +235,11 @@ void main() {
     });
 
     test('persists the advanced stage to the database', () async {
-      final id = await DatabaseHelper.instance.insertPiece(_piece(status: kStageBacklog));
+      final id = await DatabaseHelper.instance.insertPiece(_piece(status: kStageLearning));
       final p = await DatabaseHelper.instance.getPieceById(id);
       await DatabaseHelper.instance.advancePieceStage(p!);
       final fromDb = await DatabaseHelper.instance.getPieceById(id);
-      expect(fromDb!.status, kStageLearning);
+      expect(fromDb!.status, kStageRepertoire);
     });
   });
 
@@ -250,53 +247,53 @@ void main() {
 
   group('setPieceStage', () {
     test('sets piece to an arbitrary stage', () async {
-      final id = await DatabaseHelper.instance.insertPiece(_piece(status: kStageBacklog));
+      final id = await DatabaseHelper.instance.insertPiece(_piece(status: kStageLearning));
       final p = await DatabaseHelper.instance.getPieceById(id);
       final result = await DatabaseHelper.instance.setPieceStage(p!, kStageRepertoire);
       expect(result!.status, kStageRepertoire);
     });
 
     test('returns piece unchanged when new status equals current status', () async {
-      final id = await DatabaseHelper.instance.insertPiece(_piece(status: kStageBacklog));
+      final id = await DatabaseHelper.instance.insertPiece(_piece(status: kStageLearning));
       final p = await DatabaseHelper.instance.getPieceById(id);
-      final result = await DatabaseHelper.instance.setPieceStage(p!, kStageBacklog);
-      expect(result!.status, kStageBacklog);
+      final result = await DatabaseHelper.instance.setPieceStage(p!, kStageLearning);
+      expect(result!.status, kStageLearning);
     });
 
-    test('can set stage backwards (e.g. repertoire → backlog)', () async {
+    test('can set stage backwards (e.g. repertoire → learning)', () async {
       final id = await DatabaseHelper.instance.insertPiece(
         _piece(status: kStageRepertoire, repertoireAt: DateTime(2024, 1, 1)),
       );
       final p = await DatabaseHelper.instance.getPieceById(id);
-      final result = await DatabaseHelper.instance.setPieceStage(p!, kStageBacklog);
-      expect(result!.status, kStageBacklog);
+      final result = await DatabaseHelper.instance.setPieceStage(p!, kStageLearning);
+      expect(result!.status, kStageLearning);
     });
 
     test('preserves existing timestamp when setting a stage that was already reached', () async {
       final existingTs = DateTime(2023, 11, 15);
       final id = await DatabaseHelper.instance.insertPiece(
-        _piece(status: kStageBacklog, learningAt: existingTs),
+        _piece(status: kStageLearning, repertoireAt: existingTs),
       );
       final p = await DatabaseHelper.instance.getPieceById(id);
-      final result = await DatabaseHelper.instance.setPieceStage(p!, kStageLearning);
-      expect(result!.learningAt, existingTs);
+      final result = await DatabaseHelper.instance.setPieceStage(p!, kStageRepertoire);
+      expect(result!.repertoireAt, existingTs);
     });
 
     test('sets timestamp for a stage being reached for the first time', () async {
       final id = await DatabaseHelper.instance.insertPiece(
-        _piece(status: kStageBacklog, learningAt: null),
+        _piece(status: kStageLearning, repertoireAt: null),
       );
       final p = await DatabaseHelper.instance.getPieceById(id);
-      final result = await DatabaseHelper.instance.setPieceStage(p!, kStageLearning);
-      expect(result!.learningAt, isNotNull);
+      final result = await DatabaseHelper.instance.setPieceStage(p!, kStageRepertoire);
+      expect(result!.repertoireAt, isNotNull);
     });
 
     test('persists the new stage to the database', () async {
-      final id = await DatabaseHelper.instance.insertPiece(_piece(status: kStageBacklog));
+      final id = await DatabaseHelper.instance.insertPiece(_piece(status: kStageLearning));
       final p = await DatabaseHelper.instance.getPieceById(id);
-      await DatabaseHelper.instance.setPieceStage(p!, kStageLearning);
+      await DatabaseHelper.instance.setPieceStage(p!, kStageRepertoire);
       final fromDb = await DatabaseHelper.instance.getPieceById(id);
-      expect(fromDb!.status, kStageLearning);
+      expect(fromDb!.status, kStageRepertoire);
     });
   });
 
@@ -445,7 +442,6 @@ void main() {
           measures: 50,
           createdAt: now,
           updatedAt: now,
-          backlogAt: null,
         ),
       );
       final milestones = await DatabaseHelper.instance.getRecentMilestones();
@@ -458,11 +454,11 @@ void main() {
         Piece(
           name: 'Multi-stage',
           measures: 80,
-          status: kStageLearning,
+          status: kStageRepertoire,
           createdAt: now,
           updatedAt: now,
-          backlogAt: now.subtract(const Duration(days: 30)),
-          learningAt: now.subtract(const Duration(days: 5)),
+          learningAt: now.subtract(const Duration(days: 30)),
+          repertoireAt: now.subtract(const Duration(days: 5)),
         ),
       );
       expect(id, isPositive);
@@ -479,13 +475,12 @@ void main() {
           status: kStageRepertoire,
           createdAt: now,
           updatedAt: now,
-          backlogAt: now.subtract(const Duration(days: 60)),
           learningAt: now.subtract(const Duration(days: 30)),
           repertoireAt: now.subtract(const Duration(days: 5)),
         ),
       );
-      final milestones = await DatabaseHelper.instance.getRecentMilestones(limit: 2);
-      expect(milestones.length, 2);
+      final milestones = await DatabaseHelper.instance.getRecentMilestones(limit: 1);
+      expect(milestones.length, 1);
     });
 
     test('results are sorted by timestamp descending (most recent first)', () async {
@@ -494,11 +489,11 @@ void main() {
         Piece(
           name: 'Piece',
           measures: 60,
-          status: kStageLearning,
+          status: kStageRepertoire,
           createdAt: now,
           updatedAt: now,
-          backlogAt: now.subtract(const Duration(days: 10)),
-          learningAt: now.subtract(const Duration(days: 2)),
+          learningAt: now.subtract(const Duration(days: 10)),
+          repertoireAt: now.subtract(const Duration(days: 2)),
         ),
       );
       final milestones = await DatabaseHelper.instance.getRecentMilestones(limit: 10);
@@ -520,13 +515,12 @@ void main() {
     });
 
     test('counts pieces correctly per stage', () async {
-      await DatabaseHelper.instance.insertPiece(_piece(status: kStageBacklog));
-      await DatabaseHelper.instance.insertPiece(_piece(status: kStageBacklog));
       await DatabaseHelper.instance.insertPiece(_piece(status: kStageLearning));
+      await DatabaseHelper.instance.insertPiece(_piece(status: kStageLearning));
+      await DatabaseHelper.instance.insertPiece(_piece(status: kStageRepertoire));
       final map = await DatabaseHelper.instance.getStageCountMap();
-      expect(map[kStageBacklog], 2);
-      expect(map[kStageLearning], 1);
-      expect(map.containsKey(kStageRepertoire), isFalse); // no pieces there
+      expect(map[kStageLearning], 2);
+      expect(map[kStageRepertoire], 1);
     });
   });
 }

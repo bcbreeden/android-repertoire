@@ -14,7 +14,6 @@ class Piece {
   final DateTime updatedAt;
 
   // Stage achievement timestamps (set once when first reached)
-  final DateTime? backlogAt;
   final DateTime? learningAt;
   final DateTime? repertoireAt;
 
@@ -27,10 +26,9 @@ class Piece {
     this.currentTempo,
     this.targetTempo,
     this.notes,
-    this.status = kStageBacklog,
+    this.status = kStageLearning,
     required this.createdAt,
     required this.updatedAt,
-    this.backlogAt,
     this.learningAt,
     this.repertoireAt,
   });
@@ -60,8 +58,6 @@ class Piece {
 
   DateTime? timestampForStage(String stage) {
     switch (stage) {
-      case kStageBacklog:
-        return backlogAt;
       case kStageLearning:
         return learningAt;
       case kStageRepertoire:
@@ -83,7 +79,6 @@ class Piece {
     String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
-    DateTime? backlogAt,
     DateTime? learningAt,
     DateTime? repertoireAt,
     bool clearComposer = false,
@@ -107,7 +102,6 @@ class Piece {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      backlogAt: backlogAt ?? this.backlogAt,
       learningAt: learningAt ?? this.learningAt,
       repertoireAt: repertoireAt ?? this.repertoireAt,
     );
@@ -126,7 +120,6 @@ class Piece {
       'status': status,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
-      'backlog_at': backlogAt?.toIso8601String(),
       'learning_at': learningAt?.toIso8601String(),
       'repertoire_at': repertoireAt?.toIso8601String(),
     };
@@ -142,12 +135,9 @@ class Piece {
       currentTempo: map['current_tempo'] as int?,
       targetTempo: map['target_tempo'] as int?,
       notes: map['notes'] as String?,
-      status: map['status'] as String? ?? kStageBacklog,
+      status: map['status'] as String? ?? kStageLearning,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
-      backlogAt: map['backlog_at'] != null
-          ? DateTime.parse(map['backlog_at'] as String)
-          : null,
       learningAt: map['learning_at'] != null
           ? DateTime.parse(map['learning_at'] as String)
           : null,

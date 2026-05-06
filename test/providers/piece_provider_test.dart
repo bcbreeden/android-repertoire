@@ -11,7 +11,7 @@ import 'package:repertoire/utils/constants.dart';
 Piece _piece({
   String name = 'Test Piece',
   int measures = 100,
-  String status = kStageBacklog,
+  String status = kStageLearning,
 }) {
   final now = DateTime(2024, 1, 1, 12, 0);
   return Piece(
@@ -76,21 +76,21 @@ void main() {
 
   group('filteredPieces', () {
     test('returns all pieces when filter is "all"', () async {
-      await provider.addPiece(_piece(name: 'A', status: kStageBacklog));
-      await provider.addPiece(_piece(name: 'B', status: kStageLearning));
+      await provider.addPiece(_piece(name: 'A', status: kStageLearning));
+      await provider.addPiece(_piece(name: 'B', status: kStageRepertoire));
       expect(provider.filteredPieces.length, 2);
     });
 
     test('returns only pieces matching the active filter', () async {
-      await provider.addPiece(_piece(name: 'Backlog', status: kStageBacklog));
       await provider.addPiece(_piece(name: 'Learning', status: kStageLearning));
-      provider.setFilter(kStageBacklog);
+      await provider.addPiece(_piece(name: 'Repertoire', status: kStageRepertoire));
+      provider.setFilter(kStageLearning);
       expect(provider.filteredPieces.length, 1);
-      expect(provider.filteredPieces.first.name, 'Backlog');
+      expect(provider.filteredPieces.first.name, 'Learning');
     });
 
     test('returns empty list when filter matches no pieces', () async {
-      await provider.addPiece(_piece(status: kStageBacklog));
+      await provider.addPiece(_piece(status: kStageLearning));
       provider.setFilter(kStageRepertoire);
       expect(provider.filteredPieces, isEmpty);
     });
@@ -121,7 +121,7 @@ void main() {
     test('calling setFilter with a new value notifies listeners', () {
       int notifyCount = 0;
       provider.addListener(() => notifyCount++);
-      provider.setFilter(kStageBacklog);
+      provider.setFilter(kStageLearning);
       expect(notifyCount, 1);
     });
   });
@@ -141,16 +141,15 @@ void main() {
       expect(result!.id, isNotNull);
     });
 
-    test('sets backlogAt on the created piece regardless of input', () async {
+    test('sets learningAt on the created piece regardless of input', () async {
       final pieceWithoutTimestamp = Piece(
         name: 'Test',
         measures: 50,
         createdAt: DateTime(2020, 1, 1),
         updatedAt: DateTime(2020, 1, 1),
-        backlogAt: null,
       );
       final result = await provider.addPiece(pieceWithoutTimestamp);
-      expect(result!.backlogAt, isNotNull);
+      expect(result!.learningAt, isNotNull);
     });
 
     test('multiple pieces accumulate in the list', () async {
@@ -229,20 +228,20 @@ void main() {
 
   group('counts', () {
     test('totalCount reflects all pieces regardless of stage', () async {
-      await provider.addPiece(_piece(status: kStageBacklog));
+      await provider.addPiece(_piece(status: kStageLearning));
       await provider.addPiece(_piece(status: kStageRepertoire));
       expect(provider.totalCount, 2);
     });
 
     test('repertoireCount counts only repertoire-stage pieces', () async {
-      await provider.addPiece(_piece(status: kStageBacklog));
+      await provider.addPiece(_piece(status: kStageLearning));
       await provider.addPiece(_piece(status: kStageRepertoire));
       await provider.addPiece(_piece(status: kStageRepertoire));
       expect(provider.repertoireCount, 2);
     });
 
     test('repertoireCount is 0 when no pieces are in repertoire', () async {
-      await provider.addPiece(_piece(status: kStageBacklog));
+      await provider.addPiece(_piece(status: kStageLearning));
       expect(provider.repertoireCount, 0);
     });
   });
@@ -254,9 +253,9 @@ void main() {
       expect(provider.overallProgressPct, 0.0);
     });
 
-    test('returns 0 when all pieces are in backlog stage', () async {
-      await provider.addPiece(_piece(status: kStageBacklog));
-      await provider.addPiece(_piece(status: kStageBacklog));
+    test('returns 0 when all pieces are in learning stage', () async {
+      await provider.addPiece(_piece(status: kStageLearning));
+      await provider.addPiece(_piece(status: kStageLearning));
       expect(provider.overallProgressPct, 0.0);
     });
 
@@ -266,10 +265,10 @@ void main() {
       expect(provider.overallProgressPct, 100.0);
     });
 
-    test('returns 50 for one backlog and one repertoire piece', () async {
-      // backlog stageIndex=0, repertoire stageIndex=2
-      // total = 2, maxPossible = 2*2 = 4 → 2/4*100 = 50
-      await provider.addPiece(_piece(status: kStageBacklog));
+    test('returns 50 for one learning and one repertoire piece', () async {
+      // learning stageIndex=0, repertoire stageIndex=1
+      // total = 0+1 = 1, maxPossible = 2*1 = 2 → 1/2*100 = 50
+      await provider.addPiece(_piece(status: kStageLearning));
       await provider.addPiece(_piece(status: kStageRepertoire));
       expect(provider.overallProgressPct, 50.0);
     });
@@ -292,13 +291,12 @@ void main() {
     });
 
     test('counts correct number of pieces per stage', () async {
-      await provider.addPiece(_piece(status: kStageBacklog));
-      await provider.addPiece(_piece(status: kStageBacklog));
       await provider.addPiece(_piece(status: kStageLearning));
+      await provider.addPiece(_piece(status: kStageLearning));
+      await provider.addPiece(_piece(status: kStageRepertoire));
       final counts = provider.stageCounts;
-      expect(counts[kStageBacklog], 2);
-      expect(counts[kStageLearning], 1);
-      expect(counts[kStageRepertoire], 0);
+      expect(counts[kStageLearning], 2);
+      expect(counts[kStageRepertoire], 1);
     });
   });
 
@@ -330,20 +328,20 @@ void main() {
 
   group('advanceStage', () {
     test('advances piece to next stage', () async {
-      final added = await provider.addPiece(_piece(status: kStageBacklog));
+      final added = await provider.addPiece(_piece(status: kStageLearning));
       final result = await provider.advanceStage(added!);
       expect(result, isNotNull);
-      expect(result!.status, kStageLearning);
+      expect(result!.status, kStageRepertoire);
     });
 
     test('updates piece in the in-memory list', () async {
-      final added = await provider.addPiece(_piece(status: kStageBacklog));
+      final added = await provider.addPiece(_piece(status: kStageLearning));
       await provider.advanceStage(added!);
-      expect(provider.pieces.first.status, kStageLearning);
+      expect(provider.pieces.first.status, kStageRepertoire);
     });
 
     test('notifies listeners after advancing', () async {
-      final added = await provider.addPiece(_piece(status: kStageBacklog));
+      final added = await provider.addPiece(_piece(status: kStageLearning));
       int notifyCount = 0;
       provider.addListener(() => notifyCount++);
       await provider.advanceStage(added!);
@@ -357,9 +355,9 @@ void main() {
     });
 
     test('sets timestamp for the new stage', () async {
-      final added = await provider.addPiece(_piece(status: kStageBacklog));
+      final added = await provider.addPiece(_piece(status: kStageLearning));
       final result = await provider.advanceStage(added!);
-      expect(result!.timestampForStage(kStageLearning), isNotNull);
+      expect(result!.timestampForStage(kStageRepertoire), isNotNull);
     });
   });
 
@@ -367,40 +365,39 @@ void main() {
 
   group('setStage', () {
     test('sets piece to the specified stage', () async {
-      final added = await provider.addPiece(_piece(status: kStageBacklog));
+      final added = await provider.addPiece(_piece(status: kStageLearning));
       final result = await provider.setStage(added!, kStageRepertoire);
       expect(result!.status, kStageRepertoire);
     });
 
     test('updates piece in the in-memory list', () async {
-      final added = await provider.addPiece(_piece(status: kStageBacklog));
+      final added = await provider.addPiece(_piece(status: kStageLearning));
       await provider.setStage(added!, kStageRepertoire);
       expect(provider.pieces.first.status, kStageRepertoire);
     });
 
     test('notifies listeners', () async {
-      final added = await provider.addPiece(_piece(status: kStageBacklog));
+      final added = await provider.addPiece(_piece(status: kStageLearning));
       int notifyCount = 0;
       provider.addListener(() => notifyCount++);
-      await provider.setStage(added!, kStageLearning);
+      await provider.setStage(added!, kStageRepertoire);
       expect(notifyCount, greaterThan(0));
     });
 
-    test('can jump multiple stages forward', () async {
-      final added = await provider.addPiece(_piece(status: kStageBacklog));
+    test('sets stage to repertoire', () async {
+      final added = await provider.addPiece(_piece(status: kStageLearning));
       await provider.setStage(added!, kStageRepertoire);
       expect(provider.pieces.first.status, kStageRepertoire);
     });
 
     test('preserves first achievement timestamp on re-entry', () async {
-      final added = await provider.addPiece(_piece(status: kStageBacklog));
-      // First time reaching learning — timestamp is set
-      await provider.setStage(added!, kStageLearning);
+      final added = await provider.addPiece(_piece(status: kStageLearning));
+      // addPiece sets learningAt — capture it
       final first = provider.pieces.first.timestampForStage(kStageLearning);
       expect(first, isNotNull);
 
-      // Go back to backlog, then return to learning
-      await provider.setStage(provider.pieces.first, kStageBacklog);
+      // Advance to repertoire, then go back to learning
+      await provider.setStage(provider.pieces.first, kStageRepertoire);
       await provider.setStage(provider.pieces.first, kStageLearning);
       final second = provider.pieces.first.timestampForStage(kStageLearning);
       // Timestamp must be the original (write-once)
@@ -627,7 +624,7 @@ void main() {
     });
 
     test('returns milestone entries for pieces with stage timestamps', () async {
-      // addPiece always sets backlogAt, so one milestone entry is created
+      // addPiece always sets learningAt, so one milestone entry is created
       await provider.addPiece(_piece(name: 'Milestone Piece'));
       final milestones = await provider.recentMilestones;
       expect(milestones, isNotEmpty);

@@ -22,7 +22,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'repertoire.db');
     return await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _createDatabase,
       onUpgrade: _onUpgrade,
     );
@@ -39,10 +39,9 @@ class DatabaseHelper {
         current_tempo INTEGER,
         target_tempo INTEGER,
         notes TEXT,
-        status TEXT NOT NULL DEFAULT '$kStageBacklog',
+        status TEXT NOT NULL DEFAULT '$kStageLearning',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        backlog_at TEXT,
         learning_at TEXT,
         repertoire_at TEXT
       )
@@ -165,6 +164,12 @@ class DatabaseHelper {
         "UPDATE pieces SET status = 'learning' WHERE status IN ('note_perfection', 'dynamics_perfection', 'tempo_perfection')",
       );
       // 'repertoire' stays unchanged
+    }
+    if (oldVersion < 7) {
+      // Remove backlog stage: migrate all backlog pieces to learning
+      await db.execute(
+        "UPDATE pieces SET status = 'learning' WHERE status = 'backlog'",
+      );
     }
   }
 
@@ -299,11 +304,6 @@ class DatabaseHelper {
     );
 
     switch (newStatus) {
-      case kStageBacklog:
-        if (piece.backlogAt == null) {
-          updated = updated.copyWith(backlogAt: now);
-        }
-        break;
       case kStageLearning:
         if (piece.learningAt == null) {
           updated = updated.copyWith(learningAt: now);
@@ -418,26 +418,24 @@ class DatabaseHelper {
 
     final now = DateTime.now();
 
-    // 40 pieces spread across composers and 3 stages
+    // 40 pieces spread across composers and 2 stages
     final pieces = <Map<String, dynamic>>[
-      // ── Backlog (15 pieces) ───────────────────────────────────────────────
-      _seed(now, 'Moonlight Sonata', 'Beethoven', kStageBacklog, 200, ml: 24, ct: 48, tt: 96, daysAgo: 2),
-      _seed(now, 'Für Elise', 'Beethoven', kStageBacklog, 105, ml: 12, ct: 60, tt: 120, daysAgo: 5),
-      _seed(now, 'Clair de Lune', 'Debussy', kStageBacklog, 144, ml: 30, ct: 54, tt: 108, daysAgo: 1),
-      _seed(now, 'Gymnopédie No. 1', 'Satie', kStageBacklog, 88, ml: 8, ct: 50, tt: 76, daysAgo: 7),
-      _seed(now, 'Prelude in C Major', 'Bach', kStageBacklog, 35, ml: 10, ct: 72, tt: 120, daysAgo: 3),
-      _seed(now, 'Nocturne Op. 9 No. 2', 'Chopin', kStageBacklog, 132, ml: 20, ct: 60, tt: 132, daysAgo: 10),
-      _seed(now, 'Arabesque No. 1', 'Debussy', kStageBacklog, 68, ml: 15, ct: 80, tt: 144, daysAgo: 4),
-      _seed(now, 'Turkish March', 'Mozart', kStageBacklog, 96, ml: 32, ct: 100, tt: 160, daysAgo: 6),
-      _seed(now, 'Maple Leaf Rag', 'Joplin', kStageBacklog, 96, ml: 16, ct: 76, tt: 100, daysAgo: 8),
-      _seed(now, 'Rondo Alla Turca', 'Mozart', kStageBacklog, 160, ml: 40, ct: 88, tt: 168, daysAgo: 9),
-      _seed(now, 'Canon in D', 'Pachelbel', kStageBacklog, 56, ml: 14, ct: 66, tt: 88, daysAgo: 11),
-      _seed(now, 'River Flows in You', 'Yiruma', kStageBacklog, 76, ml: 20, ct: 72, tt: 96, daysAgo: 14),
-      _seed(now, 'Invention No. 4', 'Bach', kStageBacklog, 38, ml: 10, ct: 80, tt: 120, daysAgo: 16),
-      _seed(now, 'Prelude in E Minor', 'Chopin', kStageBacklog, 25, ml: 8, ct: 48, tt: 60, daysAgo: 18),
-      _seed(now, 'Minuet in D Minor', 'Bach', kStageBacklog, 24, ml: 6, ct: 80, tt: 108, daysAgo: 20),
-
-      // ── Learning (15 pieces) ──────────────────────────────────────────────
+      // ── Learning (30 pieces) ──────────────────────────────────────────────
+      _seed(now, 'Moonlight Sonata', 'Beethoven', kStageLearning, 200, ml: 24, ct: 48, tt: 96, daysAgo: 2),
+      _seed(now, 'Für Elise', 'Beethoven', kStageLearning, 105, ml: 12, ct: 60, tt: 120, daysAgo: 5),
+      _seed(now, 'Clair de Lune', 'Debussy', kStageLearning, 144, ml: 30, ct: 54, tt: 108, daysAgo: 1),
+      _seed(now, 'Gymnopédie No. 1', 'Satie', kStageLearning, 88, ml: 8, ct: 50, tt: 76, daysAgo: 7),
+      _seed(now, 'Prelude in C Major', 'Bach', kStageLearning, 35, ml: 10, ct: 72, tt: 120, daysAgo: 3),
+      _seed(now, 'Nocturne Op. 9 No. 2', 'Chopin', kStageLearning, 132, ml: 20, ct: 60, tt: 132, daysAgo: 10),
+      _seed(now, 'Arabesque No. 1', 'Debussy', kStageLearning, 68, ml: 15, ct: 80, tt: 144, daysAgo: 4),
+      _seed(now, 'Turkish March', 'Mozart', kStageLearning, 96, ml: 32, ct: 100, tt: 160, daysAgo: 6),
+      _seed(now, 'Maple Leaf Rag', 'Joplin', kStageLearning, 96, ml: 16, ct: 76, tt: 100, daysAgo: 8),
+      _seed(now, 'Rondo Alla Turca', 'Mozart', kStageLearning, 160, ml: 40, ct: 88, tt: 168, daysAgo: 9),
+      _seed(now, 'Canon in D', 'Pachelbel', kStageLearning, 56, ml: 14, ct: 66, tt: 88, daysAgo: 11),
+      _seed(now, 'River Flows in You', 'Yiruma', kStageLearning, 76, ml: 20, ct: 72, tt: 96, daysAgo: 14),
+      _seed(now, 'Invention No. 4', 'Bach', kStageLearning, 38, ml: 10, ct: 80, tt: 120, daysAgo: 16),
+      _seed(now, 'Prelude in E Minor', 'Chopin', kStageLearning, 25, ml: 8, ct: 48, tt: 60, daysAgo: 18),
+      _seed(now, 'Minuet in D Minor', 'Bach', kStageLearning, 24, ml: 6, ct: 80, tt: 108, daysAgo: 20),
       _seed(now, 'Ballade No. 1', 'Chopin', kStageLearning, 264, ml: 264, ct: 92, tt: 152, daysAgo: 25),
       _seed(now, 'Fantasie Impromptu', 'Chopin', kStageLearning, 188, ml: 188, ct: 108, tt: 176, daysAgo: 20),
       _seed(now, 'Sonata K. 331', 'Mozart', kStageLearning, 180, ml: 180, ct: 84, tt: 132, daysAgo: 22),
@@ -505,11 +503,8 @@ class DatabaseHelper {
     final created = now.subtract(Duration(days: daysAgo));
     final stageIndex = kStageOrder.indexOf(status);
 
-    final backlogAt = created.toIso8601String();
-    final learningAt = stageIndex >= 1
-        ? now.subtract(Duration(days: (daysAgo * 0.7).round())).toIso8601String()
-        : null;
-    final repertoireAt = stageIndex >= 2
+    final learningAt = created.toIso8601String();
+    final repertoireAt = stageIndex >= 1
         ? now.subtract(Duration(days: (daysAgo * 0.3).round())).toIso8601String()
         : null;
 
@@ -524,7 +519,6 @@ class DatabaseHelper {
       'status': status,
       'created_at': created.toIso8601String(),
       'updated_at': now.subtract(const Duration(days: 1)).toIso8601String(),
-      'backlog_at': backlogAt,
       'learning_at': learningAt,
       'repertoire_at': repertoireAt,
     };

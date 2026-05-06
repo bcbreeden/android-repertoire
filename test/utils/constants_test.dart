@@ -5,10 +5,6 @@ void main() {
   // ── nextStage ─────────────────────────────────────────────────────────────
 
   group('nextStage', () {
-    test('backlog → learning', () {
-      expect(nextStage(kStageBacklog), kStageLearning);
-    });
-
     test('learning → repertoire', () {
       expect(nextStage(kStageLearning), kStageRepertoire);
     });
@@ -33,10 +29,6 @@ void main() {
       expect(isLastStage(kStageRepertoire), isTrue);
     });
 
-    test('returns false for backlog', () {
-      expect(isLastStage(kStageBacklog), isFalse);
-    });
-
     test('returns false for learning', () {
       expect(isLastStage(kStageLearning), isFalse);
     });
@@ -49,16 +41,12 @@ void main() {
   // ── stageIndex ────────────────────────────────────────────────────────────
 
   group('stageIndex', () {
-    test('backlog is index 0', () {
-      expect(stageIndex(kStageBacklog), 0);
+    test('learning is index 0', () {
+      expect(stageIndex(kStageLearning), 0);
     });
 
-    test('learning is index 1', () {
-      expect(stageIndex(kStageLearning), 1);
-    });
-
-    test('repertoire is index 2', () {
-      expect(stageIndex(kStageRepertoire), 2);
+    test('repertoire is index 1', () {
+      expect(stageIndex(kStageRepertoire), 1);
     });
 
     test('invalid stage returns -1', () {
@@ -73,12 +61,12 @@ void main() {
   // ── kStageOrder integrity ─────────────────────────────────────────────────
 
   group('kStageOrder', () {
-    test('contains exactly 3 stages', () {
-      expect(kStageOrder.length, 3);
+    test('contains exactly 2 stages', () {
+      expect(kStageOrder.length, 2);
     });
 
     test('stages are in ascending progression order', () {
-      expect(kStageOrder.first, kStageBacklog);
+      expect(kStageOrder.first, kStageLearning);
       expect(kStageOrder.last, kStageRepertoire);
     });
   });

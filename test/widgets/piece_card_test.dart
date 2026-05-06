@@ -11,7 +11,7 @@ Piece _piece({
   String? composer = 'Beethoven',
   int? measuresLearned = 80,
   int? currentTempo = 72,
-  String status = kStageBacklog,
+  String status = kStageLearning,
 }) {
   final now = DateTime(2024, 6, 1, 12, 0);
   return Piece(
@@ -144,11 +144,6 @@ void main() {
   });
 
   group('PieceCard stage badge', () {
-    testWidgets('shows correct label for backlog stage', (tester) async {
-      await tester.pumpWidget(_build(piece: _piece(status: kStageBacklog), onTap: () {}));
-      expect(find.text('Backlog'), findsOneWidget);
-    });
-
     testWidgets('shows correct label for learning stage', (tester) async {
       await tester.pumpWidget(
         _build(piece: _piece(status: kStageLearning), onTap: () {}),
@@ -165,7 +160,7 @@ void main() {
     });
 
     testWidgets('does not show star icon for non-repertoire stage', (tester) async {
-      await tester.pumpWidget(_build(piece: _piece(status: kStageBacklog), onTap: () {}));
+      await tester.pumpWidget(_build(piece: _piece(status: kStageLearning), onTap: () {}));
       expect(find.byIcon(Icons.star), findsNothing);
     });
   });

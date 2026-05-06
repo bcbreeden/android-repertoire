@@ -49,7 +49,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
     _targetTempoController =
         TextEditingController(text: p?.targetTempo?.toString() ?? '');
     _notesController = TextEditingController(text: p?.notes ?? '');
-    _status = p?.status ?? kStageBacklog;
+    _status = p?.status ?? kStageLearning;
   }
 
   @override
@@ -120,7 +120,6 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
       status: _status,
       createdAt: widget.piece?.createdAt ?? now,
       updatedAt: now,
-      backlogAt: widget.piece?.backlogAt,
       learningAt: widget.piece?.learningAt,
       repertoireAt: widget.piece?.repertoireAt,
     );

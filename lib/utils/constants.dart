@@ -1,30 +1,25 @@
 import 'package:flutter/material.dart';
 
 // Stage identifiers
-const String kStageBacklog = 'backlog';
 const String kStageLearning = 'learning';
 const String kStageRepertoire = 'repertoire';
 
 const List<String> kStageOrder = [
-  kStageBacklog,
   kStageLearning,
   kStageRepertoire,
 ];
 
 const Map<String, String> kStageLabels = {
-  kStageBacklog: 'Backlog',
   kStageLearning: 'Learning',
   kStageRepertoire: 'Repertoire',
 };
 
 const Map<String, String> kStageDescriptions = {
-  kStageBacklog: 'Queued up and ready to learn',
   kStageLearning: 'Actively working on this piece',
   kStageRepertoire: 'Polished and performance ready',
 };
 
 const Map<String, Color> kStageColors = {
-  kStageBacklog: Color(0xFF6B7280),
   kStageLearning: Color(0xFF4CAF50),
   kStageRepertoire: Color(0xFFC9A227),
 };
@@ -40,12 +35,10 @@ const Color kTextSecondary = Color(0xFF9CA3AF);
 const Color kDividerColor = Color(0xFF2D3340);
 
 // Stage timestamp keys (database column names)
-const String kBacklogAt = 'backlog_at';
 const String kLearningAt = 'learning_at';
 const String kRepertoireAt = 'repertoire_at';
 
 const Map<String, String> kStageTimestampKeys = {
-  kStageBacklog: kBacklogAt,
   kStageLearning: kLearningAt,
   kStageRepertoire: kRepertoireAt,
 };

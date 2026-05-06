@@ -27,7 +27,7 @@ Piece _piece({
     measuresLearned: measuresLearned,
     currentTempo: currentTempo,
     targetTempo: targetTempo,
-    status: kStageBacklog,
+    status: kStageLearning,
     createdAt: now,
     updatedAt: now,
   );

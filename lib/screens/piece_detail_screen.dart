@@ -11,8 +11,6 @@ import 'piece_form_screen.dart';
 
 String _motivationalText(String status) {
   switch (status) {
-    case kStageBacklog:
-      return 'Ready to start!';
     case kStageLearning:
       return 'Keep practicing!';
     case kStageRepertoire:

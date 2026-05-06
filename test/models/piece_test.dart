@@ -13,8 +13,7 @@ Piece _piece({
   int? currentTempo,
   int? targetTempo,
   String? notes,
-  String status = kStageBacklog,
-  DateTime? backlogAt,
+  String status = kStageLearning,
   DateTime? learningAt,
   DateTime? repertoireAt,
 }) {
@@ -31,7 +30,6 @@ Piece _piece({
     status: status,
     createdAt: now,
     updatedAt: now,
-    backlogAt: backlogAt,
     learningAt: learningAt,
     repertoireAt: repertoireAt,
   );
@@ -120,28 +118,28 @@ void main() {
 
   group('Piece.daysAtStage', () {
     test('returns 0 when no timestamp is set for current status', () {
-      final p = _piece(status: kStageBacklog, backlogAt: null);
+      final p = _piece(status: kStageLearning, learningAt: null);
       expect(p.daysAtStage, 0);
     });
 
     test('returns 0 when timestamp is today', () {
       final today = DateTime.now();
-      final p = _piece(status: kStageBacklog, backlogAt: today);
+      final p = _piece(status: kStageLearning, learningAt: today);
       expect(p.daysAtStage, 0);
     });
 
     test('returns correct days for a past timestamp', () {
       final fiveDaysAgo = DateTime.now().subtract(const Duration(days: 5));
-      final p = _piece(status: kStageBacklog, backlogAt: fiveDaysAgo);
+      final p = _piece(status: kStageLearning, learningAt: fiveDaysAgo);
       expect(p.daysAtStage, 5);
     });
 
     test('uses timestamp for the correct current stage', () {
       final threeDaysAgo = DateTime.now().subtract(const Duration(days: 3));
       final p = _piece(
-        status: kStageLearning,
-        backlogAt: DateTime.now().subtract(const Duration(days: 30)),
-        learningAt: threeDaysAgo,
+        status: kStageRepertoire,
+        learningAt: DateTime.now().subtract(const Duration(days: 30)),
+        repertoireAt: threeDaysAgo,
       );
       expect(p.daysAtStage, 3);
     });
@@ -155,11 +153,6 @@ void main() {
       expect(p.isRepertoire, isTrue);
     });
 
-    test('false when status is backlog', () {
-      final p = _piece(status: kStageBacklog);
-      expect(p.isRepertoire, isFalse);
-    });
-
     test('false when status is learning', () {
       final p = _piece(status: kStageLearning);
       expect(p.isRepertoire, isFalse);
@@ -169,16 +162,12 @@ void main() {
   // ── stageIndex ────────────────────────────────────────────────────────────
 
   group('Piece.stageIndex', () {
-    test('returns 0 for backlog', () {
-      expect(_piece(status: kStageBacklog).stageIndex, 0);
+    test('returns 0 for learning', () {
+      expect(_piece(status: kStageLearning).stageIndex, 0);
     });
 
-    test('returns 1 for learning', () {
-      expect(_piece(status: kStageLearning).stageIndex, 1);
-    });
-
-    test('returns 2 for repertoire', () {
-      expect(_piece(status: kStageRepertoire).stageIndex, 2);
+    test('returns 1 for repertoire', () {
+      expect(_piece(status: kStageRepertoire).stageIndex, 1);
     });
 
     test('returns -1 for an unrecognised status', () {
@@ -190,11 +179,6 @@ void main() {
 
   group('Piece.timestampForStage', () {
     final ts = DateTime(2024, 1, 10);
-
-    test('returns backlogAt for backlog', () {
-      final p = _piece(backlogAt: ts);
-      expect(p.timestampForStage(kStageBacklog), ts);
-    });
 
     test('returns learningAt for learning', () {
       final p = _piece(learningAt: ts);
@@ -212,7 +196,7 @@ void main() {
     });
 
     test('returns null for an unrecognised stage', () {
-      final p = _piece(backlogAt: ts);
+      final p = _piece(learningAt: ts);
       expect(p.timestampForStage('unknown'), isNull);
     });
   });
@@ -299,7 +283,6 @@ void main() {
     test('nullable stage timestamps serialise to null when unset', () {
       final p = _piece();
       final map = p.toMap();
-      expect(map['backlog_at'], isNull);
       expect(map['learning_at'], isNull);
       expect(map['repertoire_at'], isNull);
     });
@@ -346,7 +329,7 @@ void main() {
       expect(result.currentTempo, isNull);
     });
 
-    test('defaults status to backlog when key is absent from map', () {
+    test('defaults status to learning when key is absent from map', () {
       final map = {
         'name': 'Test',
         'measures': 50,
@@ -354,7 +337,7 @@ void main() {
         'updated_at': DateTime(2024, 1, 1).toIso8601String(),
       };
       final p = Piece.fromMap(map);
-      expect(p.status, kStageBacklog);
+      expect(p.status, kStageLearning);
     });
 
     test('parses date strings from ISO-8601', () {

@@ -47,11 +47,10 @@ lib/
 ## Stage Pipeline
 
 Stages in order (defined in `kStageOrder`):
-1. `backlog` — Added but not yet being actively learned
-2. `learning` — Actively learning notes, measures, dynamics, tempo
-3. `repertoire` — Performance-ready ("Mastered")
+1. `learning` — Actively learning notes, measures, dynamics, tempo
+2. `repertoire` — Performance-ready ("Mastered")
 
-Stage constants: `kStageBacklog`, `kStageLearning`, `kStageRepertoire`.
+Stage constants: `kStageLearning`, `kStageRepertoire`.
 
 Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageIndex()`.
 
@@ -59,15 +58,16 @@ Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageInde
 
 - **DatabaseHelper is a singleton** (`DatabaseHelper.instance`). `_database` is reset to null on `close()`, allowing re-initialization. The `database` getter is public.
 - **Stage timestamps are write-once** — `advancePieceStage()` and `setPieceStage()` only set a stage timestamp if it is currently null. First-achievement time is preserved forever.
+- **No backlog stage**: The pipeline is just two stages — `learning` → `repertoire`. All new pieces start in `learning` with `learningAt` set to creation time.
 - **Free tier cap**: `canAddPiece` returns false if `!isPremium && pieces.length >= 3`. Premium status is stored in `SharedPreferences` under key `'is_premium'`.
 - **Piece sorting**: `filteredPieces` sorts by last practice date descending; pieces with no sessions sort to the end.
 - **Portrait-only**: `SystemChrome.setPreferredOrientations` enforces this at startup.
 - **Startup flow**: `SplashScreen` is the initial route. It parallel-loads both `PieceProvider.loadPieces()` and `ExerciseProvider.loadExercises()` via `Future.wait`, shows an animated progress bar, then crossfades to `MainScreen`. Neither `PiecesTab` nor `ExercisesTab` call load in `initState` — pull-to-refresh still works via explicit `onRefresh` callbacks.
 - **Exercises tab**: Middle tab (index 1) in a 3-tab layout (Songs=0, Exercises=1, Practice=2). Exercises have no stages — just a name, optional source (e.g. "Hanon"), and optional notes. Sessions record BPM, notes, and duration. The Play button on each `ExerciseCard` is always visible (unconditional). Session history lives in `ExerciseDetailScreen`, not in `PracticeTab`.
-- **DB schema v6**: Adds `backlog_at` column to `pieces`. Migration from v5: copies `learning_at` → `backlog_at`, clears `learning_at` for old `learning` pieces (which become `backlog`), maps `note_perfection`/`dynamics_perfection`/`tempo_perfection` → `learning`. Old timestamp columns remain in DB (unused, harmless).
+- **DB schema v7**: Removes backlog stage. Migration from v6: all `status='backlog'` rows become `status='learning'`. The `backlog_at` column remains in the DB (unused, harmless). Earlier migrations (v5→v6) added `backlog_at`; v6→v7 renders it defunct.
 - **FAB per tab**: Songs tab → Add Song (with long-press shortcut to Log Practice), Exercises tab → Add Exercise, Practice tab → Log Practice. Uses `Consumer2<PieceProvider, ExerciseProvider>`. Practice FAB hides only when BOTH providers have zero items.
 - **Dark gold theme**: `kGoldColor = #C9A227`, `kBackgroundColor = #111318`. All UI uses the centralized theme from `main.dart`.
-- **Debug seed button**: `Icons.science_outlined` FAB visible only in `kDebugMode`. Seeds 40 pieces across all 3 stages (15 Backlog, 15 Learning, 10 Repertoire) with realistic data and practice sessions.
+- **Debug seed button**: `Icons.science_outlined` FAB visible only in `kDebugMode`. Seeds 40 pieces across 2 stages (30 Learning, 10 Repertoire) with realistic data and practice sessions.
 - **Naming convention**: All user-facing UI strings use "song"/"songs" (e.g. "Add Song", "No songs yet"). Code identifiers, DB table names (`pieces`, `practice_sessions`), and widget keys (`Key('pieces_scroll')`) remain unchanged.
 - **Practice pill button**: `PieceCard` accepts an optional `onPractice` callback. When provided, a small "Practice" pill renders below the stage badge. Tapping it opens `LogPracticeSheet` pre-filled for that piece (name + composer shown, dropdown hidden). When `onPractice` is null the pill is absent and tapping the card navigates normally.
 - **Practice session deletion**: In `PracticeTab`, each `_SessionTile` is wrapped in a `Dismissible` (swipe left-to-right to reveal red delete background). `onDismissed` calls `PieceProvider.deletePracticeSession(id)`, which removes the session from `_practiceSessions`, refreshes `_lastPracticeDates` via DB, and notifies listeners. A "Session deleted" `SnackBar` confirms the action. The outer session-group `Container` uses `clipBehavior: Clip.hardEdge` to keep the red dismiss background within the rounded corners.
