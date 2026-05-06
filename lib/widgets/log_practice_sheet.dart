@@ -16,7 +16,8 @@ class LogPracticeSheet extends StatefulWidget {
   State<LogPracticeSheet> createState() => _LogPracticeSheetState();
 }
 
-class _LogPracticeSheetState extends State<LogPracticeSheet> {
+class _LogPracticeSheetState extends State<LogPracticeSheet>
+    with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _measuresController;
   late final TextEditingController _bpmController;
@@ -29,10 +30,13 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
   _TimerState _timerState = _TimerState.idle;
   Duration _elapsed = Duration.zero;
   Timer? _ticker;
+  DateTime? _startedAt;        // wall-clock time the current run segment began
+  Duration _accumulated = Duration.zero; // elapsed before current run segment
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _selectedPieceId = widget.pieceId;
     _measuresController = TextEditingController();
     _bpmController = TextEditingController();
@@ -56,7 +60,22 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        _timerState == _TimerState.running &&
+        _startedAt != null) {
+      // Snap elapsed to wall-clock time, correcting for sleep drift.
+      setState(() {
+        _elapsed = _accumulated + DateTime.now().difference(_startedAt!);
+        _accumulated = _elapsed;
+        _startedAt = DateTime.now();
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker?.cancel();
     _measuresController.dispose();
     _bpmController.dispose();
@@ -65,6 +84,8 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
   }
 
   void _startTimer() {
+    _accumulated = Duration.zero;
+    _startedAt = DateTime.now();
     setState(() {
       _timerState = _TimerState.running;
       _elapsed = Duration.zero;
@@ -77,10 +98,13 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
   void _pauseTimer() {
     _ticker?.cancel();
     _ticker = null;
+    _accumulated = _elapsed;
+    _startedAt = null;
     setState(() => _timerState = _TimerState.paused);
   }
 
   void _resumeTimer() {
+    _startedAt = DateTime.now();
     setState(() => _timerState = _TimerState.running);
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _elapsed += const Duration(seconds: 1));
@@ -90,6 +114,8 @@ class _LogPracticeSheetState extends State<LogPracticeSheet> {
   void _stopTimer() {
     _ticker?.cancel();
     _ticker = null;
+    _accumulated = _elapsed;
+    _startedAt = null;
     setState(() => _timerState = _TimerState.stopped);
   }
 

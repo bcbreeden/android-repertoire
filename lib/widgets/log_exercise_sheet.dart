@@ -18,7 +18,8 @@ class LogExerciseSheet extends StatefulWidget {
   State<LogExerciseSheet> createState() => _LogExerciseSheetState();
 }
 
-class _LogExerciseSheetState extends State<LogExerciseSheet> {
+class _LogExerciseSheetState extends State<LogExerciseSheet>
+    with WidgetsBindingObserver {
   late final TextEditingController _bpmController;
   late final TextEditingController _notesController;
   bool _isSaving = false;
@@ -26,16 +27,33 @@ class _LogExerciseSheetState extends State<LogExerciseSheet> {
   _TimerState _timerState = _TimerState.idle;
   Duration _elapsed = Duration.zero;
   Timer? _ticker;
+  DateTime? _startedAt;
+  Duration _accumulated = Duration.zero;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _bpmController = TextEditingController();
     _notesController = TextEditingController();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        _timerState == _TimerState.running &&
+        _startedAt != null) {
+      setState(() {
+        _elapsed = _accumulated + DateTime.now().difference(_startedAt!);
+        _accumulated = _elapsed;
+        _startedAt = DateTime.now();
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker?.cancel();
     _bpmController.dispose();
     _notesController.dispose();
@@ -43,6 +61,8 @@ class _LogExerciseSheetState extends State<LogExerciseSheet> {
   }
 
   void _startTimer() {
+    _accumulated = Duration.zero;
+    _startedAt = DateTime.now();
     setState(() {
       _timerState = _TimerState.running;
       _elapsed = Duration.zero;
@@ -55,10 +75,13 @@ class _LogExerciseSheetState extends State<LogExerciseSheet> {
   void _pauseTimer() {
     _ticker?.cancel();
     _ticker = null;
+    _accumulated = _elapsed;
+    _startedAt = null;
     setState(() => _timerState = _TimerState.paused);
   }
 
   void _resumeTimer() {
+    _startedAt = DateTime.now();
     setState(() => _timerState = _TimerState.running);
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _elapsed += const Duration(seconds: 1));
@@ -68,6 +91,8 @@ class _LogExerciseSheetState extends State<LogExerciseSheet> {
   void _stopTimer() {
     _ticker?.cancel();
     _ticker = null;
+    _accumulated = _elapsed;
+    _startedAt = null;
     setState(() => _timerState = _TimerState.stopped);
   }
 
