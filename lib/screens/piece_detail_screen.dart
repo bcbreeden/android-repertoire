@@ -155,7 +155,7 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: kCardColor,
         title: Text(
-          'Advance to $newStageLabel?',
+          'Promote to $newStageLabel?',
           style: const TextStyle(color: kTextPrimary),
         ),
         content: const Text(
@@ -542,7 +542,7 @@ class _StageActions extends StatelessWidget {
               onPressed: onAdvance,
               icon: const Icon(Icons.arrow_upward),
               label: Text(
-                'Advance to ${kStageLabels[nextStage(piece.status)] ?? 'Next Stage'}',
+                'Promote to ${kStageLabels[nextStage(piece.status)] ?? 'Next Stage'}',
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: stageColor,

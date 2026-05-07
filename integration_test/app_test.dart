@@ -45,9 +45,9 @@ Future<void> _openPiece(WidgetTester tester, String name) async {
 /// Taps the Advance button on the detail screen once and confirms the dialog.
 /// Handles the CelebrationScreen that appears when advancing to Repertoire.
 Future<void> _advanceOnce(WidgetTester tester) async {
-  await tester.ensureVisible(find.textContaining('Advance to').first);
+  await tester.ensureVisible(find.textContaining('Promote to').first);
   await tester.pumpAndSettle();
-  await tester.tap(find.textContaining('Advance to').first);
+  await tester.tap(find.textContaining('Promote to').first);
   await tester.pumpAndSettle();
   await tester.tap(find.text('Confirm'));
   // Pump with fixed durations instead of pumpAndSettle so that the Lottie
