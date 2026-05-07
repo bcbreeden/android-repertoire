@@ -196,6 +196,15 @@ void main() {
     test('deleting a non-existent id does not throw', () async {
       expect(() => DatabaseHelper.instance.deletePiece(999999), returnsNormally);
     });
+
+    test('cascade deletes practice sessions for the piece', () async {
+      final id = await DatabaseHelper.instance.insertPiece(_piece());
+      await DatabaseHelper.instance.insertPracticeSession(_session(id));
+      await DatabaseHelper.instance.insertPracticeSession(_session(id));
+      await DatabaseHelper.instance.deletePiece(id);
+      final sessions = await DatabaseHelper.instance.getAllPracticeSessions();
+      expect(sessions.where((s) => s.pieceId == id), isEmpty);
+    });
   });
 
   // ── advancePieceStage ─────────────────────────────────────────────────────

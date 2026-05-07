@@ -260,6 +260,7 @@ class DatabaseHelper {
   // Delete
   Future<int> deletePiece(int id) async {
     final db = await database;
+    await db.delete('practice_sessions', where: 'piece_id = ?', whereArgs: [id]);
     return await db.delete('pieces', where: 'id = ?', whereArgs: [id]);
   }
 

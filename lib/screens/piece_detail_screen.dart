@@ -226,6 +226,11 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
 
   Future<void> _confirmDelete(
       BuildContext context, Piece piece, PieceProvider provider) async {
+    final sessionCount =
+        provider.practiceSessions.where((s) => s.pieceId == piece.id).length;
+    final sessionWarning = sessionCount > 0
+        ? ' This will also delete $sessionCount practice ${sessionCount == 1 ? 'session' : 'sessions'}.'
+        : '';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -235,7 +240,7 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
           style: TextStyle(color: kTextPrimary),
         ),
         content: Text(
-          'Are you sure you want to delete "${piece.name}"? This cannot be undone.',
+          'Are you sure you want to delete "${piece.name}"?$sessionWarning This cannot be undone.',
           style: const TextStyle(color: kTextSecondary),
         ),
         actions: [

@@ -207,6 +207,15 @@ void main() {
       expect(provider.pieces.length, 1);
       expect(provider.pieces.first.name, 'Keep');
     });
+
+    test('also removes practice sessions for the deleted piece', () async {
+      final added = await provider.addPiece(_piece());
+      await provider.logPractice(added!.id!);
+      await provider.logPractice(added.id!);
+      expect(provider.practiceSessions.where((s) => s.pieceId == added.id), hasLength(2));
+      await provider.deletePiece(added.id!);
+      expect(provider.practiceSessions.where((s) => s.pieceId == added.id), isEmpty);
+    });
   });
 
   // ── getPieceById ──────────────────────────────────────────────────────────

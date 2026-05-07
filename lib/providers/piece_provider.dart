@@ -136,8 +136,10 @@ class PieceProvider extends ChangeNotifier {
 
   Future<bool> deletePiece(int id) async {
     try {
-      await _db.deletePiece(id);
+      await _db.deletePiece(id); // also deletes practice_sessions for this piece
       _pieces.removeWhere((p) => p.id == id);
+      _practiceSessions.removeWhere((s) => s.pieceId == id);
+      _lastPracticeDates.remove(id);
       notifyListeners();
       return true;
     } catch (e) {
