@@ -6,7 +6,6 @@ import '../models/practice_session.dart';
 import '../providers/exercise_provider.dart';
 import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
-import '../widgets/log_practice_sheet.dart';
 import 'exercise_detail_screen.dart';
 import 'practice_session_detail_screen.dart';
 
@@ -73,7 +72,6 @@ class _PracticeTabState extends State<PracticeTab>
           return _EmptyPractice(
             hasSongsOrExercises: pieceProvider.pieces.isNotEmpty ||
                 exerciseProvider.exercises.isNotEmpty,
-            onLog: () => _showLogSheet(context),
           );
         }
 
@@ -125,17 +123,6 @@ class _PracticeTabState extends State<PracticeTab>
     );
   }
 
-  void _showLogSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: kCardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => const LogPracticeSheet(),
-    );
-  }
 }
 
 // ── Summary card ──────────────────────────────────────────────────────────────
@@ -525,9 +512,7 @@ class _Chip extends StatelessWidget {
 
 class _EmptyPractice extends StatelessWidget {
   final bool hasSongsOrExercises;
-  final VoidCallback onLog;
-  const _EmptyPractice(
-      {required this.hasSongsOrExercises, required this.onLog});
+  const _EmptyPractice({required this.hasSongsOrExercises});
 
   @override
   Widget build(BuildContext context) {
@@ -558,20 +543,6 @@ class _EmptyPractice extends StatelessWidget {
               style: const TextStyle(color: kTextSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),
-            if (hasSongsOrExercises) ...[
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: onLog,
-                icon: const Icon(Icons.add),
-                label: const Text('Log Practice'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kGoldColor,
-                  foregroundColor: const Color(0xFF1A1200),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 12),
-                ),
-              ),
-            ],
           ],
         ),
       ),

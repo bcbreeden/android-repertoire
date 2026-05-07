@@ -129,7 +129,7 @@ class _MainScreenState extends State<MainScreen>
               backgroundColor: kGoldColor,
               foregroundColor: const Color(0xFF1A1200),
               tooltip: 'Log Practice',
-              child: const Icon(Icons.edit_note),
+              child: const Icon(Icons.add),
             );
           }
           // Songs tab
