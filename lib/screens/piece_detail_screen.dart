@@ -1,24 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/piece.dart';
 import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/log_practice_sheet.dart';
-import '../widgets/stage_progress_tracker.dart';
 import 'celebration_screen.dart';
 import 'piece_form_screen.dart';
-
-String _motivationalText(String status) {
-  switch (status) {
-    case kStageLearning:
-      return 'Keep practicing!';
-    case kStageRepertoire:
-      return 'In your repertoire!';
-    default:
-      return '';
-  }
-}
 
 class PieceDetailScreen extends StatefulWidget {
   final int pieceId;
@@ -102,34 +89,11 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
                 // Log Practice button
                 _LogPracticeButton(pieceId: piece.id!),
 
-                // Advance / Stage selector
+                // Promote button
                 _StageActions(
                   piece: piece,
                   stageColor: stageColor,
                   onAdvance: () => _advanceStage(context, piece, provider),
-                  onSetStage: (stage) =>
-                      _setStage(context, piece, provider, stage),
-                ),
-
-                // Stage progress tracker
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Stage Progress',
-                        style: TextStyle(
-                          color: kTextSecondary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      StageProgressTracker(piece: piece),
-                    ],
-                  ),
                 ),
 
                 // Notes
@@ -199,21 +163,6 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
           );
         }
       }
-    }
-  }
-
-  Future<void> _setStage(BuildContext context, Piece piece,
-      PieceProvider provider, String newStage) async {
-    if (piece.status == newStage) return;
-    final updated = await provider.setStage(piece, newStage);
-    if (updated != null && context.mounted) {
-      final label = kStageLabels[updated.status] ?? updated.status;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Stage set to $label'),
-          backgroundColor: kStageColors[updated.status] ?? kGoldColor,
-        ),
-      );
     }
   }
 
@@ -337,24 +286,6 @@ class _HeroHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${piece.daysAtStage} days at this stage',
-                    style: const TextStyle(color: kTextSecondary, fontSize: 13),
-                  ),
-                  Text(
-                    _motivationalText(piece.status),
-                    style: const TextStyle(
-                      color: kTextSecondary,
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -366,16 +297,6 @@ class _HeroHeader extends StatelessWidget {
                 '${piece.measures} measures',
                 style: const TextStyle(color: kTextSecondary, fontSize: 13),
               ),
-              ...[
-                const SizedBox(width: 16),
-                const Icon(Icons.calendar_today,
-                    size: 14, color: kTextSecondary),
-                const SizedBox(width: 4),
-                Text(
-                  'Added ${DateFormat('MMM d, yyyy').format(piece.createdAt)}',
-                  style: const TextStyle(color: kTextSecondary, fontSize: 13),
-                ),
-              ],
             ],
           ),
         ],
@@ -523,13 +444,11 @@ class _StageActions extends StatelessWidget {
   final Piece piece;
   final Color stageColor;
   final VoidCallback onAdvance;
-  final ValueChanged<String> onSetStage;
 
   const _StageActions({
     required this.piece,
     required this.stageColor,
     required this.onAdvance,
-    required this.onSetStage,
   });
 
   @override
@@ -586,61 +505,6 @@ class _StageActions extends StatelessWidget {
               ),
             ),
 
-          const SizedBox(height: 12),
-
-          // Manual stage selector
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: kCardColor,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: kDividerColor),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: piece.status,
-                isExpanded: true,
-                dropdownColor: kCardColor,
-                style: const TextStyle(color: kTextPrimary, fontSize: 14),
-                icon: const Icon(Icons.unfold_more, color: kTextSecondary),
-                hint: const Text(
-                  'Set stage manually',
-                  style: TextStyle(color: kTextSecondary),
-                ),
-                items: kStageOrder.map((stage) {
-                  final color = kStageColors[stage] ?? kGoldColor;
-                  return DropdownMenuItem(
-                    value: stage,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: color,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          kStageLabels[stage] ?? stage,
-                          style: TextStyle(
-                            color: piece.status == stage ? color : kTextPrimary,
-                            fontWeight: piece.status == stage
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (newStage) {
-                  if (newStage != null) onSetStage(newStage);
-                },
-              ),
-            ),
-          ),
         ],
       ),
     );
