@@ -63,13 +63,15 @@ Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageInde
 - **Piece sorting**: `filteredPieces` sorts by last practice date descending; pieces with no sessions sort to the end.
 - **Portrait-only**: `SystemChrome.setPreferredOrientations` enforces this at startup.
 - **Startup flow**: `SplashScreen` is the initial route. It parallel-loads both `PieceProvider.loadPieces()` and `ExerciseProvider.loadExercises()` via `Future.wait`, shows an animated progress bar, then crossfades to `MainScreen`. Neither `PiecesTab` nor `ExercisesTab` call load in `initState` — pull-to-refresh still works via explicit `onRefresh` callbacks.
+- **Bottom NavigationBar**: `MainScreen` uses a `NavigationBar` (Material 3, bottom) with `IndexedStack` instead of a top `TabBar` + `TabBarView`. All four tabs are always mounted (IndexedStack keeps them alive), so `AutomaticKeepAliveClientMixin` on tab screens is redundant but harmless. NavigationBar is themed with `kBackgroundColor`, gold indicator, and `WidgetStateProperty` for label/icon colors.
+- **Filter bar is horizontal scroll**: `_FilterBar` in `home_screen.dart` uses `SingleChildScrollView(scrollDirection: Axis.horizontal)` + `Row` instead of `Wrap`, so all filter chips stay on one row without wrapping.
 - **Exercises tab**: Middle tab (index 1) in a 3-tab layout (Songs=0, Exercises=1, Practice=2). Exercises have no stages — just a name, optional source (e.g. "Hanon"), and optional notes. Sessions record BPM, notes, and duration. The Play button on each `ExerciseCard` is always visible (unconditional). Session history lives in `ExerciseDetailScreen`, not in `PracticeTab`.
 - **DB schema v7**: Removes backlog stage. Migration from v6: all `status='backlog'` rows become `status='learning'`. The `backlog_at` column remains in the DB (unused, harmless). Earlier migrations (v5→v6) added `backlog_at`; v6→v7 renders it defunct.
 - **FAB per tab**: Songs tab → Add Song (with long-press shortcut to Log Practice), Exercises tab → Add Exercise, Practice tab → Log Practice. Uses `Consumer2<PieceProvider, ExerciseProvider>`. Practice FAB hides only when BOTH providers have zero items.
 - **Dark gold theme**: `kGoldColor = #C9A227`, `kBackgroundColor = #111318`. All UI uses the centralized theme from `main.dart`.
 - **Debug seed button**: `Icons.science_outlined` FAB visible only in `kDebugMode`. Seeds 40 pieces across 2 stages (30 Learning, 10 Repertoire) with realistic data and practice sessions.
 - **Naming convention**: All user-facing UI strings use "song"/"songs" (e.g. "Add Song", "No songs yet"). Code identifiers, DB table names (`pieces`, `practice_sessions`), and widget keys (`Key('pieces_scroll')`) remain unchanged.
-- **Practice pill button**: `PieceCard` accepts an optional `onPractice` callback. When provided, a small "Practice" pill renders below the stage badge. Tapping it opens `LogPracticeSheet` pre-filled for that piece (name + composer shown, dropdown hidden). When `onPractice` is null the pill is absent and tapping the card navigates normally.
+- **No practice pill on cards**: `PieceCard` has no `onPractice` callback. Tapping a card always navigates to the detail screen. Practice sessions are logged via the "Log Practice" button on the detail screen, or via the FAB (Songs tab long-press or Practice tab FAB).
 - **Practice session deletion**: In `PracticeTab`, each `_SessionTile` is wrapped in a `Dismissible` (swipe left-to-right to reveal red delete background). `onDismissed` calls `PieceProvider.deletePracticeSession(id)`, which removes the session from `_practiceSessions`, refreshes `_lastPracticeDates` via DB, and notifies listeners. A "Session deleted" `SnackBar` confirms the action. The outer session-group `Container` uses `clipBehavior: Clip.hardEdge` to keep the red dismiss background within the rounded corners.
 
 ## Development Workflow
@@ -123,7 +125,7 @@ Test files:
 - `test/utils/constants_test.dart` — nextStage, isLastStage, stageIndex, constant integrity
 - `test/database/database_helper_test.dart` — Full CRUD, stage advancement, streak, milestones
 - `test/providers/piece_provider_test.dart` — filteredPieces, overallProgressPct, canAddPiece, deletePracticeSession, etc.
-- `test/widgets/piece_card_test.dart` — PieceCard button visibility and tap-routing behaviour
+- `test/widgets/piece_card_test.dart` — PieceCard name/composer display, last practiced row, stage badge, tap routing
 - `test/widgets/log_practice_sheet_test.dart` — LogPracticeSheet timer controls, piece display (dropdown vs info row), prefill, Save button enabled state
 - `test/widgets/exercise_card_test.dart` — ExerciseCard name/source display, Play button always visible, tap routing
 - `test/providers/exercise_provider_test.dart` — ExerciseProvider CRUD, logSession, sorting by last session date
@@ -147,7 +149,7 @@ flutter test integration_test/app_test.dart -d <device-id>
 
 Key helpers in `app_test.dart`:
 - `_cardFinder(name)` — `find.byWidgetPredicate` matching `PieceCard.piece.name`. Uses `skipOffstage: false` so assertions work regardless of scroll position.
-- `_piecesScrollable` — `find.descendant` targeting the `Scrollable` inside the `CustomScrollView` keyed `'pieces_scroll'`. Pass this as the `scrollable:` argument to `scrollUntilVisible`.
+- `_piecesScrollable` — `find.descendant` targeting the **vertical** `Scrollable` inside the `CustomScrollView` keyed `'pieces_scroll'` (filters by `axisDirection == AxisDirection.down` to exclude the horizontal `Scrollable` inside the filter bar's `SingleChildScrollView`). Pass this as the `scrollable:` argument to `scrollUntilVisible`.
 - `_openPiece(tester, name)` — scrolls to a `PieceCard` by name using `_piecesScrollable` and taps it.
 - `_tapChip(tester, label)` — uses `skipOffstage: false` on the text finder and `ensureVisible` to handle chips that have scrolled off the top of the sliver.
 - `_advanceOnce(tester)` — taps "Advance to…", confirms, and dismisses any celebration screen.
@@ -159,7 +161,7 @@ Integration test pitfalls:
 - Scroll direction: `drag(Offset(0, negative))` = scroll DOWN; `drag(Offset(0, positive))` = scroll UP / back to top.
 - **Keyboard blocking bottom-sheet buttons**: After `enterText` inside a modal bottom sheet, the soft keyboard remains up and its hit-test layer blocks taps on buttons near the bottom of the sheet (e.g. "Save Session"). Always call `FocusManager.instance.primaryFocus?.unfocus(); await tester.pumpAndSettle();` before tapping such buttons.
 - **Practice tab empty-state text**: When both providers have zero items the text is "Nothing added yet"; when items exist but no sessions have been logged it is "No sessions yet". The old "No songs yet" string no longer exists.
-- **Tab navigation in tests**: Use `find.widgetWithText(Tab, 'Exercises')` (not `find.text('Exercises')`) to avoid ambiguity with exercise names rendered elsewhere on screen.
+- **Tab navigation in tests**: Use `find.widgetWithText(NavigationDestination, 'Exercises')` (not `find.text('Exercises')`) to avoid ambiguity with exercise names rendered elsewhere on screen. Same pattern for `'Practice'`.
 - **Exercise names in Practice tab assertions**: When asserting an exercise name appears in the Practice tab after navigating from the Exercises tab, use `findsAtLeastNWidgets(1)` — the Exercises tab card remains in-tree via `AutomaticKeepAliveClientMixin` and is NOT wrapped in `Offstage`, so `skipOffstage: true` does not filter it out.
 
 ## Dependencies

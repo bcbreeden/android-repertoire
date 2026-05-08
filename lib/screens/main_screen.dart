@@ -20,27 +20,13 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _MainScreenState extends State<MainScreen> {
+  int _currentIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(() => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  bool get _isSongsTab      => _tabController.index == 0;
-  bool get _isExercisesTab  => _tabController.index == 1;
-  bool get _isPracticeTab   => _tabController.index == 2;
-  bool get _isStatsTab      => _tabController.index == 3;
+  bool get _isSongsTab     => _currentIndex == 0;
+  bool get _isExercisesTab => _currentIndex == 1;
+  bool get _isPracticeTab  => _currentIndex == 2;
+  bool get _isStatsTab     => _currentIndex == 3;
 
   @override
   Widget build(BuildContext context) {
@@ -50,20 +36,14 @@ class _MainScreenState extends State<MainScreen>
         backgroundColor: kBackgroundColor,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: const Row(
-          children: [
-            Icon(Icons.piano, color: kGoldColor, size: 24),
-            SizedBox(width: 8),
-            Text(
-              'Repertoire',
-              style: TextStyle(
-                color: kTextPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ],
+        title: const Text(
+          'Repertoire',
+          style: TextStyle(
+            color: kTextPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+          ),
         ),
         actions: [
           if (kDebugMode)
@@ -80,31 +60,66 @@ class _MainScreenState extends State<MainScreen>
               },
             ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: kGoldColor,
-          indicatorWeight: 2,
-          labelColor: kGoldColor,
-          unselectedLabelColor: kTextSecondary,
-          labelStyle: const TextStyle(
-              fontSize: 14, fontWeight: FontWeight.w600),
-          unselectedLabelStyle: const TextStyle(fontSize: 14),
-          tabs: const [
-            Tab(text: 'Songs'),
-            Tab(text: 'Exercises'),
-            Tab(text: 'Practice'),
-            Tab(text: 'Stats'),
-          ],
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: IndexedStack(
+        index: _currentIndex,
         children: const [
           PiecesTab(),
           ExercisesTab(),
           PracticeTab(),
           StatsTab(),
         ],
+      ),
+      bottomNavigationBar: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          backgroundColor: kBackgroundColor,
+          indicatorColor: kGoldColor.withOpacity(0.18),
+          surfaceTintColor: Colors.transparent,
+          labelTextStyle: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const TextStyle(
+                color: kGoldColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              );
+            }
+            return const TextStyle(color: kTextSecondary, fontSize: 11);
+          }),
+          iconTheme: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const IconThemeData(color: kGoldColor, size: 22);
+            }
+            return const IconThemeData(color: kTextSecondary, size: 22);
+          }),
+        ),
+        child: NavigationBar(
+          surfaceTintColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (i) => setState(() => _currentIndex = i),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.library_music_outlined),
+              selectedIcon: Icon(Icons.library_music),
+              label: 'Songs',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.fitness_center_outlined),
+              selectedIcon: Icon(Icons.fitness_center),
+              label: 'Exercises',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.history_outlined),
+              selectedIcon: Icon(Icons.history),
+              label: 'Practice',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.bar_chart_outlined),
+              selectedIcon: Icon(Icons.bar_chart),
+              label: 'Stats',
+            ),
+          ],
+        ),
       ),
       floatingActionButton: Consumer2<PieceProvider, ExerciseProvider>(
         builder: (context, pieceProvider, exerciseProvider, _) {

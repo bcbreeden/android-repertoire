@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/piece_card.dart';
-import '../widgets/log_practice_sheet.dart';
 import 'piece_detail_screen.dart';
 
 class PiecesTab extends StatefulWidget {
@@ -85,17 +84,6 @@ class _PiecesTabState extends State<PiecesTab>
                               builder: (_) =>
                                   PieceDetailScreen(pieceId: piece.id!)),
                         ),
-                        onPractice: () => showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: kCardColor,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(20)),
-                          ),
-                          builder: (_) =>
-                              LogPracticeSheet(pieceId: piece.id),
-                        ),
                       );
                     },
                     childCount: provider.filteredPieces.length,
@@ -119,44 +107,50 @@ class _FilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final filters = ['all', ...kStageOrder];
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        children: filters.map((filter) {
-          final isSelected = provider.activeFilter == filter;
-          final color = filter == 'all'
-              ? kTextPrimary
-              : (kStageColors[filter] ?? kGoldColor);
-          final label =
-              filter == 'all' ? 'All' : (kStageLabels[filter] ?? filter);
-          final count = filter == 'all'
-              ? provider.totalCount
-              : (provider.stageCounts[filter] ?? 0);
-
-          return FilterChip(
-            selected: isSelected,
-            label: Text(
-              count > 0 ? '$label ($count)' : label,
-              style: TextStyle(
-                color: isSelected ? color : kTextSecondary,
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          for (int i = 0; i < filters.length; i++)
+            Padding(
+              padding: EdgeInsets.only(right: i < filters.length - 1 ? 6 : 0),
+              child: _buildChip(filters[i], provider),
             ),
-            onSelected: (_) => provider.setFilter(filter),
-            backgroundColor: kCardColor,
-            selectedColor: color.withOpacity(0.3),
-            checkmarkColor: color,
-            side: BorderSide(
-              color: isSelected ? color.withOpacity(0.5) : kDividerColor,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          );
-        }).toList(),
+        ],
       ),
+    );
+  }
+
+  FilterChip _buildChip(String filter, PieceProvider provider) {
+    final isSelected = provider.activeFilter == filter;
+    final color = filter == 'all'
+        ? kTextPrimary
+        : (kStageColors[filter] ?? kGoldColor);
+    final label = filter == 'all' ? 'All' : (kStageLabels[filter] ?? filter);
+    final count = filter == 'all'
+        ? provider.totalCount
+        : (provider.stageCounts[filter] ?? 0);
+
+    return FilterChip(
+      selected: isSelected,
+      label: Text(
+        count > 0 ? '$label ($count)' : label,
+        style: TextStyle(
+          color: isSelected ? color : kTextSecondary,
+          fontSize: 12,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        ),
+      ),
+      onSelected: (_) => provider.setFilter(filter),
+      backgroundColor: kCardColor,
+      selectedColor: color.withOpacity(0.3),
+      checkmarkColor: color,
+      side: BorderSide(
+        color: isSelected ? color.withOpacity(0.5) : kDividerColor,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }

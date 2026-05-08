@@ -10,11 +10,15 @@ import 'package:repertoire/widgets/piece_card.dart';
 /// Key on the main CustomScrollView in the Pieces tab.
 const _piecesScrollKey = Key('pieces_scroll');
 
-/// Finds the Scrollable inside the keyed CustomScrollView.
+/// Finds the vertical Scrollable inside the keyed CustomScrollView.
 /// scrollUntilVisible requires a Scrollable, not the CustomScrollView itself.
+/// Filters by axisDirection to exclude the horizontal Scrollable from the
+/// filter bar's SingleChildScrollView.
 Finder get _piecesScrollable => find.descendant(
       of: find.byKey(_piecesScrollKey),
-      matching: find.byType(Scrollable),
+      matching: find.byWidgetPredicate(
+        (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+      ),
     );
 
 /// Returns a Finder that matches a PieceCard whose piece.name equals [name].
@@ -551,12 +555,9 @@ void main() {
       await tester.tap(find.text('Add Song'));
       await tester.pumpAndSettle();
 
-      // Open the log sheet via the Practice pill on the card
-      final practiceBtn = find.descendant(
-        of: _cardFinder('Session Piece'),
-        matching: find.text('Practice'),
-      );
-      await tester.tap(practiceBtn);
+      // Open the log sheet via the piece detail screen
+      await _openPiece(tester, 'Session Piece');
+      await tester.tap(find.text('Log Practice'));
       await tester.pumpAndSettle();
 
       // Fill in measures learned
@@ -571,8 +572,10 @@ void main() {
       await tester.tap(find.text('Save Session'));
       await tester.pumpAndSettle();
 
-      // Switch to Practice tab (use Tab widget to avoid ambiguity with Practice pill)
-      await tester.tap(find.widgetWithText(Tab, 'Practice'));
+      // Back to songs list, then switch to Practice tab
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Practice'));
       await tester.pumpAndSettle();
 
       // Session appears — piece name is shown in the session tile
@@ -601,11 +604,8 @@ void main() {
       await tester.tap(find.text('Add Song'));
       await tester.pumpAndSettle();
 
-      final practiceBtn = find.descendant(
-        of: _cardFinder('Chip Test Piece'),
-        matching: find.text('Practice'),
-      );
-      await tester.tap(practiceBtn);
+      await _openPiece(tester, 'Chip Test Piece');
+      await tester.tap(find.text('Log Practice'));
       await tester.pumpAndSettle();
 
       // Enter 55 measures
@@ -619,8 +619,10 @@ void main() {
       await tester.tap(find.text('Save Session'));
       await tester.pumpAndSettle();
 
-      // Switch to Practice tab (use Tab widget to avoid ambiguity with Practice pill)
-      await tester.tap(find.widgetWithText(Tab, 'Practice'));
+      // Back to songs list, then switch to Practice tab
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Practice'));
       await tester.pumpAndSettle();
 
       // The measures chip should show "55 / 80 measures"
@@ -629,16 +631,16 @@ void main() {
   });
 
   // ── Practice button ───────────────────────────────────────────────────────
-  group('Practice button', () {
+  // ── Log practice via detail screen ───────────────────────────────────────
+  group('Log practice via detail screen', () {
     setUp(() async {
       await DatabaseHelper.instance.resetForTesting();
     });
 
-    testWidgets('tapping Practice on a card opens the sheet pre-filled for that piece', (tester) async {
+    testWidgets('opening detail screen Log Practice shows sheet pre-filled for that piece', (tester) async {
       app.main();
       await tester.pumpAndSettle();
 
-      // Add a piece with known measures and tempo so prefill is testable
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
 
@@ -647,49 +649,33 @@ void main() {
         return;
       }
 
-      await tester.enterText(find.byType(TextFormField).at(0), 'Practice Btn Piece');
+      await tester.enterText(find.byType(TextFormField).at(0), 'Detail Log Piece');
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField).at(1), 'Test Composer');
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField).at(2), '64');  // measures
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField).at(3), '120'); // target BPM
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField).at(4), '80');  // current BPM
+      await tester.enterText(find.byType(TextFormField).at(2), '64');
       await tester.pumpAndSettle();
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add Song'));
       await tester.pumpAndSettle();
 
-      // Practice button is visible on the card
-      final practiceBtn = find.descendant(
-        of: _cardFinder('Practice Btn Piece'),
-        matching: find.text('Practice'),
-      );
-      expect(practiceBtn, findsOneWidget);
-
-      // Tap it
-      await tester.tap(practiceBtn);
+      // Open detail screen and tap Log Practice
+      await _openPiece(tester, 'Detail Log Piece');
+      await tester.tap(find.text('Log Practice'));
       await tester.pumpAndSettle();
 
-      // Sheet opened
-      expect(find.text('Log Practice'), findsOneWidget);
+      // Sheet opened with piece pre-selected (no dropdown shown)
+      expect(find.text('Log Practice'), findsAtLeastNWidgets(1));
       expect(find.text('Save Session'), findsOneWidget);
-
-      // Piece picker dropdown is hidden — sheet was opened with a pre-selected piece
       expect(find.text('Select a song'), findsNothing);
 
-      // Piece name and composer are displayed in the sheet
-      // (findsAtLeastNWidgets because the name also appears in the card behind the sheet)
-      expect(find.text('Practice Btn Piece'), findsAtLeastNWidgets(1));
+      // Piece name and composer shown in the sheet
+      expect(find.text('Detail Log Piece'), findsAtLeastNWidgets(1));
       expect(find.text('Test Composer'), findsAtLeastNWidgets(1));
     });
 
-    testWidgets('Practice button absent when onPractice not wired — card tap still navigates', (tester) async {
-      // This test seeds data and verifies the Practice button appears on real
-      // cards rendered by the home screen (as opposed to the widget-level test
-      // that builds PieceCard in isolation).
+    testWidgets('tapping a card navigates to the detail screen', (tester) async {
       app.main();
       await tester.pumpAndSettle();
 
@@ -710,7 +696,6 @@ void main() {
       await tester.tap(find.text('Add Song'));
       await tester.pumpAndSettle();
 
-      // Tapping the card itself (not the Practice button) navigates to detail
       await tester.tap(_cardFinder('Nav Test Piece'));
       await tester.pumpAndSettle();
 
@@ -728,7 +713,7 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(Tab, 'Exercises'));
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Exercises'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byType(FloatingActionButton));
@@ -749,7 +734,7 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(Tab, 'Exercises'));
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Exercises'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byType(FloatingActionButton));
@@ -782,7 +767,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Add an exercise
-      await tester.tap(find.widgetWithText(Tab, 'Exercises'));
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Exercises'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byType(FloatingActionButton));
@@ -807,7 +792,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Navigate to Practice tab
-      await tester.tap(find.widgetWithText(Tab, 'Practice'));
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Practice'));
       await tester.pumpAndSettle();
 
       // Exercise session appears in Practice tab
@@ -845,12 +830,9 @@ void main() {
       await tester.tap(find.text('Add Song'));
       await tester.pumpAndSettle();
 
-      // Log a session via the Practice pill
-      final practiceBtn = find.descendant(
-        of: _cardFinder('Detail Test Piece'),
-        matching: find.text('Practice'),
-      );
-      await tester.tap(practiceBtn);
+      // Log a session via the detail screen
+      await _openPiece(tester, 'Detail Test Piece');
+      await tester.tap(find.text('Log Practice'));
       await tester.pumpAndSettle();
 
       FocusManager.instance.primaryFocus?.unfocus();
@@ -858,8 +840,10 @@ void main() {
       await tester.tap(find.text('Save Session'));
       await tester.pumpAndSettle();
 
-      // Navigate to Practice tab and tap the session tile
-      await tester.tap(find.widgetWithText(Tab, 'Practice'));
+      // Navigate back then to Practice tab
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Practice'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Detail Test Piece'));
@@ -890,11 +874,8 @@ void main() {
       await tester.tap(find.text('Add Song'));
       await tester.pumpAndSettle();
 
-      final practiceBtn = find.descendant(
-        of: _cardFinder('Delete Session Piece'),
-        matching: find.text('Practice'),
-      );
-      await tester.tap(practiceBtn);
+      await _openPiece(tester, 'Delete Session Piece');
+      await tester.tap(find.text('Log Practice'));
       await tester.pumpAndSettle();
 
       FocusManager.instance.primaryFocus?.unfocus();
@@ -902,7 +883,10 @@ void main() {
       await tester.tap(find.text('Save Session'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(Tab, 'Practice'));
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Practice'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Delete Session Piece'));
@@ -942,11 +926,8 @@ void main() {
       await tester.tap(find.text('Add Song'));
       await tester.pumpAndSettle();
 
-      final practiceBtn = find.descendant(
-        of: _cardFinder('Duration Edit Piece'),
-        matching: find.text('Practice'),
-      );
-      await tester.tap(practiceBtn);
+      await _openPiece(tester, 'Duration Edit Piece');
+      await tester.tap(find.text('Log Practice'));
       await tester.pumpAndSettle();
 
       FocusManager.instance.primaryFocus?.unfocus();
@@ -954,8 +935,11 @@ void main() {
       await tester.tap(find.text('Save Session'));
       await tester.pumpAndSettle();
 
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
       // Navigate to Practice tab and open the session
-      await tester.tap(find.widgetWithText(Tab, 'Practice'));
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Practice'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Duration Edit Piece'));
@@ -1025,17 +1009,17 @@ void main() {
       await tester.tap(find.text('Add Song'));
       await tester.pumpAndSettle();
 
-      // Log a session
-      final practiceBtn = find.descendant(
-        of: _cardFinder('Stats Test Piece'),
-        matching: find.text('Practice'),
-      );
-      await tester.tap(practiceBtn);
+      // Log a session via the detail screen
+      await _openPiece(tester, 'Stats Test Piece');
+      await tester.tap(find.text('Log Practice'));
       await tester.pumpAndSettle();
 
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
       await tester.tap(find.text('Save Session'));
+      await tester.pumpAndSettle();
+
+      await tester.pageBack();
       await tester.pumpAndSettle();
 
       // Navigate to Stats tab

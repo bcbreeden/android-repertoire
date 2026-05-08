@@ -30,7 +30,6 @@ Piece _piece({
 Widget _build({
   required Piece piece,
   required VoidCallback onTap,
-  VoidCallback? onPractice,
   DateTime? lastPracticed,
 }) =>
     MaterialApp(
@@ -38,7 +37,6 @@ Widget _build({
         body: PieceCard(
           piece: piece,
           onTap: onTap,
-          onPractice: onPractice,
           lastPracticed: lastPracticed,
         ),
       ),
@@ -47,36 +45,6 @@ Widget _build({
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 void main() {
-  group('PieceCard practice button visibility', () {
-    testWidgets('button is hidden when onPractice is null', (tester) async {
-      await tester.pumpWidget(_build(piece: _piece(), onTap: () {}));
-
-      expect(find.text('Practice'), findsNothing);
-      expect(find.byIcon(Icons.play_arrow), findsNothing);
-    });
-
-    testWidgets('button is shown when onPractice is provided', (tester) async {
-      await tester.pumpWidget(
-        _build(piece: _piece(), onTap: () {}, onPractice: () {}),
-      );
-
-      expect(find.text('Practice'), findsOneWidget);
-      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
-    });
-
-    testWidgets('button is shown for repertoire pieces', (tester) async {
-      await tester.pumpWidget(
-        _build(
-          piece: _piece(status: kStageRepertoire),
-          onTap: () {},
-          onPractice: () {},
-        ),
-      );
-
-      expect(find.text('Practice'), findsOneWidget);
-    });
-  });
-
   group('PieceCard name and composer display', () {
     testWidgets('always shows piece name', (tester) async {
       await tester.pumpWidget(_build(piece: _piece(name: 'La Campanella'), onTap: () {}));
@@ -165,56 +133,33 @@ void main() {
     });
   });
 
-  group('PieceCard practice button tap routing', () {
-    testWidgets('tapping Practice calls onPractice, not onTap', (tester) async {
+  group('PieceCard tap routing', () {
+    testWidgets('tapping piece title calls onTap', (tester) async {
       var tapCalled = false;
-      var practiceCalled = false;
 
       await tester.pumpWidget(_build(
         piece: _piece(),
         onTap: () => tapCalled = true,
-        onPractice: () => practiceCalled = true,
-      ));
-
-      await tester.tap(find.text('Practice'));
-      await tester.pump();
-
-      expect(practiceCalled, isTrue);
-      expect(tapCalled, isFalse);
-    });
-
-    testWidgets('tapping piece title calls onTap, not onPractice', (tester) async {
-      var tapCalled = false;
-      var practiceCalled = false;
-
-      await tester.pumpWidget(_build(
-        piece: _piece(),
-        onTap: () => tapCalled = true,
-        onPractice: () => practiceCalled = true,
       ));
 
       await tester.tap(find.text('Moonlight Sonata'));
       await tester.pump();
 
       expect(tapCalled, isTrue);
-      expect(practiceCalled, isFalse);
     });
 
-    testWidgets('tapping composer line calls onTap, not onPractice', (tester) async {
+    testWidgets('tapping composer line calls onTap', (tester) async {
       var tapCalled = false;
-      var practiceCalled = false;
 
       await tester.pumpWidget(_build(
         piece: _piece(composer: 'Beethoven'),
         onTap: () => tapCalled = true,
-        onPractice: () => practiceCalled = true,
       ));
 
       await tester.tap(find.text('Beethoven'));
       await tester.pump();
 
       expect(tapCalled, isTrue);
-      expect(practiceCalled, isFalse);
     });
   });
 }
