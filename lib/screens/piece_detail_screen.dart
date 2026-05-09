@@ -289,16 +289,17 @@ class _HeroHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              const Icon(Icons.piano, size: 14, color: kTextSecondary),
-              const SizedBox(width: 4),
-              Text(
-                '${piece.measures} measures',
-                style: const TextStyle(color: kTextSecondary, fontSize: 13),
-              ),
-            ],
-          ),
+          if (piece.measures != null)
+            Row(
+              children: [
+                const Icon(Icons.piano, size: 14, color: kTextSecondary),
+                const SizedBox(width: 4),
+                Text(
+                  '${piece.measures} measures',
+                  style: const TextStyle(color: kTextSecondary, fontSize: 13),
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -337,9 +338,13 @@ class _ProgressSection extends StatelessWidget {
           _ProgressBar(
             label: 'Measures Learned',
             value: piece.measuresLearnedPct / 100,
-            display: piece.measuresLearned != null
+            display: piece.measuresLearned != null && piece.measures != null
                 ? '${piece.measuresLearned} / ${piece.measures} (${piece.measuresLearnedPct.toStringAsFixed(0)}%)'
-                : '${piece.measures} total',
+                : piece.measuresLearned != null
+                    ? '${piece.measuresLearned} learned'
+                    : piece.measures != null
+                        ? '${piece.measures} total'
+                        : 'Not set',
             color: stageColor,
           ),
           const SizedBox(height: 12),

@@ -287,18 +287,20 @@ class _PracticeSessionDetailScreenState
               ),
             ),
             if (piece != null &&
-                (piece.measures > 0 || piece.targetTempo != null)) ...[
+                ((piece.measures != null && piece.measures! > 0) || piece.targetTempo != null)) ...[
               const SizedBox(height: 6),
               Row(
                 children: [
-                  const Icon(Icons.music_note,
-                      size: 13, color: kTextSecondary),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${piece.measures} measures total',
-                    style: const TextStyle(
-                        color: kTextSecondary, fontSize: 12),
-                  ),
+                  if (piece.measures != null) ...[
+                    const Icon(Icons.music_note,
+                        size: 13, color: kTextSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${piece.measures} measures total',
+                      style: const TextStyle(
+                          color: kTextSecondary, fontSize: 12),
+                    ),
+                  ],
                   if (piece.targetTempo != null) ...[
                     const SizedBox(width: 16),
                     const Icon(Icons.speed, size: 13, color: kTextSecondary),
@@ -325,7 +327,7 @@ class _PracticeSessionDetailScreenState
                       if (v == null || v.trim().isEmpty) return null;
                       final n = int.tryParse(v);
                       if (n == null) return 'Invalid';
-                      if (piece != null && n > piece.measures) {
+                      if (piece?.measures != null && n > piece!.measures!) {
                         return 'Max ${piece.measures}';
                       }
                       return null;

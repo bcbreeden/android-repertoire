@@ -41,7 +41,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
     _nameController = TextEditingController(text: p?.name ?? '');
     _composerController = TextEditingController(text: p?.composer ?? '');
     _measuresController =
-        TextEditingController(text: p?.measures.toString() ?? '');
+        TextEditingController(text: p?.measures?.toString() ?? '');
     _measuresLearnedController =
         TextEditingController(text: p?.measuresLearned?.toString() ?? '');
     _currentTempoController =
@@ -104,7 +104,9 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
       composer: _composerController.text.trim().isEmpty
           ? null
           : _composerController.text.trim(),
-      measures: int.parse(_measuresController.text),
+      measures: _measuresController.text.trim().isEmpty
+          ? null
+          : int.tryParse(_measuresController.text),
       measuresLearned: _measuresLearnedController.text.trim().isEmpty
           ? null
           : int.parse(_measuresLearnedController.text),
@@ -199,13 +201,10 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                 controller: _measuresController,
                 label: 'Total Measures',
                 hint: 'e.g. 64',
-                isRequired: true,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) {
-                    return 'Total measures is required';
-                  }
+                  if (v == null || v.trim().isEmpty) return null;
                   final n = int.tryParse(v);
                   if (n == null || n < 1) return 'Enter a valid number';
                   return null;
@@ -412,13 +411,10 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
               controller: _measuresController,
               label: 'Total Measures',
               hint: 'e.g. 64',
-              isRequired: true,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return 'Total measures is required';
-                }
+                if (v == null || v.trim().isEmpty) return null;
                 final n = int.tryParse(v);
                 if (n == null || n < 1) return 'Enter a valid number';
                 return null;

@@ -306,14 +306,16 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.music_note,
-                        size: 13, color: kTextSecondary),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${selectedPiece.measures} measures total',
-                      style: const TextStyle(
-                          color: kTextSecondary, fontSize: 12),
-                    ),
+                    if (selectedPiece.measures != null) ...[
+                      const Icon(Icons.music_note,
+                          size: 13, color: kTextSecondary),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${selectedPiece.measures} measures total',
+                        style: const TextStyle(
+                            color: kTextSecondary, fontSize: 12),
+                      ),
+                    ],
                     if (selectedPiece.targetTempo != null) ...[
                       const SizedBox(width: 16),
                       const Icon(Icons.speed, size: 13, color: kTextSecondary),
@@ -341,7 +343,7 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
                         if (v == null || v.trim().isEmpty) return null;
                         final n = int.tryParse(v);
                         if (n == null) return 'Invalid number';
-                        if (selectedPiece != null && n > selectedPiece.measures) {
+                        if (selectedPiece?.measures != null && n > selectedPiece!.measures!) {
                           return 'Max ${selectedPiece.measures}';
                         }
                         return null;

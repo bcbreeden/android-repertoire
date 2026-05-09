@@ -8,7 +8,7 @@ Piece _piece({
   int? id,
   String name = 'Test Piece',
   String? composer,
-  int measures = 100,
+  int? measures = 100,
   int? measuresLearned,
   int? currentTempo,
   int? targetTempo,
@@ -41,6 +41,11 @@ void main() {
   group('Piece.measuresLearnedPct', () {
     test('returns 0 when measuresLearned is null', () {
       final p = _piece(measures: 100, measuresLearned: null);
+      expect(p.measuresLearnedPct, 0.0);
+    });
+
+    test('returns 0 when measures is null', () {
+      final p = _piece(measures: null, measuresLearned: 50);
       expect(p.measuresLearnedPct, 0.0);
     });
 

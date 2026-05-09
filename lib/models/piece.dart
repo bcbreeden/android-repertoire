@@ -4,7 +4,7 @@ class Piece {
   final int? id;
   final String name;
   final String? composer;
-  final int measures;
+  final int? measures;
   final int? measuresLearned;
   final int? currentTempo;
   final int? targetTempo;
@@ -21,7 +21,7 @@ class Piece {
     this.id,
     required this.name,
     this.composer,
-    required this.measures,
+    this.measures,
     this.measuresLearned,
     this.currentTempo,
     this.targetTempo,
@@ -35,8 +35,10 @@ class Piece {
 
   // Computed properties
   double get measuresLearnedPct {
-    if (measuresLearned == null || measures == 0) return 0.0;
-    return (measuresLearned! / measures * 100).clamp(0.0, 100.0);
+    if (measuresLearned == null || measures == null || measures! == 0) {
+      return 0.0;
+    }
+    return (measuresLearned! / measures! * 100).clamp(0.0, 100.0);
   }
 
   double get tempoPct {
@@ -130,7 +132,7 @@ class Piece {
       id: map['id'] as int?,
       name: map['name'] as String,
       composer: map['composer'] as String?,
-      measures: map['measures'] as int,
+      measures: map['measures'] as int?,
       measuresLearned: map['measures_learned'] as int?,
       currentTempo: map['current_tempo'] as int?,
       targetTempo: map['target_tempo'] as int?,

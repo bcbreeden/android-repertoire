@@ -22,7 +22,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'repertoire.db');
     return await openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: _createDatabase,
       onUpgrade: _onUpgrade,
     );
@@ -34,7 +34,7 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         composer TEXT,
-        measures INTEGER NOT NULL,
+        measures INTEGER,
         measures_learned INTEGER,
         current_tempo INTEGER,
         target_tempo INTEGER,
@@ -170,6 +170,36 @@ class DatabaseHelper {
       await db.execute(
         "UPDATE pieces SET status = 'learning' WHERE status = 'backlog'",
       );
+    }
+    if (oldVersion < 8) {
+      // Remove NOT NULL constraint from measures via table recreation
+      await db.execute('''
+        CREATE TABLE pieces_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          composer TEXT,
+          measures INTEGER,
+          measures_learned INTEGER,
+          current_tempo INTEGER,
+          target_tempo INTEGER,
+          notes TEXT,
+          status TEXT NOT NULL DEFAULT '$kStageLearning',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          learning_at TEXT,
+          repertoire_at TEXT,
+          backlog_at TEXT
+        )
+      ''');
+      await db.execute('''
+        INSERT INTO pieces_new
+          SELECT id, name, composer, measures, measures_learned, current_tempo,
+                 target_tempo, notes, status, created_at, updated_at,
+                 learning_at, repertoire_at, backlog_at
+          FROM pieces
+      ''');
+      await db.execute('DROP TABLE pieces');
+      await db.execute('ALTER TABLE pieces_new RENAME TO pieces');
     }
   }
 
