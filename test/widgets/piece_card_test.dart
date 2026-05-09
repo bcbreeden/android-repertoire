@@ -73,12 +73,12 @@ void main() {
   });
 
   group('PieceCard last practiced row', () {
-    testWidgets('hidden when lastPracticed is null', (tester) async {
+    testWidgets('shows "Never practiced" with amber icon when null', (tester) async {
       await tester.pumpWidget(
         _build(piece: _piece(), onTap: () {}, lastPracticed: null),
       );
-      expect(find.byIcon(Icons.check_circle), findsNothing);
-      expect(find.byIcon(Icons.history), findsNothing);
+      expect(find.textContaining('Never practiced'), findsOneWidget);
+      expect(find.byIcon(Icons.schedule), findsOneWidget);
     });
 
     testWidgets('shows "Today" with check_circle icon', (tester) async {
@@ -99,14 +99,20 @@ void main() {
       expect(find.byIcon(Icons.history), findsOneWidget);
     });
 
-    testWidgets('shows formatted month/day for older dates', (tester) async {
-      // Use a fixed past date that is definitely not today or yesterday
+    testWidgets('shows amber schedule icon for dates 3+ days ago', (tester) async {
       final older = DateTime(2023, 3, 15, 10, 30);
       await tester.pumpWidget(
         _build(piece: _piece(), onTap: () {}, lastPracticed: older),
       );
-      // DateFormat('MMM d') → e.g. "Mar 15"
       expect(find.textContaining('Mar'), findsOneWidget);
+      expect(find.byIcon(Icons.schedule), findsOneWidget);
+    });
+
+    testWidgets('shows history icon for dates 1-2 days ago', (tester) async {
+      final twoDaysAgo = DateTime.now().subtract(const Duration(days: 2));
+      await tester.pumpWidget(
+        _build(piece: _piece(), onTap: () {}, lastPracticed: twoDaysAgo),
+      );
       expect(find.byIcon(Icons.history), findsOneWidget);
     });
   });

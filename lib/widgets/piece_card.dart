@@ -15,76 +15,100 @@ class PieceCard extends StatelessWidget {
     this.lastPracticed,
   });
 
+  bool get _needsPractice {
+    if (lastPracticed == null) return true;
+    return DateTime.now().difference(lastPracticed!).inDays >= 3;
+  }
+
   @override
   Widget build(BuildContext context) {
     final stageColor = kStageColors[piece.status] ?? kGoldColor;
     final isRepertoire = piece.isRepertoire;
+    final progress = (piece.measuresLearnedPct / 100).clamp(0.0, 1.0);
+    final needsPractice = _needsPractice;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: isRepertoire
-              ? const Color(0xFF1F1A0E)
-              : kCardColor,
+          color: isRepertoire ? const Color(0xFF1F1A0E) : kCardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isRepertoire ? kGoldColor.withOpacity(0.5) : kDividerColor,
             width: isRepertoire ? 1.5 : 1,
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: IntrinsicHeight(
+          child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (needsPractice)
+              Container(width: 3, color: Colors.amber),
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                        needsPractice ? 13 : 16, 16, 16, 12),
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          piece.name,
-                          style: TextStyle(
-                            color: isRepertoire ? kGoldLight : kTextPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                piece.name,
+                                style: TextStyle(
+                                  color: isRepertoire ? kGoldLight : kTextPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (piece.composer != null &&
+                                  piece.composer!.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  piece.composer!,
+                                  style: const TextStyle(
+                                    color: kTextSecondary,
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                              const SizedBox(height: 4),
+                              _LastPracticedRow(lastPracticed: lastPracticed),
+                            ],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                        if (piece.composer != null &&
-                            piece.composer!.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            piece.composer!,
-                            style: const TextStyle(
-                              color: kTextSecondary,
-                              fontSize: 13,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                        if (lastPracticed != null) ...[
-                          const SizedBox(height: 4),
-                          _LastPracticedRow(lastPracticed: lastPracticed!),
-                        ],
+                        const SizedBox(width: 12),
+                        _StageBadge(
+                          label: kStageLabels[piece.status] ?? piece.status,
+                          color: stageColor,
+                          isRepertoire: isRepertoire,
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  _StageBadge(
-                    label: kStageLabels[piece.status] ?? piece.status,
-                    color: stageColor,
-                    isRepertoire: isRepertoire,
+                  LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: kDividerColor,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      stageColor.withOpacity(0.55),
+                    ),
+                    minHeight: 3,
                   ),
                 ],
               ),
-            ],
+            ),
+          ],
           ),
         ),
       ),
@@ -93,22 +117,35 @@ class PieceCard extends StatelessWidget {
 }
 
 class _LastPracticedRow extends StatelessWidget {
-  final DateTime lastPracticed;
+  final DateTime? lastPracticed;
 
   const _LastPracticedRow({required this.lastPracticed});
 
   @override
   Widget build(BuildContext context) {
+    if (lastPracticed == null) {
+      return const Row(
+        children: [
+          Icon(Icons.schedule, size: 12, color: Colors.amber),
+          SizedBox(width: 4),
+          Text(
+            'Never practiced',
+            style: TextStyle(color: Colors.amber, fontSize: 11),
+          ),
+        ],
+      );
+    }
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
     final practiceDay = DateTime(
-      lastPracticed.year,
-      lastPracticed.month,
-      lastPracticed.day,
+      lastPracticed!.year,
+      lastPracticed!.month,
+      lastPracticed!.day,
     );
-
-    final timeStr = DateFormat('h:mm a').format(lastPracticed);
+    final daysDiff = today.difference(practiceDay).inDays;
+    final timeStr = DateFormat('h:mm a').format(lastPracticed!);
 
     String dateStr;
     Color iconColor;
@@ -122,8 +159,12 @@ class _LastPracticedRow extends StatelessWidget {
       dateStr = 'Yesterday, $timeStr';
       iconColor = kTextSecondary;
       icon = Icons.history;
+    } else if (daysDiff >= 3) {
+      dateStr = '${DateFormat('MMM d').format(lastPracticed!)}, $timeStr';
+      iconColor = Colors.amber;
+      icon = Icons.schedule;
     } else {
-      dateStr = '${DateFormat('MMM d').format(lastPracticed)}, $timeStr';
+      dateStr = '${DateFormat('MMM d').format(lastPracticed!)}, $timeStr';
       iconColor = kTextSecondary;
       icon = Icons.history;
     }
@@ -134,7 +175,10 @@ class _LastPracticedRow extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           dateStr,
-          style: const TextStyle(color: kTextSecondary, fontSize: 11),
+          style: TextStyle(
+            color: daysDiff >= 3 ? Colors.amber : kTextSecondary,
+            fontSize: 11,
+          ),
         ),
       ],
     );

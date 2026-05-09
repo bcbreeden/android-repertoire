@@ -36,14 +36,52 @@ class _MainScreenState extends State<MainScreen> {
         backgroundColor: kBackgroundColor,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'Repertoire',
-          style: TextStyle(
-            color: kTextPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.3,
-          ),
+        title: Consumer<PieceProvider>(
+          builder: (context, provider, _) {
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Repertoire',
+                  style: TextStyle(
+                    color: kTextPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                if (provider.streak > 0) ...[
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.deepOrange.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: Colors.deepOrange.withOpacity(0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.local_fire_department,
+                            color: Colors.deepOrange, size: 14),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${provider.streak}',
+                          style: const TextStyle(
+                            color: Colors.deepOrange,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
         ),
         actions: [
           if (kDebugMode)
