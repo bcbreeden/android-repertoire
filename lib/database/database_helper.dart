@@ -642,6 +642,45 @@ class DatabaseHelper {
     }
   }
 
+  // ── Export / Import ─────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> exportAllData() async {
+    final db = await database;
+    return {
+      'version': 1,
+      'exported_at': DateTime.now().toIso8601String(),
+      'pieces': await db.query('pieces'),
+      'practice_sessions': await db.query('practice_sessions'),
+      'exercises': await db.query('exercises'),
+      'exercise_sessions': await db.query('exercise_sessions'),
+    };
+  }
+
+  /// Replaces all data with the contents of [data]. Runs inside a transaction.
+  /// On success, both providers must call their respective load methods to
+  /// refresh in-memory state.
+  Future<void> importAllData(Map<String, dynamic> data) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete('exercise_sessions');
+      await txn.delete('practice_sessions');
+      await txn.delete('exercises');
+      await txn.delete('pieces');
+      for (final row in data['pieces'] as List) {
+        await txn.insert('pieces', Map<String, dynamic>.from(row as Map));
+      }
+      for (final row in data['practice_sessions'] as List) {
+        await txn.insert('practice_sessions', Map<String, dynamic>.from(row as Map));
+      }
+      for (final row in data['exercises'] as List) {
+        await txn.insert('exercises', Map<String, dynamic>.from(row as Map));
+      }
+      for (final row in data['exercise_sessions'] as List) {
+        await txn.insert('exercise_sessions', Map<String, dynamic>.from(row as Map));
+      }
+    });
+  }
+
   /// Deletes all rows from every table. Used by integration tests to guarantee
   /// a clean state before each test group without re-opening the database.
   Future<void> resetForTesting() async {

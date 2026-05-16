@@ -1,6 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import '../database/database_helper.dart';
 import '../models/practice_session.dart';
 import '../models/exercise_session.dart';
 import '../providers/exercise_provider.dart';
@@ -16,36 +23,42 @@ class StatsTab extends StatelessWidget {
       builder: (context, pieces, exercises, _) {
         final allSongSessions = pieces.practiceSessions;
         final allExSessions = exercises.sessions;
-
         final totalSeconds = _totalSeconds(allSongSessions, allExSessions);
         final streak = pieces.streak;
+        final isEmpty = pieces.totalCount == 0 &&
+            allSongSessions.isEmpty &&
+            allExSessions.isEmpty;
 
-        if (allSongSessions.isEmpty && allExSessions.isEmpty && pieces.totalCount == 0) {
-          return const _EmptyStats();
+        final dataCard = _DataCard(
+          pieceProvider: pieces,
+          exerciseProvider: exercises,
+        );
+
+        if (isEmpty) {
+          return Column(
+            children: [
+              const Expanded(child: _EmptyStats()),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                child: dataCard,
+              ),
+            ],
+          );
         }
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
             // ── Summary row ───────────────────────────────────────────────
-            _SummaryRow(
-              totalSeconds: totalSeconds,
-              streak: streak,
-            ),
+            _SummaryRow(totalSeconds: totalSeconds, streak: streak),
             const SizedBox(height: 16),
 
             // ── This week ─────────────────────────────────────────────────
-            _ThisWeekCard(
-              songSessions: allSongSessions,
-              exSessions: allExSessions,
-            ),
+            _ThisWeekCard(songSessions: allSongSessions, exSessions: allExSessions),
             const SizedBox(height: 16),
 
             // ── Last 7 days bar chart ──────────────────────────────────────
-            _Last7DaysCard(
-              songSessions: allSongSessions,
-              exSessions: allExSessions,
-            ),
+            _Last7DaysCard(songSessions: allSongSessions, exSessions: allExSessions),
             const SizedBox(height: 16),
 
             // ── Song progress ─────────────────────────────────────────────
@@ -60,11 +73,13 @@ class StatsTab extends StatelessWidget {
             ],
 
             // ── Most practiced ────────────────────────────────────────────
-            if (allSongSessions.isNotEmpty)
-              _MostPracticedCard(
-                sessions: allSongSessions,
-                pieces: pieces,
-              ),
+            if (allSongSessions.isNotEmpty) ...[
+              _MostPracticedCard(sessions: allSongSessions, pieces: pieces),
+              const SizedBox(height: 16),
+            ],
+
+            // ── Data management ───────────────────────────────────────────
+            dataCard,
           ],
         );
       },
@@ -697,6 +712,217 @@ class _InlineStatTile extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+// ── Data management card ───────────────────────────────────────────────────────
+
+class _DataCard extends StatefulWidget {
+  final PieceProvider pieceProvider;
+  final ExerciseProvider exerciseProvider;
+
+  const _DataCard({
+    required this.pieceProvider,
+    required this.exerciseProvider,
+  });
+
+  @override
+  State<_DataCard> createState() => _DataCardState();
+}
+
+class _DataCardState extends State<_DataCard> {
+  bool _isExporting = false;
+  bool _isImporting = false;
+
+  Future<void> _export() async {
+    setState(() => _isExporting = true);
+    try {
+      final data = await DatabaseHelper.instance.exportAllData();
+      final json = jsonEncode(data);
+      final dir = await getTemporaryDirectory();
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final file = File('${dir.path}/repertoire_backup_$timestamp.json');
+      await file.writeAsString(json);
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'Repertoire Backup',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
+  Future<void> _import() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+    if (result == null || result.files.isEmpty) return;
+    final path = result.files.single.path;
+    if (path == null) return;
+
+    Map<String, dynamic> data;
+    try {
+      final content = await File(path).readAsString();
+      data = jsonDecode(content) as Map<String, dynamic>;
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invalid file — could not read backup'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!_isValidBackup(data)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('File does not appear to be a Repertoire backup'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      return;
+    }
+
+    final pieceCount = (data['pieces'] as List).length;
+    final sessionCount = (data['practice_sessions'] as List).length;
+    final exerciseCount = (data['exercises'] as List).length;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: kCardColor,
+        title: const Text(
+          'Replace all data?',
+          style: TextStyle(color: kTextPrimary),
+        ),
+        content: Text(
+          'Your current data will be replaced with:\n\n'
+          '• $pieceCount ${pieceCount == 1 ? 'song' : 'songs'}\n'
+          '• $sessionCount practice ${sessionCount == 1 ? 'session' : 'sessions'}\n'
+          '• $exerciseCount ${exerciseCount == 1 ? 'exercise' : 'exercises'}\n\n'
+          'This cannot be undone.',
+          style: const TextStyle(color: kTextSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: kTextSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kGoldColor,
+              foregroundColor: const Color(0xFF1A1200),
+            ),
+            child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isImporting = true);
+    try {
+      await DatabaseHelper.instance.importAllData(data);
+      await Future.wait([
+        widget.pieceProvider.loadPieces(),
+        widget.exerciseProvider.loadExercises(),
+      ]);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Import complete'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Import failed: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isImporting = false);
+    }
+  }
+
+  bool _isValidBackup(Map<String, dynamic> data) {
+    return data['version'] is int &&
+        data['pieces'] is List &&
+        data['practice_sessions'] is List &&
+        data['exercises'] is List &&
+        data['exercise_sessions'] is List;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final busy = _isExporting || _isImporting;
+    return _Card(
+      label: 'DATA',
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: busy ? null : _export,
+              icon: _isExporting
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: kGoldColor),
+                    )
+                  : const Icon(Icons.upload_outlined, size: 16),
+              label: const Text('Export'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: kGoldColor,
+                side: const BorderSide(color: kGoldColor),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: busy ? null : _import,
+              icon: _isImporting
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: kTextSecondary),
+                    )
+                  : const Icon(Icons.download_outlined, size: 16),
+              label: const Text('Import'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: kTextSecondary,
+                side: const BorderSide(color: kDividerColor),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

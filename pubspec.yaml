@@ -17,6 +17,9 @@ dependencies:
   lottie: ^3.0.0
   in_app_purchase: ^3.2.0
   shared_preferences: ^2.3.0
+  share_plus: ^10.0.0
+  file_picker: ^8.0.0
+  path_provider: ^2.1.0
 
 dev_dependencies:
   flutter_test:

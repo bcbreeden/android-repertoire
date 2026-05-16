@@ -532,4 +532,130 @@ void main() {
       expect(map[kStageRepertoire], 1);
     });
   });
+
+  // ── exportAllData / importAllData ─────────────────────────────────────────
+
+  group('exportAllData', () {
+    setUp(() async => DatabaseHelper.instance.resetForTesting());
+
+    test('returns a map with all required keys', () async {
+      final data = await DatabaseHelper.instance.exportAllData();
+      expect(data['version'], 1);
+      expect(data['exported_at'], isA<String>());
+      expect(data['pieces'], isA<List>());
+      expect(data['practice_sessions'], isA<List>());
+      expect(data['exercises'], isA<List>());
+      expect(data['exercise_sessions'], isA<List>());
+    });
+
+    test('includes inserted pieces and sessions', () async {
+      final pieceId = await DatabaseHelper.instance.insertPiece(_piece(name: 'Nocturne'));
+      await DatabaseHelper.instance.insertPracticeSession(
+        PracticeSession(pieceId: pieceId, timestamp: DateTime(2024, 1, 1)),
+      );
+
+      final data = await DatabaseHelper.instance.exportAllData();
+      final pieces = data['pieces'] as List;
+      final sessions = data['practice_sessions'] as List;
+      expect(pieces.length, 1);
+      expect(pieces.first['name'], 'Nocturne');
+      expect(sessions.length, 1);
+    });
+
+    test('empty database exports empty lists', () async {
+      final data = await DatabaseHelper.instance.exportAllData();
+      expect((data['pieces'] as List), isEmpty);
+      expect((data['practice_sessions'] as List), isEmpty);
+      expect((data['exercises'] as List), isEmpty);
+      expect((data['exercise_sessions'] as List), isEmpty);
+    });
+  });
+
+  group('importAllData', () {
+    setUp(() async => DatabaseHelper.instance.resetForTesting());
+
+    test('replaces existing data with imported data', () async {
+      // Seed initial data
+      await DatabaseHelper.instance.insertPiece(_piece(name: 'Original'));
+      expect((await DatabaseHelper.instance.getAllPieces()).length, 1);
+
+      // Build an export-shaped map with different data
+      final importData = {
+        'version': 1,
+        'exported_at': DateTime.now().toIso8601String(),
+        'pieces': [
+          {
+            'id': 10,
+            'name': 'Imported Piece',
+            'composer': null,
+            'measures': 64,
+            'measures_learned': null,
+            'current_tempo': null,
+            'target_tempo': null,
+            'notes': null,
+            'status': kStageLearning,
+            'created_at': DateTime(2024, 1, 1).toIso8601String(),
+            'updated_at': DateTime(2024, 1, 1).toIso8601String(),
+            'learning_at': DateTime(2024, 1, 1).toIso8601String(),
+            'repertoire_at': null,
+            'backlog_at': null,
+          }
+        ],
+        'practice_sessions': [],
+        'exercises': [],
+        'exercise_sessions': [],
+      };
+
+      await DatabaseHelper.instance.importAllData(importData);
+
+      final pieces = await DatabaseHelper.instance.getAllPieces();
+      expect(pieces.length, 1);
+      expect(pieces.first.name, 'Imported Piece');
+      expect(pieces.first.id, 10);
+    });
+
+    test('import round-trip: export then reimport restores same data', () async {
+      final pieceId = await DatabaseHelper.instance.insertPiece(
+        _piece(name: 'Ballade', measures: 200, status: kStageRepertoire),
+      );
+      await DatabaseHelper.instance.insertPracticeSession(
+        PracticeSession(
+          pieceId: pieceId,
+          timestamp: DateTime(2024, 6, 1),
+          measuresLearned: 100,
+        ),
+      );
+
+      final exported = await DatabaseHelper.instance.exportAllData();
+      await DatabaseHelper.instance.resetForTesting();
+      expect((await DatabaseHelper.instance.getAllPieces()), isEmpty);
+
+      await DatabaseHelper.instance.importAllData(exported);
+
+      final pieces = await DatabaseHelper.instance.getAllPieces();
+      expect(pieces.length, 1);
+      expect(pieces.first.name, 'Ballade');
+      expect(pieces.first.status, kStageRepertoire);
+      expect(pieces.first.measures, 200);
+
+      final allSessions = await DatabaseHelper.instance.getAllPracticeSessions();
+      final sessions = allSessions.where((s) => s.pieceId == pieces.first.id).toList();
+      expect(sessions.length, 1);
+      expect(sessions.first.measuresLearned, 100);
+    });
+
+    test('import clears existing data before inserting', () async {
+      await DatabaseHelper.instance.insertPiece(_piece(name: 'To Be Replaced'));
+      final importData = {
+        'version': 1,
+        'exported_at': DateTime.now().toIso8601String(),
+        'pieces': [],
+        'practice_sessions': [],
+        'exercises': [],
+        'exercise_sessions': [],
+      };
+      await DatabaseHelper.instance.importAllData(importData);
+      expect((await DatabaseHelper.instance.getAllPieces()), isEmpty);
+    });
+  });
 }
