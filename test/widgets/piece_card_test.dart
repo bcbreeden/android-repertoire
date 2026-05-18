@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:repertoire/models/piece.dart';
+import 'package:repertoire/theme/app_colors.dart';
 import 'package:repertoire/utils/constants.dart';
 import 'package:repertoire/widgets/piece_card.dart';
 
@@ -33,6 +34,7 @@ Widget _build({
   DateTime? lastPracticed,
 }) =>
     MaterialApp(
+      theme: ThemeData(extensions: const [AppColors.dark]),
       home: Scaffold(
         body: PieceCard(
           piece: piece,

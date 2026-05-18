@@ -6,6 +6,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:repertoire/database/database_helper.dart';
 import 'package:repertoire/models/piece.dart';
 import 'package:repertoire/providers/piece_provider.dart';
+import 'package:repertoire/theme/app_colors.dart';
 import 'package:repertoire/utils/constants.dart';
 import 'package:repertoire/widgets/log_practice_sheet.dart';
 
@@ -37,6 +38,7 @@ Widget _buildSheet(PieceProvider provider, {int? pieceId}) =>
     ChangeNotifierProvider<PieceProvider>.value(
       value: provider,
       child: MaterialApp(
+        theme: ThemeData(extensions: const [AppColors.dark]),
         home: Scaffold(
           body: LogPracticeSheet(pieceId: pieceId),
         ),

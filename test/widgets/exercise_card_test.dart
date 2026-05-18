@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:repertoire/models/exercise.dart';
+import 'package:repertoire/theme/app_colors.dart';
 import 'package:repertoire/utils/constants.dart';
 import 'package:repertoire/widgets/exercise_card.dart';
 
@@ -22,6 +23,7 @@ Widget _buildCard(
   DateTime? lastPracticed,
 }) =>
     MaterialApp(
+      theme: ThemeData(extensions: const [AppColors.dark]),
       home: Scaffold(
         body: ExerciseCard(
           exercise: exercise,
