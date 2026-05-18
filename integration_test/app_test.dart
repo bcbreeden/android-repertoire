@@ -165,6 +165,11 @@ void main() {
     testWidgets('tapping a piece opens detail screen', (tester) async {
       app.main();
       await tester.pumpAndSettle();
+      // main() is async (awaits themeNotifier.load() before runApp), so
+      // pumpAndSettle alone may return before runApp fires. Extra pump ensures
+      // the splash screen completes and MainScreen is fully built.
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
 
       // Test Piece was created by 'can add a new piece' above and persists
       // because setUpAll only resets once for the whole group.
