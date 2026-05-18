@@ -8,7 +8,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/achievements.dart';
 import '../database/database_helper.dart';
 import '../models/practice_session.dart';
 import '../models/exercise_session.dart';
@@ -37,19 +36,19 @@ class StatsTab extends StatelessWidget {
         );
 
         if (isEmpty) {
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          return Column(
             children: [
-              const SizedBox(height: 48),
-              const _EmptyStats(),
-              const SizedBox(height: 24),
-              _AchievementsCard(
-                  pieceProvider: pieces, exerciseProvider: exercises),
-              const SizedBox(height: 16),
-              _ThisWeekCard(
-                  songSessions: allSongSessions, exSessions: allExSessions),
-              const SizedBox(height: 16),
-              dataCard,
+              const Expanded(child: _EmptyStats()),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: _ThisWeekCard(
+                    songSessions: allSongSessions,
+                    exSessions: allExSessions),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                child: dataCard,
+              ),
             ],
           );
         }
@@ -67,13 +66,6 @@ class StatsTab extends StatelessWidget {
 
             // ── Last 7 days bar chart ──────────────────────────────────────
             _Last7DaysCard(songSessions: allSongSessions, exSessions: allExSessions),
-            const SizedBox(height: 16),
-
-            // ── Achievements ──────────────────────────────────────────────
-            _AchievementsCard(
-              pieceProvider: pieces,
-              exerciseProvider: exercises,
-            ),
             const SizedBox(height: 16),
 
             // ── Song progress ─────────────────────────────────────────────
@@ -737,239 +729,6 @@ class _SongProgressCard extends StatelessWidget {
     return Expanded(
       flex: flex,
       child: Container(color: kStageColors[stage] ?? kGoldColor),
-    );
-  }
-}
-
-// ── Achievements card ──────────────────────────────────────────────────────────
-
-class _AchievementsCard extends StatefulWidget {
-  final PieceProvider pieceProvider;
-  final ExerciseProvider exerciseProvider;
-
-  const _AchievementsCard({
-    required this.pieceProvider,
-    required this.exerciseProvider,
-  });
-
-  @override
-  State<_AchievementsCard> createState() => _AchievementsCardState();
-}
-
-class _AchievementsCardState extends State<_AchievementsCard> {
-  Map<String, DateTime> _unlockedAt = {};
-  bool _loaded = false;
-  bool _checking = false;
-  String _lastSignature = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _init();
-  }
-
-  @override
-  void didUpdateWidget(_AchievementsCard old) {
-    super.didUpdateWidget(old);
-    final sig = _signature();
-    if (_loaded && sig != _lastSignature) {
-      _lastSignature = sig;
-      _checkNewUnlocks();
-    }
-  }
-
-  String _signature() =>
-      '${widget.pieceProvider.practiceSessions.length}'
-      '_${widget.exerciseProvider.sessions.length}'
-      '_${widget.pieceProvider.totalCount}'
-      '_${widget.pieceProvider.repertoireCount}'
-      '_${widget.pieceProvider.streak}';
-
-  Future<void> _init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final map = <String, DateTime>{};
-    for (final a in kAchievements) {
-      final ts = prefs.getString('achievement_${a.id}');
-      if (ts != null) map[a.id] = DateTime.parse(ts);
-    }
-    if (!mounted) return;
-    setState(() {
-      _unlockedAt = map;
-      _loaded = true;
-      _lastSignature = _signature();
-    });
-    await _checkNewUnlocks();
-  }
-
-  Future<void> _checkNewUnlocks() async {
-    if (!_loaded || _checking) return;
-    _checking = true;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      bool anyNew = false;
-      for (final a in kAchievements) {
-        if (!_unlockedAt.containsKey(a.id) &&
-            a.check(widget.pieceProvider, widget.exerciseProvider)) {
-          final now = DateTime.now();
-          await prefs.setString('achievement_${a.id}', now.toIso8601String());
-          _unlockedAt[a.id] = now;
-          anyNew = true;
-        }
-      }
-      if (!mounted || !anyNew) return;
-      setState(() {});
-    } finally {
-      _checking = false;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_loaded) return const SizedBox.shrink();
-    final unlockedCount =
-        kAchievements.where((a) => _unlockedAt.containsKey(a.id)).length;
-    return _Card(
-      label: 'ACHIEVEMENTS · $unlockedCount / ${kAchievements.length}',
-      child: GridView.count(
-        crossAxisCount: 4,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        childAspectRatio: 0.78,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 4,
-        children: kAchievements
-            .map((a) => _AchievementTile(
-                  achievement: a,
-                  unlockedAt: _unlockedAt[a.id],
-                ))
-            .toList(),
-      ),
-    );
-  }
-}
-
-class _AchievementTile extends StatelessWidget {
-  final Achievement achievement;
-  final DateTime? unlockedAt;
-
-  const _AchievementTile({required this.achievement, required this.unlockedAt});
-
-  @override
-  Widget build(BuildContext context) {
-    final unlocked = unlockedAt != null;
-
-    return GestureDetector(
-      onTap: () => _showDetail(context),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: unlocked
-                  ? achievement.color.withValues(alpha: 0.15)
-                  : kDividerColor,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: unlocked
-                    ? achievement.color.withValues(alpha: 0.4)
-                    : Colors.transparent,
-              ),
-            ),
-            child: Icon(
-              unlocked ? achievement.icon : Icons.lock_outline,
-              color: unlocked
-                  ? achievement.color
-                  : kTextSecondary.withValues(alpha: 0.35),
-              size: 20,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            unlocked ? achievement.name : achievement.name,
-            style: TextStyle(
-              color: unlocked
-                  ? kTextPrimary
-                  : kTextSecondary.withValues(alpha: 0.4),
-              fontSize: 9,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDetail(BuildContext context) {
-    final unlocked = unlockedAt != null;
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: kCardColor,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: unlocked
-                    ? achievement.color.withValues(alpha: 0.15)
-                    : kDividerColor,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: unlocked
-                      ? achievement.color.withValues(alpha: 0.4)
-                      : Colors.transparent,
-                ),
-              ),
-              child: Icon(
-                unlocked ? achievement.icon : Icons.lock_outline,
-                color: unlocked ? achievement.color : kTextSecondary,
-                size: 28,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              achievement.name,
-              style: TextStyle(
-                color: unlocked ? kTextPrimary : kTextSecondary,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              achievement.description,
-              style: const TextStyle(color: kTextSecondary, fontSize: 13),
-              textAlign: TextAlign.center,
-            ),
-            if (unlocked) ...[
-              const SizedBox(height: 10),
-              Text(
-                'Unlocked ${DateFormat('MMM d, yyyy').format(unlockedAt!)}',
-                style: TextStyle(
-                  color: achievement.color,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close',
-                style: TextStyle(color: kTextSecondary)),
-          ),
-        ],
-      ),
     );
   }
 }

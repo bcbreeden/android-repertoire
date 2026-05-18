@@ -982,10 +982,6 @@ void main() {
       await DatabaseHelper.instance.resetForTesting();
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('weekly_goal_hours');
-      // Clear all achievement unlock timestamps
-      for (final key in prefs.getKeys().where((k) => k.startsWith('achievement_')).toList()) {
-        await prefs.remove(key);
-      }
     });
 
     testWidgets('Stats tab shows empty state when no data', (tester) async {
@@ -1045,77 +1041,10 @@ void main() {
       expect(find.text('Total Time'), findsOneWidget);
       expect(find.text('Streak'), findsOneWidget);
 
-      // Section headers visible near the top of the stats ListView
+      // Section headers
       expect(find.text('THIS WEEK'), findsOneWidget);
       expect(find.text('LAST 7 DAYS · time'), findsOneWidget);
-      // MOST PRACTICED is below the achievements grid and may not be built yet
-      // by the ListView; asserting the key cards above is sufficient.
-    });
-
-    testWidgets('achievements card shows all locked initially', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Stats').last);
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('ACHIEVEMENTS'), findsOneWidget);
-      // All locked — only lock icons should be present (no filled achievement icons)
-      expect(find.byIcon(Icons.lock_outline), findsWidgets);
-    });
-
-    testWidgets('adding a song unlocks First Song achievement', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
-
-      if (find.text('Next').evaluate().isEmpty) {
-        markTestSkipped('Paywall active.');
-        return;
-      }
-
-      await tester.enterText(find.byType(TextFormField).at(0), 'Achievement Test Song');
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Add Song'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Stats').last);
-      await tester.pumpAndSettle();
-
-      // 'First Song' badge should now be unlocked (no lock icon for it)
-      expect(find.text('First Song'), findsOneWidget);
-      // At least one achievement unlocked — count label changes from '0 / 13'
-      expect(find.textContaining('/ 13'), findsOneWidget);
-      final countText = tester.widget<Text>(find.textContaining('/ 13'));
-      expect(countText.data, isNot('ACHIEVEMENTS · 0 / 13'));
-    });
-
-    testWidgets('tapping an achievement tile shows detail dialog', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Stats').last);
-      await tester.pumpAndSettle();
-
-      // Scroll until an achievement lock icon is visible then tap it
-      final lockFinder = find.byIcon(Icons.lock_outline).first;
-      await tester.ensureVisible(lockFinder);
-      await tester.pumpAndSettle();
-      await tester.tap(lockFinder);
-      await tester.pumpAndSettle();
-
-      // Dialog appears with Close button
-      expect(find.text('Close'), findsOneWidget);
-      await tester.tap(find.text('Close'));
-      await tester.pumpAndSettle();
+      expect(find.text('MOST PRACTICED'), findsOneWidget);
     });
 
     testWidgets('weekly goal can be set and cleared', (tester) async {
