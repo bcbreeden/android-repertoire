@@ -5,6 +5,7 @@ import '../models/exercise_session.dart';
 import '../models/practice_session.dart';
 import '../providers/exercise_provider.dart';
 import '../providers/piece_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 import 'exercise_detail_screen.dart';
 import 'practice_session_detail_screen.dart';
@@ -80,20 +81,20 @@ class _PracticeTabState extends State<PracticeTab>
 
         return RefreshIndicator(
           color: kGoldColor,
-          backgroundColor: kCardColor,
+          backgroundColor: context.colors.card,
           onRefresh: () async {
             await pieceProvider.loadPieces();
             await exerciseProvider.loadExercises();
           },
           child: CustomScrollView(
             slivers: [
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, 6),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
                   child: Text(
                     'Session History',
                     style: TextStyle(
-                      color: kTextSecondary,
+                      color: context.colors.textSecondary,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.5,
@@ -164,8 +165,8 @@ class _DayGroup extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
             dateLabel,
-            style: const TextStyle(
-              color: kTextSecondary,
+            style: TextStyle(
+              color: context.colors.textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.3,
@@ -175,9 +176,9 @@ class _DayGroup extends StatelessWidget {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: kCardColor,
+            color: context.colors.card,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: kDividerColor),
+            border: Border.all(color: context.colors.divider),
           ),
           child: Column(
             children: List.generate(entries.length, (i) {
@@ -185,9 +186,9 @@ class _DayGroup extends StatelessWidget {
               return Column(
                 children: [
                   if (i > 0)
-                    const Divider(
+                    Divider(
                         height: 1,
-                        color: kDividerColor,
+                        color: context.colors.divider,
                         indent: 16,
                         endIndent: 16),
                   if (entry.practiceSession != null)
@@ -254,7 +255,7 @@ class _SessionTile extends StatelessWidget {
     final pieceName = piece?.name ?? 'Unknown Song';
     final stageColor = piece != null
         ? (kStageColors[piece.status] ?? kGoldColor)
-        : kTextSecondary;
+        : context.colors.textSecondary;
     final timeStr = DateFormat('h:mm a').format(session.timestamp);
 
     return Padding(
@@ -280,8 +281,8 @@ class _SessionTile extends StatelessWidget {
                   children: [
                     Text(
                       pieceName,
-                      style: const TextStyle(
-                        color: kTextPrimary,
+                      style: TextStyle(
+                        color: context.colors.textPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -291,8 +292,8 @@ class _SessionTile extends StatelessWidget {
                     if (piece?.composer != null)
                       Text(
                         piece!.composer!,
-                        style: const TextStyle(
-                            color: kTextSecondary, fontSize: 12),
+                        style: TextStyle(
+                            color: context.colors.textSecondary, fontSize: 12),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -301,7 +302,7 @@ class _SessionTile extends StatelessWidget {
               ),
               Text(
                 timeStr,
-                style: const TextStyle(color: kTextSecondary, fontSize: 12),
+                style: TextStyle(color: context.colors.textSecondary, fontSize: 12),
               ),
             ],
           ),
@@ -342,8 +343,8 @@ class _SessionTile extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               session.notes!,
-              style: const TextStyle(
-                color: kTextSecondary,
+              style: TextStyle(
+                color: context.colors.textSecondary,
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
                 height: 1.4,
@@ -405,8 +406,8 @@ class _ExerciseTile extends StatelessWidget {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
-                        color: kTextPrimary,
+                      style: TextStyle(
+                        color: context.colors.textPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -417,23 +418,23 @@ class _ExerciseTile extends StatelessWidget {
                         exercise!.source!.isNotEmpty)
                       Text(
                         exercise.source!,
-                        style: const TextStyle(
-                            color: kTextSecondary, fontSize: 12),
+                        style: TextStyle(
+                            color: context.colors.textSecondary, fontSize: 12),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       )
                     else
-                      const Text(
+                      Text(
                         'Exercise',
                         style:
-                            TextStyle(color: kTextSecondary, fontSize: 12),
+                            TextStyle(color: context.colors.textSecondary, fontSize: 12),
                       ),
                   ],
                 ),
               ),
               Text(
                 timeStr,
-                style: const TextStyle(color: kTextSecondary, fontSize: 12),
+                style: TextStyle(color: context.colors.textSecondary, fontSize: 12),
               ),
             ],
           ),
@@ -462,8 +463,8 @@ class _ExerciseTile extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               session.notes!,
-              style: const TextStyle(
-                color: kTextSecondary,
+              style: TextStyle(
+                color: context.colors.textSecondary,
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
                 height: 1.4,
@@ -525,13 +526,13 @@ class _EmptyPractice extends StatelessWidget {
             Icon(
               hasSongsOrExercises ? Icons.edit_note : Icons.piano,
               size: 64,
-              color: kTextSecondary.withOpacity(0.4),
+              color: context.colors.textSecondary.withOpacity(0.4),
             ),
             const SizedBox(height: 16),
             Text(
               hasSongsOrExercises ? 'No sessions yet' : 'Nothing added yet',
-              style: const TextStyle(
-                  color: kTextPrimary,
+              style: TextStyle(
+                  color: context.colors.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w600),
             ),
@@ -540,7 +541,7 @@ class _EmptyPractice extends StatelessWidget {
               hasSongsOrExercises
                   ? 'Log a song or exercise session to start tracking your progress'
                   : 'Add songs or exercises before logging practice',
-              style: const TextStyle(color: kTextSecondary, fontSize: 14),
+              style: TextStyle(color: context.colors.textSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),
           ],

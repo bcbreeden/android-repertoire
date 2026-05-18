@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/exercise_provider.dart';
 import '../providers/piece_provider.dart';
+import '../providers/theme_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 import '../widgets/log_practice_sheet.dart';
 import '../widgets/paywall_sheet.dart';
@@ -30,10 +32,11 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: kBackgroundColor,
+      backgroundColor: colors.background,
       appBar: AppBar(
-        backgroundColor: kBackgroundColor,
+        backgroundColor: colors.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         title: Consumer<PieceProvider>(
@@ -41,10 +44,10 @@ class _MainScreenState extends State<MainScreen> {
             return Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   'Repertoire',
                   style: TextStyle(
-                    color: kTextPrimary,
+                    color: colors.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.3,
@@ -84,9 +87,19 @@ class _MainScreenState extends State<MainScreen> {
           },
         ),
         actions: [
+          Consumer<ThemeNotifier>(
+            builder: (context, theme, _) => IconButton(
+              icon: Icon(
+                theme.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                color: colors.textSecondary,
+              ),
+              tooltip: theme.isDark ? 'Switch to light mode' : 'Switch to dark mode',
+              onPressed: () => theme.toggle(),
+            ),
+          ),
           if (kDebugMode)
             IconButton(
-              icon: const Icon(Icons.science_outlined, color: kTextSecondary),
+              icon: Icon(Icons.science_outlined, color: colors.textSecondary),
               tooltip: 'Seed test data',
               onPressed: () async {
                 await context.read<PieceProvider>().seedTestData();
@@ -110,7 +123,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
-          backgroundColor: kBackgroundColor,
+          backgroundColor: colors.background,
           indicatorColor: kGoldColor.withOpacity(0.18),
           surfaceTintColor: Colors.transparent,
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -121,13 +134,13 @@ class _MainScreenState extends State<MainScreen> {
                 fontWeight: FontWeight.w600,
               );
             }
-            return const TextStyle(color: kTextSecondary, fontSize: 11);
+            return TextStyle(color: colors.textSecondary, fontSize: 11);
           }),
           iconTheme: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
               return const IconThemeData(color: kGoldColor, size: 22);
             }
-            return const IconThemeData(color: kTextSecondary, size: 22);
+            return IconThemeData(color: colors.textSecondary, size: 22);
           }),
         ),
         child: NavigationBar(
@@ -207,7 +220,7 @@ class _MainScreenState extends State<MainScreen> {
       await showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        backgroundColor: kCardColor,
+        backgroundColor: context.colors.card,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
@@ -232,7 +245,7 @@ class _MainScreenState extends State<MainScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: kCardColor,
+      backgroundColor: context.colors.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

@@ -1042,7 +1042,7 @@ void main() {
       expect(find.text('Streak'), findsOneWidget);
 
       // Section headers
-      expect(find.text('THIS WEEK'), findsOneWidget);
+      expect(find.text('LAST 7 DAYS'), findsOneWidget);
       expect(find.text('LAST 7 DAYS · time'), findsOneWidget);
       expect(find.text('MOST PRACTICED'), findsOneWidget);
     });
@@ -1051,7 +1051,7 @@ void main() {
       app.main();
       await tester.pumpAndSettle();
 
-      // Add a song so the non-empty stats path renders, putting THIS WEEK near top
+      // Add a song so the non-empty stats path renders, putting LAST 7 DAYS near top
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
 
@@ -1087,7 +1087,7 @@ void main() {
 
       // Goal is now set — filled flag icon
       expect(find.byIcon(Icons.flag), findsOneWidget);
-      expect(find.textContaining('goal this week'), findsOneWidget);
+      expect(find.textContaining('of '), findsOneWidget);
 
       // Open dialog again and clear the goal
       await tester.tap(find.byIcon(Icons.flag));
@@ -1099,7 +1099,36 @@ void main() {
 
       // Goal cleared — back to outlined flag, no progress label
       expect(find.byIcon(Icons.flag_outlined), findsOneWidget);
-      expect(find.textContaining('goal this week'), findsNothing);
+      expect(find.textContaining('of '), findsNothing);
+    });
+  });
+
+  group('Theme toggle', () {
+    setUp(() async {
+      await DatabaseHelper.instance.resetForTesting();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('is_dark_mode');
+    });
+
+    testWidgets('Toggle switches between dark and light mode', (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      // Default is dark — light_mode icon visible (tapping switches to light)
+      expect(find.byIcon(Icons.light_mode_outlined), findsOneWidget);
+
+      // Tap the toggle
+      await tester.tap(find.byIcon(Icons.light_mode_outlined));
+      await tester.pumpAndSettle();
+
+      // Now in light mode — dark_mode icon visible
+      expect(find.byIcon(Icons.dark_mode_outlined), findsOneWidget);
+
+      // Tap again to return to dark
+      await tester.tap(find.byIcon(Icons.dark_mode_outlined));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.light_mode_outlined), findsOneWidget);
     });
   });
 }

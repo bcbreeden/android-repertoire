@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'providers/exercise_provider.dart';
 import 'providers/piece_provider.dart';
-import 'screens/main_screen.dart';
+import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
+import 'theme/app_colors.dart';
 import 'utils/constants.dart';
 
 void main() async {
@@ -13,72 +14,110 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: kBackgroundColor,
-    systemNavigationBarIconBrightness: Brightness.light,
-  ));
-  runApp(const RepertoireApp());
+
+  final themeNotifier = ThemeNotifier();
+  await themeNotifier.load();
+
+  runApp(RepertoireApp(themeNotifier: themeNotifier));
 }
 
 class RepertoireApp extends StatelessWidget {
-  const RepertoireApp({super.key});
+  final ThemeNotifier themeNotifier;
+  const RepertoireApp({super.key, required this.themeNotifier});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: themeNotifier),
         ChangeNotifierProvider(create: (_) => PieceProvider()),
         ChangeNotifierProvider(create: (_) => ExerciseProvider()),
       ],
-      child: MaterialApp(
-        title: 'Repertoire',
-        debugShowCheckedModeBanner: false,
-        theme: _buildTheme(),
-        home: const SplashScreen(),
+      child: Consumer<ThemeNotifier>(
+        builder: (context, theme, _) {
+          final isDark = theme.isDark;
+          SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness:
+                isDark ? Brightness.light : Brightness.dark,
+            systemNavigationBarColor: isDark
+                ? AppColors.dark.background
+                : AppColors.light.background,
+            systemNavigationBarIconBrightness:
+                isDark ? Brightness.light : Brightness.dark,
+          ));
+          return MaterialApp(
+            title: 'Repertoire',
+            debugShowCheckedModeBanner: false,
+            themeMode: theme.mode,
+            theme: _buildLightTheme(),
+            darkTheme: _buildDarkTheme(),
+            home: const SplashScreen(),
+          );
+        },
       ),
     );
   }
 
-  ThemeData _buildTheme() {
+  ThemeData _buildDarkTheme() {
+    const colors = AppColors.dark;
     const colorScheme = ColorScheme.dark(
       primary: kGoldColor,
       onPrimary: Color(0xFF1A1200),
       secondary: kGoldColor,
       onSecondary: Color(0xFF1A1200),
-      surface: kSurfaceColor,
-      onSurface: kTextPrimary,
+      surface: Color(0xFF1E2128),
+      onSurface: Color(0xFFE8EAF0),
       error: Colors.redAccent,
       onError: Colors.white,
-      outline: kDividerColor,
+      outline: Color(0xFF2D3340),
     );
+    return _buildThemeData(colorScheme, colors);
+  }
 
+  ThemeData _buildLightTheme() {
+    const colors = AppColors.light;
+    const colorScheme = ColorScheme.light(
+      primary: kGoldColor,
+      onPrimary: Color(0xFF1A1200),
+      secondary: kGoldColor,
+      onSecondary: Color(0xFF1A1200),
+      surface: Color(0xFFFFFFFF),
+      onSurface: Color(0xFF1A1D2E),
+      error: Colors.red,
+      onError: Colors.white,
+      outline: Color(0xFFE5E7EB),
+    );
+    return _buildThemeData(colorScheme, colors);
+  }
+
+  ThemeData _buildThemeData(ColorScheme colorScheme, AppColors colors) {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: kBackgroundColor,
+      scaffoldBackgroundColor: colors.background,
       fontFamily: 'Roboto',
+      extensions: [colors],
 
-      appBarTheme: const AppBarTheme(
-        backgroundColor: kBackgroundColor,
-        foregroundColor: kTextPrimary,
+      appBarTheme: AppBarTheme(
+        backgroundColor: colors.background,
+        foregroundColor: colors.textPrimary,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          color: kTextPrimary,
+          color: colors.textPrimary,
           fontSize: 20,
           fontWeight: FontWeight.w700,
         ),
-        iconTheme: IconThemeData(color: kTextPrimary),
+        iconTheme: IconThemeData(color: colors.textPrimary),
       ),
 
-      cardTheme: const CardThemeData(
-        color: kCardColor,
+      cardTheme: CardThemeData(
+        color: colors.card,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12)),
-          side: BorderSide(color: kDividerColor),
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
+          side: BorderSide(color: colors.divider),
         ),
       ),
 
@@ -98,52 +137,52 @@ class RepertoireApp extends StatelessWidget {
 
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: kCardColor,
+        fillColor: colors.card,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: kDividerColor),
+          borderSide: BorderSide(color: colors.divider),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: kDividerColor),
+          borderSide: BorderSide(color: colors.divider),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: kGoldColor, width: 1.5),
         ),
-        labelStyle: const TextStyle(color: kTextSecondary),
-        hintStyle: TextStyle(color: kTextSecondary.withOpacity(0.5)),
+        labelStyle: TextStyle(color: colors.textSecondary),
+        hintStyle: TextStyle(color: colors.textSecondary.withOpacity(0.5)),
       ),
 
-      dividerTheme: const DividerThemeData(
-        color: kDividerColor,
+      dividerTheme: DividerThemeData(
+        color: colors.divider,
         space: 1,
       ),
 
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: kCardColor,
-        contentTextStyle: const TextStyle(color: kTextPrimary),
+        backgroundColor: colors.card,
+        contentTextStyle: TextStyle(color: colors.textPrimary),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
         behavior: SnackBarBehavior.floating,
       ),
 
-      dialogTheme: const DialogThemeData(
-        backgroundColor: kCardColor,
+      dialogTheme: DialogThemeData(
+        backgroundColor: colors.card,
         titleTextStyle: TextStyle(
-          color: kTextPrimary,
+          color: colors.textPrimary,
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
-        contentTextStyle: TextStyle(color: kTextSecondary, fontSize: 14),
+        contentTextStyle: TextStyle(color: colors.textSecondary, fontSize: 14),
       ),
 
       chipTheme: ChipThemeData(
-        backgroundColor: kCardColor,
+        backgroundColor: colors.card,
         selectedColor: kGoldColor.withOpacity(0.15),
-        labelStyle: const TextStyle(color: kTextSecondary, fontSize: 12),
-        side: const BorderSide(color: kDividerColor),
+        labelStyle: TextStyle(color: colors.textSecondary, fontSize: 12),
+        side: BorderSide(color: colors.divider),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -155,14 +194,14 @@ class RepertoireApp extends StatelessWidget {
         foregroundColor: Color(0xFF1A1200),
       ),
 
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      progressIndicatorTheme: ProgressIndicatorThemeData(
         color: kGoldColor,
-        linearTrackColor: kDividerColor,
+        linearTrackColor: colors.divider,
       ),
 
-      dropdownMenuTheme: const DropdownMenuThemeData(
+      dropdownMenuTheme: DropdownMenuThemeData(
         menuStyle: MenuStyle(
-          backgroundColor: WidgetStatePropertyAll(kCardColor),
+          backgroundColor: WidgetStatePropertyAll(colors.card),
         ),
       ),
     );

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/exercise.dart';
 import '../models/exercise_session.dart';
 import '../providers/exercise_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 import '../widgets/log_exercise_sheet.dart';
 import 'exercise_form_screen.dart';
@@ -20,19 +21,19 @@ class ExerciseDetailScreen extends StatelessWidget {
         final sessions = provider.sessionsForExercise(current.id!);
 
         return Scaffold(
-          backgroundColor: kBackgroundColor,
+          backgroundColor: context.colors.background,
           appBar: AppBar(
-            backgroundColor: kBackgroundColor,
+            backgroundColor: context.colors.background,
             surfaceTintColor: Colors.transparent,
             title: Text(
               current.name,
-              style: const TextStyle(
-                color: kTextPrimary,
+              style: TextStyle(
+                color: context.colors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            iconTheme: const IconThemeData(color: kTextPrimary),
+            iconTheme: IconThemeData(color: context.colors.textPrimary),
             actions: [
               IconButton(
                 icon: const Icon(Icons.edit_outlined),
@@ -57,13 +58,13 @@ class ExerciseDetailScreen extends StatelessWidget {
                 child: _InfoCard(exercise: current),
               ),
               if (sessions.isNotEmpty) ...[
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(16, 20, 16, 6),
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
                     child: Text(
                       'SESSION HISTORY',
                       style: TextStyle(
-                        color: kTextSecondary,
+                        color: context.colors.textSecondary,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
@@ -113,10 +114,11 @@ class ExerciseDetailScreen extends StatelessWidget {
   }
 
   void _showLogSheet(BuildContext context, int exerciseId) {
+    final cardColor = context.colors.card;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: kCardColor,
+      backgroundColor: cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -165,9 +167,9 @@ class _InfoCard extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kCardColor,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kDividerColor),
+        border: Border.all(color: context.colors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,8 +181,8 @@ class _InfoCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   exercise.name,
-                  style: const TextStyle(
-                    color: kTextPrimary,
+                  style: TextStyle(
+                    color: context.colors.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
@@ -194,7 +196,7 @@ class _InfoCard extends StatelessWidget {
               padding: const EdgeInsets.only(left: 26),
               child: Text(
                 exercise.source!,
-                style: const TextStyle(color: kTextSecondary, fontSize: 14),
+                style: TextStyle(color: context.colors.textSecondary, fontSize: 14),
               ),
             ),
           ],
@@ -202,27 +204,27 @@ class _InfoCard extends StatelessWidget {
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.menu_book_outlined,
-                    size: 14, color: kTextSecondary),
+                Icon(Icons.menu_book_outlined,
+                    size: 14, color: context.colors.textSecondary),
                 const SizedBox(width: 6),
                 Text(
                   exercise.page != null
                       ? '${exercise.book}, p. ${exercise.page}'
                       : exercise.book!,
                   style:
-                      const TextStyle(color: kTextSecondary, fontSize: 13),
+                      TextStyle(color: context.colors.textSecondary, fontSize: 13),
                 ),
               ],
             ),
           ],
           if (exercise.notes != null && exercise.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
-            const Divider(color: kDividerColor, height: 1),
+            Divider(color: context.colors.divider, height: 1),
             const SizedBox(height: 12),
             Text(
               exercise.notes!,
-              style: const TextStyle(
-                color: kTextSecondary,
+              style: TextStyle(
+                color: context.colors.textSecondary,
                 fontSize: 13,
                 height: 1.4,
               ),
@@ -263,8 +265,8 @@ class _DayGroup extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
             dateLabel,
-            style: const TextStyle(
-              color: kTextSecondary,
+            style: TextStyle(
+              color: context.colors.textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.3,
@@ -274,18 +276,18 @@ class _DayGroup extends StatelessWidget {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: kCardColor,
+            color: context.colors.card,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: kDividerColor),
+            border: Border.all(color: context.colors.divider),
           ),
           child: Column(
             children: List.generate(sessions.length, (i) {
               return Column(
                 children: [
                   if (i > 0)
-                    const Divider(
+                    Divider(
                         height: 1,
-                        color: kDividerColor,
+                        color: context.colors.divider,
                         indent: 16,
                         endIndent: 16),
                   _SessionTile(session: sessions[i]),
@@ -334,8 +336,8 @@ class _SessionTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   timeStr,
-                  style: const TextStyle(
-                    color: kTextPrimary,
+                  style: TextStyle(
+                    color: context.colors.textPrimary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -367,8 +369,8 @@ class _SessionTile extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               session.notes!,
-              style: const TextStyle(
-                color: kTextSecondary,
+              style: TextStyle(
+                color: context.colors.textSecondary,
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
                 height: 1.4,

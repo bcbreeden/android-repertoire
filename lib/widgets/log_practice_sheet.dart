@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/piece_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 
 enum _TimerState { idle, running, paused, stopped }
@@ -191,17 +192,17 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
                 children: [
                   const Icon(Icons.edit_note, color: kGoldColor),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Log Practice',
                     style: TextStyle(
-                      color: kTextPrimary,
+                      color: context.colors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: kTextSecondary),
+                    icon: Icon(Icons.close, color: context.colors.textSecondary),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -220,27 +221,27 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
               const SizedBox(height: 24),
 
               // Piece — picker when opened generically, info row when pre-selected
-              const Text('Song',
-                  style: TextStyle(color: kTextSecondary, fontSize: 12)),
+              Text('Song',
+                  style: TextStyle(color: context.colors.textSecondary, fontSize: 12)),
               const SizedBox(height: 6),
               if (widget.pieceId == null) ...[
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: kCardColor,
+                    color: context.colors.card,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: kDividerColor),
+                    border: Border.all(color: context.colors.divider),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<int>(
                       value: _selectedPieceId,
                       isExpanded: true,
-                      dropdownColor: kCardColor,
-                      hint: const Text('Select a song',
-                          style: TextStyle(color: kTextSecondary)),
+                      dropdownColor: context.colors.card,
+                      hint: Text('Select a song',
+                          style: TextStyle(color: context.colors.textSecondary)),
                       style:
-                          const TextStyle(color: kTextPrimary, fontSize: 14),
+                          TextStyle(color: context.colors.textPrimary, fontSize: 14),
                       items: pieces
                           .map((p) => DropdownMenuItem(
                                 value: p.id,
@@ -273,17 +274,17 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: kCardColor,
+                    color: context.colors.card,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: kDividerColor),
+                    border: Border.all(color: context.colors.divider),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         selectedPiece?.name ?? '—',
-                        style: const TextStyle(
-                          color: kTextPrimary,
+                        style: TextStyle(
+                          color: context.colors.textPrimary,
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -293,8 +294,8 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
                         const SizedBox(height: 2),
                         Text(
                           selectedPiece.composer!,
-                          style: const TextStyle(
-                              color: kTextSecondary, fontSize: 12),
+                          style: TextStyle(
+                              color: context.colors.textSecondary, fontSize: 12),
                         ),
                       ],
                     ],
@@ -307,23 +308,23 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
                 Row(
                   children: [
                     if (selectedPiece.measures != null) ...[
-                      const Icon(Icons.music_note,
-                          size: 13, color: kTextSecondary),
+                      Icon(Icons.music_note,
+                          size: 13, color: context.colors.textSecondary),
                       const SizedBox(width: 4),
                       Text(
                         '${selectedPiece.measures} measures total',
-                        style: const TextStyle(
-                            color: kTextSecondary, fontSize: 12),
+                        style: TextStyle(
+                            color: context.colors.textSecondary, fontSize: 12),
                       ),
                     ],
                     if (selectedPiece.targetTempo != null) ...[
                       const SizedBox(width: 16),
-                      const Icon(Icons.speed, size: 13, color: kTextSecondary),
+                      Icon(Icons.speed, size: 13, color: context.colors.textSecondary),
                       const SizedBox(width: 4),
                       Text(
                         'Target: ${selectedPiece.targetTempo} BPM',
-                        style: const TextStyle(
-                            color: kTextSecondary, fontSize: 12),
+                        style: TextStyle(
+                            color: context.colors.textSecondary, fontSize: 12),
                       ),
                     ],
                   ],
@@ -336,6 +337,7 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
                 children: [
                   Expanded(
                     child: _field(
+                      context: context,
                       controller: _measuresController,
                       label: 'Measures Learned',
                       hint: 'e.g. 32',
@@ -353,6 +355,7 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
                   const SizedBox(width: 12),
                   Expanded(
                     child: _field(
+                      context: context,
                       controller: _bpmController,
                       label: 'Current BPM',
                       hint: 'e.g. 72',
@@ -374,6 +377,7 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
 
               // Notes
               _field(
+                context: context,
                 controller: _notesController,
                 label: 'Session Notes (optional)',
                 hint: 'How did it go?',
@@ -414,6 +418,7 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
   }
 
   Widget _field({
+    required BuildContext context,
     required TextEditingController controller,
     required String label,
     required String hint,
@@ -425,7 +430,7 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(color: kTextSecondary, fontSize: 12)),
+            style: TextStyle(color: context.colors.textSecondary, fontSize: 12)),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
@@ -435,19 +440,19 @@ class _LogPracticeSheetState extends State<LogPracticeSheet>
               isNumeric ? [FilteringTextInputFormatter.digitsOnly] : null,
           maxLines: maxLines,
           validator: validator,
-          style: const TextStyle(color: kTextPrimary),
+          style: TextStyle(color: context.colors.textPrimary),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: kTextSecondary.withOpacity(0.5)),
+            hintStyle: TextStyle(color: context.colors.textSecondary.withOpacity(0.5)),
             filled: true,
-            fillColor: kCardColor,
+            fillColor: context.colors.card,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: kDividerColor),
+              borderSide: BorderSide(color: context.colors.divider),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: kDividerColor),
+              borderSide: BorderSide(color: context.colors.divider),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -504,10 +509,10 @@ class _TimerDisplay extends StatelessWidget {
       bgColor = Colors.orangeAccent.withOpacity(0.06);
     } else if (isStopped) {
       borderColor = const Color(0xFF4CAF50).withOpacity(0.4);
-      bgColor = kCardColor;
+      bgColor = context.colors.card;
     } else {
-      borderColor = kDividerColor;
-      bgColor = kCardColor;
+      borderColor = context.colors.divider;
+      bgColor = context.colors.card;
     }
 
     Color timerColor;
@@ -518,7 +523,7 @@ class _TimerDisplay extends StatelessWidget {
     } else if (isStopped) {
       timerColor = const Color(0xFF4CAF50);
     } else {
-      timerColor = kTextSecondary;
+      timerColor = context.colors.textSecondary;
     }
 
     String subtitle;
@@ -581,7 +586,7 @@ class _TimerDisplay extends StatelessWidget {
                   ? const Color(0xFF4CAF50)
                   : isPaused
                       ? Colors.orangeAccent
-                      : kTextSecondary,
+                      : context.colors.textSecondary,
               fontSize: 12,
             ),
           ),

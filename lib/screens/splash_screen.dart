@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/exercise_provider.dart';
 import '../providers/piece_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 import 'main_screen.dart';
 
@@ -76,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBackgroundColor,
+      backgroundColor: context.colors.background,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: SafeArea(
@@ -85,10 +86,10 @@ class _SplashScreenState extends State<SplashScreen>
               const Spacer(flex: 3),
               _Logo(),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'Repertoire',
                 style: TextStyle(
-                  color: kTextPrimary,
+                  color: context.colors.textPrimary,
                   fontSize: 30,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
@@ -98,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen>
               Text(
                 'Track your practice journey',
                 style: TextStyle(
-                  color: kTextSecondary.withOpacity(0.65),
+                  color: context.colors.textSecondary.withOpacity(0.65),
                   fontSize: 14,
                   letterSpacing: 0.2,
                 ),
@@ -156,7 +157,7 @@ class _ProgressFooter extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
               child: LinearProgressIndicator(
                 value: controller.value,
-                backgroundColor: kDividerColor,
+                backgroundColor: context.colors.divider,
                 valueColor:
                     const AlwaysStoppedAnimation<Color>(kGoldColor),
                 minHeight: 2,
@@ -167,7 +168,7 @@ class _ProgressFooter extends StatelessWidget {
           Text(
             'Loading your songs\u2026',
             style: TextStyle(
-              color: kTextSecondary.withOpacity(0.40),
+              color: context.colors.textSecondary.withOpacity(0.40),
               fontSize: 12,
               letterSpacing: 0.3,
             ),

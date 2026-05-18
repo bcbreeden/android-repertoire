@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 
 class StatsCard extends StatelessWidget {
@@ -21,9 +22,9 @@ class StatsCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kCardColor,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kDividerColor),
+        border: Border.all(color: context.colors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,7 +35,7 @@ class StatsCard extends StatelessWidget {
                 label: 'Total Songs',
                 value: totalPieces.toString(),
                 icon: Icons.library_music,
-                color: kTextPrimary,
+                color: context.colors.textPrimary,
               ),
               const SizedBox(width: 16),
               _StatTile(
@@ -121,7 +122,7 @@ class _StatTile extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 label,
-                style: const TextStyle(color: kTextSecondary, fontSize: 11),
+                style: TextStyle(color: context.colors.textSecondary, fontSize: 11),
               ),
             ],
           ),
@@ -164,7 +165,7 @@ class _StageLegend extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           '$label: $count',
-          style: const TextStyle(color: kTextSecondary, fontSize: 10),
+          style: TextStyle(color: context.colors.textSecondary, fontSize: 10),
         ),
       ],
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/piece_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 import '../widgets/piece_card.dart';
 import 'piece_detail_screen.dart';
@@ -40,7 +41,7 @@ class _PiecesTabState extends State<PiecesTab>
                 const Icon(Icons.error_outline, color: Colors.red, size: 48),
                 const SizedBox(height: 16),
                 Text(provider.error!,
-                    style: const TextStyle(color: kTextSecondary),
+                    style: TextStyle(color: context.colors.textSecondary),
                     textAlign: TextAlign.center),
                 const SizedBox(height: 16),
                 ElevatedButton(
@@ -57,7 +58,7 @@ class _PiecesTabState extends State<PiecesTab>
 
         return RefreshIndicator(
           color: kGoldColor,
-          backgroundColor: kCardColor,
+          backgroundColor: context.colors.card,
           onRefresh: () => provider.loadPieces(),
           child: CustomScrollView(
             key: const Key('pieces_scroll'),
@@ -115,17 +116,17 @@ class _FilterBar extends StatelessWidget {
           for (int i = 0; i < filters.length; i++)
             Padding(
               padding: EdgeInsets.only(right: i < filters.length - 1 ? 6 : 0),
-              child: _buildChip(filters[i], provider),
+              child: _buildChip(context, filters[i], provider),
             ),
         ],
       ),
     );
   }
 
-  FilterChip _buildChip(String filter, PieceProvider provider) {
+  FilterChip _buildChip(BuildContext context, String filter, PieceProvider provider) {
     final isSelected = provider.activeFilter == filter;
     final color = filter == 'all'
-        ? kTextPrimary
+        ? context.colors.textPrimary
         : (kStageColors[filter] ?? kGoldColor);
     final label = filter == 'all' ? 'All' : (kStageLabels[filter] ?? filter);
     final count = filter == 'all'
@@ -137,17 +138,17 @@ class _FilterBar extends StatelessWidget {
       label: Text(
         count > 0 ? '$label ($count)' : label,
         style: TextStyle(
-          color: isSelected ? color : kTextSecondary,
+          color: isSelected ? color : context.colors.textSecondary,
           fontSize: 12,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
         ),
       ),
       onSelected: (_) => provider.setFilter(filter),
-      backgroundColor: kCardColor,
+      backgroundColor: context.colors.card,
       selectedColor: color.withOpacity(0.3),
       checkmarkColor: color,
       side: BorderSide(
-        color: isSelected ? color.withOpacity(0.5) : kDividerColor,
+        color: isSelected ? color.withOpacity(0.5) : context.colors.divider,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 4),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -175,13 +176,13 @@ class _EmptyState extends StatelessWidget {
                   ? Icons.filter_list_off
                   : Icons.library_music_outlined,
               size: 64,
-              color: kTextSecondary.withOpacity(0.4),
+              color: context.colors.textSecondary.withOpacity(0.4),
             ),
             const SizedBox(height: 16),
             Text(
               isFiltered ? 'No songs in this stage' : 'No songs yet',
-              style: const TextStyle(
-                  color: kTextPrimary,
+              style: TextStyle(
+                  color: context.colors.textPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.w600),
             ),
@@ -190,7 +191,7 @@ class _EmptyState extends StatelessWidget {
               isFiltered
                   ? 'Try selecting a different filter'
                   : 'Add your first song to get started',
-              style: const TextStyle(color: kTextSecondary, fontSize: 14),
+              style: TextStyle(color: context.colors.textSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),
           ],

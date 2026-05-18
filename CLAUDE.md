@@ -10,7 +10,7 @@ Target platform: Android (portrait-only). iOS is not a current target.
 
 ```
 lib/
-  main.dart                  # App entry point, theme, MultiProvider (PieceProvider + ExerciseProvider)
+  main.dart                  # App entry point, theme (dark+light), MultiProvider (ThemeNotifier + PieceProvider + ExerciseProvider)
   models/
     piece.dart               # Piece model with computed properties
     practice_session.dart    # Practice session model
@@ -21,6 +21,7 @@ lib/
   providers/
     piece_provider.dart      # PieceProvider (ChangeNotifier) — single source of truth for songs
     exercise_provider.dart   # ExerciseProvider (ChangeNotifier) — single source of truth for exercises
+    theme_provider.dart      # ThemeNotifier (ChangeNotifier) — persists is_dark_mode in SharedPreferences
   screens/
     splash_screen.dart       # Launch screen; parallel-loads both providers, then navigates to MainScreen
     main_screen.dart         # TabBarView: Songs | Exercises | Practice (3 tabs)
@@ -41,8 +42,10 @@ lib/
     stats_card.dart
     paywall_sheet.dart
     book_field.dart          # Autocomplete widget for book name, shared by both forms
+  theme/
+    app_colors.dart          # AppColors ThemeExtension — dark/light color palettes; context.colors BuildContext extension
   utils/
-    constants.dart           # Stage identifiers, kStageOrder, colors, nextStage(), etc.
+    constants.dart           # Stage identifiers, kStageOrder, kGoldColor, nextStage(), etc.
 ```
 
 ## Stage Pipeline
@@ -71,7 +74,8 @@ Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageInde
 - **DB schema v9**: Current version. v7 removed backlog stage; v8 dropped NOT NULL constraint on `measures` via table recreation; v9 added `book TEXT` and `page INTEGER` columns to both `pieces` and `exercises`. The `backlog_at` column remains in `pieces` (unused, harmless).
 - **Book/page fields**: Both `Piece` and `Exercise` have optional `book` (String?) and `page` (int?) fields for referencing a music book and page number. In forms, book uses `BookField` (an `Autocomplete<String>` widget in `lib/widgets/book_field.dart`) populated from `PieceProvider.bookNames` / `ExerciseProvider.bookNames` — unique, sorted lists of previously used book names. The autocomplete `TextEditingController` is owned by `Autocomplete` and exposed via an `onControllerReady` callback; the form reads it at save time via a nullable `_bookFieldController` field.
 - **FAB per tab**: Songs tab → Add Song (with long-press shortcut to Log Practice), Exercises tab → Add Exercise, Practice tab → Log Practice. Uses `Consumer2<PieceProvider, ExerciseProvider>`. Practice FAB hides only when BOTH providers have zero items.
-- **Dark gold theme**: `kGoldColor = #C9A227`, `kBackgroundColor = #111318`. All UI uses the centralized theme from `main.dart`.
+- **Dark gold theme**: `kGoldColor = #C9A227` stays as a constant. All adaptive colors (background, surface, card, textPrimary, textSecondary, divider) are accessed via `context.colors.*` using the `AppColors` ThemeExtension defined in `lib/theme/app_colors.dart`. Do NOT use the old `kBackgroundColor`/`kCardColor`/etc. constants in widget code — they still exist in `constants.dart` for backwards compat but all UI uses `context.colors` instead.
+- **Light/dark mode**: `ThemeNotifier` (in `providers/theme_provider.dart`) persists `is_dark_mode` in SharedPreferences (default: true = dark). Loaded before `runApp()` to avoid flash-of-wrong-theme. `RepertoireApp` uses `Consumer<ThemeNotifier>` to set `MaterialApp.themeMode`, `theme` (light), and `darkTheme` (dark), each with `AppColors` extension registered. A theme toggle `IconButton` in the `MainScreen` AppBar uses `Icons.light_mode_outlined` / `Icons.dark_mode_outlined`.
 - **Debug seed button**: `Icons.science_outlined` FAB visible only in `kDebugMode`. Seeds 40 pieces across 2 stages (30 Learning, 10 Repertoire) with realistic data and practice sessions.
 - **Naming convention**: All user-facing UI strings use "song"/"songs" (e.g. "Add Song", "No songs yet"). Code identifiers, DB table names (`pieces`, `practice_sessions`), and widget keys (`Key('pieces_scroll')`) remain unchanged.
 - **No practice pill on cards**: `PieceCard` has no `onPractice` callback. Tapping a card always navigates to the detail screen. Practice sessions are logged via the "Log Practice" button on the detail screen, or via the FAB (Songs tab long-press or Practice tab FAB).

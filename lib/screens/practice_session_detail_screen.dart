@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/practice_session.dart';
 import '../providers/piece_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 
 class PracticeSessionDetailScreen extends StatefulWidget {
@@ -42,6 +43,7 @@ class _PracticeSessionDetailScreenState
   }
 
   Future<void> _pickDate() async {
+    final colors = context.colors;
     final picked = await showDatePicker(
       context: context,
       initialDate: _timestamp,
@@ -49,9 +51,9 @@ class _PracticeSessionDetailScreenState
       lastDate: DateTime.now(),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.dark(
+          colorScheme: ColorScheme.dark(
             primary: kGoldColor,
-            surface: kCardColor,
+            surface: colors.card,
           ),
         ),
         child: child!,
@@ -68,14 +70,15 @@ class _PracticeSessionDetailScreenState
   }
 
   Future<void> _pickTime() async {
+    final colors = context.colors;
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_timestamp),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.dark(
+          colorScheme: ColorScheme.dark(
             primary: kGoldColor,
-            surface: kCardColor,
+            surface: colors.card,
           ),
         ),
         child: child!,
@@ -141,21 +144,21 @@ class _PracticeSessionDetailScreenState
   }
 
   Future<void> _confirmDelete() async {
+    final colors = context.colors;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: kCardColor,
-        title: const Text('Delete Session',
-            style: TextStyle(color: kTextPrimary)),
-        content: const Text(
+        backgroundColor: colors.card,
+        title: Text('Delete Session',
+            style: TextStyle(color: colors.textPrimary)),
+        content: Text(
           'Delete this practice session? This cannot be undone.',
-          style: TextStyle(color: kTextSecondary),
+          style: TextStyle(color: colors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child:
-                const Text('Cancel', style: TextStyle(color: kTextSecondary)),
+            child: Text('Cancel', style: TextStyle(color: colors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -174,6 +177,7 @@ class _PracticeSessionDetailScreenState
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final provider = context.watch<PieceProvider>();
     final piece = provider.getPieceById(widget.session.pieceId);
     final stageColor =
@@ -182,19 +186,19 @@ class _PracticeSessionDetailScreenState
     final timeStr = DateFormat('h:mm a').format(_timestamp);
 
     return Scaffold(
-      backgroundColor: kBackgroundColor,
+      backgroundColor: colors.background,
       appBar: AppBar(
-        backgroundColor: kBackgroundColor,
+        backgroundColor: colors.background,
         surfaceTintColor: Colors.transparent,
-        title: const Text(
+        title: Text(
           'Session Details',
           style: TextStyle(
-            color: kTextPrimary,
+            color: colors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
-        iconTheme: const IconThemeData(color: kTextPrimary),
+        iconTheme: IconThemeData(color: colors.textPrimary),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
@@ -215,9 +219,9 @@ class _PracticeSessionDetailScreenState
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: kCardColor,
+                color: colors.card,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: kDividerColor),
+                border: Border.all(color: colors.divider),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,8 +241,8 @@ class _PracticeSessionDetailScreenState
                       children: [
                         Text(
                           piece?.name ?? 'Unknown Song',
-                          style: const TextStyle(
-                            color: kTextPrimary,
+                          style: TextStyle(
+                            color: colors.textPrimary,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -247,8 +251,8 @@ class _PracticeSessionDetailScreenState
                           const SizedBox(height: 2),
                           Text(
                             piece!.composer!,
-                            style: const TextStyle(
-                                color: kTextSecondary, fontSize: 13),
+                            style: TextStyle(
+                                color: colors.textSecondary, fontSize: 13),
                           ),
                         ],
                         const SizedBox(height: 8),
@@ -277,10 +281,10 @@ class _PracticeSessionDetailScreenState
             const SizedBox(height: 24),
 
             // ── Edit fields ───────────────────────────────────────────────
-            const Text(
+            Text(
               'EDIT SESSION',
               style: TextStyle(
-                color: kTextSecondary,
+                color: colors.textSecondary,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -292,23 +296,23 @@ class _PracticeSessionDetailScreenState
               Row(
                 children: [
                   if (piece.measures != null) ...[
-                    const Icon(Icons.music_note,
-                        size: 13, color: kTextSecondary),
+                    Icon(Icons.music_note,
+                        size: 13, color: colors.textSecondary),
                     const SizedBox(width: 4),
                     Text(
                       '${piece.measures} measures total',
-                      style: const TextStyle(
-                          color: kTextSecondary, fontSize: 12),
+                      style: TextStyle(
+                          color: colors.textSecondary, fontSize: 12),
                     ),
                   ],
                   if (piece.targetTempo != null) ...[
                     const SizedBox(width: 16),
-                    const Icon(Icons.speed, size: 13, color: kTextSecondary),
+                    Icon(Icons.speed, size: 13, color: colors.textSecondary),
                     const SizedBox(width: 4),
                     Text(
                       'Target: ${piece.targetTempo} BPM',
-                      style: const TextStyle(
-                          color: kTextSecondary, fontSize: 12),
+                      style: TextStyle(
+                          color: colors.textSecondary, fontSize: 12),
                     ),
                   ],
                 ],
@@ -409,11 +413,12 @@ class _PracticeSessionDetailScreenState
     bool isNumeric = true,
     String? Function(String?)? validator,
   }) {
+    final colors = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(color: kTextSecondary, fontSize: 12)),
+            style: TextStyle(color: colors.textSecondary, fontSize: 12)),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
@@ -423,20 +428,19 @@ class _PracticeSessionDetailScreenState
               isNumeric ? [FilteringTextInputFormatter.digitsOnly] : null,
           maxLines: maxLines,
           validator: validator,
-          style: const TextStyle(color: kTextPrimary),
+          style: TextStyle(color: colors.textPrimary),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle:
-                TextStyle(color: kTextSecondary.withOpacity(0.5)),
+            hintStyle: TextStyle(color: colors.textSecondary.withOpacity(0.5)),
             filled: true,
-            fillColor: kCardColor,
+            fillColor: colors.card,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: kDividerColor),
+              borderSide: BorderSide(color: colors.divider),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: kDividerColor),
+              borderSide: BorderSide(color: colors.divider),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -464,14 +468,15 @@ class _DateTimeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: kBackgroundColor,
+          color: colors.background,
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: kDividerColor),
+          border: Border.all(color: colors.divider),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -480,10 +485,10 @@ class _DateTimeChip extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label,
-              style: const TextStyle(color: kTextSecondary, fontSize: 12),
+              style: TextStyle(color: colors.textSecondary, fontSize: 12),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.edit, size: 10, color: kTextSecondary),
+            Icon(Icons.edit, size: 10, color: colors.textSecondary),
           ],
         ),
       ),

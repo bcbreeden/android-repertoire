@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 
 /// A text field with autocomplete suggestions drawn from [bookNames].
@@ -35,7 +36,7 @@ class BookField extends StatelessWidget {
         return Align(
           alignment: Alignment.topLeft,
           child: Material(
-            color: kCardColor,
+            color: context.colors.card,
             elevation: 4,
             borderRadius: BorderRadius.circular(10),
             child: ConstrainedBox(
@@ -53,8 +54,8 @@ class BookField extends StatelessWidget {
                           horizontal: 14, vertical: 12),
                       child: Text(
                         option,
-                        style: const TextStyle(
-                            color: kTextPrimary, fontSize: 14),
+                        style: TextStyle(
+                            color: context.colors.textPrimary, fontSize: 14),
                       ),
                     ),
                   );
@@ -72,23 +73,23 @@ class BookField extends StatelessWidget {
         return TextFormField(
           controller: textEditingController,
           focusNode: focusNode,
-          style: const TextStyle(color: kTextPrimary),
+          style: TextStyle(color: context.colors.textPrimary),
           textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
             labelText: 'Book',
             hintText: 'e.g. Alfred Adult Piano, Royal Conservatory',
-            labelStyle: const TextStyle(color: kTextSecondary),
+            labelStyle: TextStyle(color: context.colors.textSecondary),
             hintStyle:
-                TextStyle(color: kTextSecondary.withOpacity(0.5)),
+                TextStyle(color: context.colors.textSecondary.withOpacity(0.5)),
             filled: true,
-            fillColor: kCardColor,
+            fillColor: context.colors.card,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: kDividerColor),
+              borderSide: BorderSide(color: context.colors.divider),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: kDividerColor),
+              borderSide: BorderSide(color: context.colors.divider),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),

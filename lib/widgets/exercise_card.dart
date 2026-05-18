@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/exercise.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 
 class ExerciseCard extends StatelessWidget {
@@ -24,9 +25,9 @@ class ExerciseCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
-          color: kCardColor,
+          color: context.colors.card,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: kDividerColor),
+          border: Border.all(color: context.colors.divider),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -39,8 +40,8 @@ class ExerciseCard extends StatelessWidget {
                   children: [
                     Text(
                       exercise.name,
-                      style: const TextStyle(
-                        color: kTextPrimary,
+                      style: TextStyle(
+                        color: context.colors.textPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -52,8 +53,8 @@ class ExerciseCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         exercise.source!,
-                        style: const TextStyle(
-                          color: kTextSecondary,
+                        style: TextStyle(
+                          color: context.colors.textSecondary,
                           fontSize: 13,
                         ),
                         maxLines: 1,
@@ -126,11 +127,11 @@ class _LastPracticedRow extends StatelessWidget {
       icon = Icons.check_circle;
     } else if (practiceDay == yesterday) {
       dateStr = 'Yesterday, $timeStr';
-      iconColor = kTextSecondary;
+      iconColor = context.colors.textSecondary;
       icon = Icons.history;
     } else {
       dateStr = '${DateFormat('MMM d').format(lastPracticed)}, $timeStr';
-      iconColor = kTextSecondary;
+      iconColor = context.colors.textSecondary;
       icon = Icons.history;
     }
 
@@ -139,7 +140,7 @@ class _LastPracticedRow extends StatelessWidget {
         Icon(icon, size: 12, color: iconColor),
         const SizedBox(width: 4),
         Text(dateStr,
-            style: const TextStyle(color: kTextSecondary, fontSize: 11)),
+            style: TextStyle(color: context.colors.textSecondary, fontSize: 11)),
       ],
     );
   }

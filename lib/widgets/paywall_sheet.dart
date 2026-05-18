@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:provider/provider.dart';
 import '../providers/piece_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 
 const String _kProductId = 'unlock_unlimited';
@@ -80,27 +81,27 @@ class _PaywallSheetState extends State<PaywallSheet> {
           Container(
             width: 48, height: 4,
             decoration: BoxDecoration(
-              color: kDividerColor,
+              color: context.colors.divider,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 24),
           const Icon(Icons.lock_outline, color: kGoldColor, size: 48),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Unlock Unlimited Songs',
-            style: TextStyle(color: kTextPrimary, fontSize: 20, fontWeight: FontWeight.w700),
+            style: TextStyle(color: context.colors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             "You've used your 3 free songs",
-            style: TextStyle(color: kTextSecondary, fontSize: 15),
+            style: TextStyle(color: context.colors.textSecondary, fontSize: 15),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Unlock unlimited songs with a one-time purchase.',
-            style: TextStyle(color: kTextSecondary, fontSize: 13),
+            style: TextStyle(color: context.colors.textSecondary, fontSize: 13),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -133,9 +134,9 @@ class _PaywallSheetState extends State<PaywallSheet> {
           const SizedBox(height: 16),
           TextButton(
             onPressed: _isPurchasing ? null : _restore,
-            child: const Text(
+            child: Text(
               'Restore Purchase',
-              style: TextStyle(color: kTextSecondary, fontSize: 13),
+              style: TextStyle(color: context.colors.textSecondary, fontSize: 13),
             ),
           ),
         ],

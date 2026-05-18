@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/exercise_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 
 // Timer state is intentionally duplicated from log_practice_sheet.dart
@@ -154,17 +155,17 @@ class _LogExerciseSheetState extends State<LogExerciseSheet>
                 children: [
                   const Icon(Icons.fitness_center, color: kGoldColor),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Log Exercise',
                     style: TextStyle(
-                      color: kTextPrimary,
+                      color: context.colors.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: kTextSecondary),
+                    icon: Icon(Icons.close, color: context.colors.textSecondary),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -183,25 +184,25 @@ class _LogExerciseSheetState extends State<LogExerciseSheet>
               const SizedBox(height: 24),
 
               // Exercise info row
-              const Text('Exercise',
-                  style: TextStyle(color: kTextSecondary, fontSize: 12)),
+              Text('Exercise',
+                  style: TextStyle(color: context.colors.textSecondary, fontSize: 12)),
               const SizedBox(height: 6),
               Container(
                 width: double.infinity,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                  color: kCardColor,
+                  color: context.colors.card,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: kDividerColor),
+                  border: Border.all(color: context.colors.divider),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       exercise?.name ?? '—',
-                      style: const TextStyle(
-                        color: kTextPrimary,
+                      style: TextStyle(
+                        color: context.colors.textPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -211,8 +212,8 @@ class _LogExerciseSheetState extends State<LogExerciseSheet>
                       const SizedBox(height: 2),
                       Text(
                         exercise.source!,
-                        style: const TextStyle(
-                            color: kTextSecondary, fontSize: 12),
+                        style: TextStyle(
+                            color: context.colors.textSecondary, fontSize: 12),
                       ),
                     ],
                   ],
@@ -222,6 +223,7 @@ class _LogExerciseSheetState extends State<LogExerciseSheet>
 
               // BPM field
               _field(
+                context: context,
                 controller: _bpmController,
                 label: 'BPM',
                 hint: 'e.g. 120',
@@ -230,6 +232,7 @@ class _LogExerciseSheetState extends State<LogExerciseSheet>
 
               // Notes field
               _field(
+                context: context,
                 controller: _notesController,
                 label: 'Session Notes (optional)',
                 hint: 'How did it go?',
@@ -268,6 +271,7 @@ class _LogExerciseSheetState extends State<LogExerciseSheet>
   }
 
   Widget _field({
+    required BuildContext context,
     required TextEditingController controller,
     required String label,
     required String hint,
@@ -278,7 +282,7 @@ class _LogExerciseSheetState extends State<LogExerciseSheet>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(color: kTextSecondary, fontSize: 12)),
+            style: TextStyle(color: context.colors.textSecondary, fontSize: 12)),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
@@ -287,20 +291,20 @@ class _LogExerciseSheetState extends State<LogExerciseSheet>
           inputFormatters:
               isNumeric ? [FilteringTextInputFormatter.digitsOnly] : null,
           maxLines: maxLines,
-          style: const TextStyle(color: kTextPrimary),
+          style: TextStyle(color: context.colors.textPrimary),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle:
-                TextStyle(color: kTextSecondary.withOpacity(0.5)),
+                TextStyle(color: context.colors.textSecondary.withOpacity(0.5)),
             filled: true,
-            fillColor: kCardColor,
+            fillColor: context.colors.card,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: kDividerColor),
+              borderSide: BorderSide(color: context.colors.divider),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: kDividerColor),
+              borderSide: BorderSide(color: context.colors.divider),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
@@ -357,10 +361,10 @@ class _TimerDisplay extends StatelessWidget {
       bgColor = Colors.orangeAccent.withOpacity(0.06);
     } else if (isStopped) {
       borderColor = const Color(0xFF4CAF50).withOpacity(0.4);
-      bgColor = kCardColor;
+      bgColor = context.colors.card;
     } else {
-      borderColor = kDividerColor;
-      bgColor = kCardColor;
+      borderColor = context.colors.divider;
+      bgColor = context.colors.card;
     }
 
     Color timerColor = isRunning
@@ -369,7 +373,7 @@ class _TimerDisplay extends StatelessWidget {
             ? Colors.orangeAccent
             : isStopped
                 ? const Color(0xFF4CAF50)
-                : kTextSecondary;
+                : context.colors.textSecondary;
 
     String subtitle = isStopped
         ? 'Session complete'
@@ -427,7 +431,7 @@ class _TimerDisplay extends StatelessWidget {
                   ? const Color(0xFF4CAF50)
                   : isPaused
                       ? Colors.orangeAccent
-                      : kTextSecondary,
+                      : context.colors.textSecondary,
               fontSize: 12,
             ),
           ),

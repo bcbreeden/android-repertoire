@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/piece.dart';
 import '../providers/piece_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 import '../widgets/book_field.dart';
 
@@ -152,23 +153,23 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return isEditing ? _buildEditForm() : _buildWizard();
+    return isEditing ? _buildEditForm(context) : _buildWizard(context);
   }
 
   // ── Full edit form ───────────────────────────────────────────────────────
 
-  Widget _buildEditForm() {
+  Widget _buildEditForm(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBackgroundColor,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: kBackgroundColor,
+        backgroundColor: context.colors.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: kTextPrimary),
-        title: const Text(
+        iconTheme: IconThemeData(color: context.colors.textPrimary),
+        title: Text(
           'Edit Song',
           style: TextStyle(
-              color: kTextPrimary, fontSize: 18, fontWeight: FontWeight.w600),
+              color: context.colors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
         ),
         actions: [
           TextButton(
@@ -176,7 +177,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
             child: Text(
               'Save',
               style: TextStyle(
-                color: _isSaving ? kTextSecondary : kGoldColor,
+                color: _isSaving ? context.colors.textSecondary : kGoldColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -191,9 +192,10 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SectionLabel('Basic Info'),
+              _SectionLabel(text: 'Basic Info'),
               const SizedBox(height: 8),
               _buildTextField(
+                context: context,
                 controller: _nameController,
                 label: 'Song Title',
                 hint: 'e.g. Moonlight Sonata',
@@ -204,6 +206,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
               ),
               const SizedBox(height: 12),
               _buildTextField(
+                context: context,
                 controller: _composerController,
                 label: 'Composer',
                 hint: 'e.g. Ludwig van Beethoven',
@@ -216,6 +219,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
               ),
               const SizedBox(height: 12),
               _buildTextField(
+                context: context,
                 controller: _pageNumberController,
                 label: 'Page Number',
                 hint: 'e.g. 42',
@@ -224,6 +228,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
               ),
               const SizedBox(height: 12),
               _buildTextField(
+                context: context,
                 controller: _measuresController,
                 label: 'Total Measures',
                 hint: 'e.g. 64',
@@ -237,9 +242,10 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                 },
               ),
               const SizedBox(height: 20),
-              const _SectionLabel('Practice Progress'),
+              _SectionLabel(text: 'Practice Progress'),
               const SizedBox(height: 8),
               _buildTextField(
+                context: context,
                 controller: _measuresLearnedController,
                 label: 'Measures Learned',
                 hint: 'e.g. 32',
@@ -261,6 +267,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                 children: [
                   Expanded(
                     child: _buildTextField(
+                      context: context,
                       controller: _currentTempoController,
                       label: 'Current Tempo (BPM)',
                       hint: 'e.g. 60',
@@ -277,6 +284,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildTextField(
+                      context: context,
                       controller: _targetTempoController,
                       label: 'Target Tempo (BPM)',
                       hint: 'e.g. 120',
@@ -293,18 +301,18 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              const _SectionLabel('Stage'),
+              _SectionLabel(text: 'Stage'),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: kCardColor,
+                  color: context.colors.card,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: kDividerColor),
+                  border: Border.all(color: context.colors.divider),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.lock_outline, size: 14, color: kTextSecondary),
+                    Icon(Icons.lock_outline, size: 14, color: context.colors.textSecondary),
                     const SizedBox(width: 8),
                     Container(
                       width: 8,
@@ -317,20 +325,21 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                     const SizedBox(width: 8),
                     Text(
                       kStageLabels[_status] ?? _status,
-                      style: const TextStyle(color: kTextPrimary, fontSize: 14),
+                      style: TextStyle(color: context.colors.textPrimary, fontSize: 14),
                     ),
                     const Spacer(),
-                    const Text(
+                    Text(
                       'Change via Advance button',
-                      style: TextStyle(color: kTextSecondary, fontSize: 11),
+                      style: TextStyle(color: context.colors.textSecondary, fontSize: 11),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
-              const _SectionLabel('Notes'),
+              _SectionLabel(text: 'Notes'),
               const SizedBox(height: 8),
               _buildTextField(
+                context: context,
                 controller: _notesController,
                 label: 'Practice Notes',
                 hint: 'Tips, reminders, tricky sections...',
@@ -368,18 +377,18 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
 
   // ── Wizard ───────────────────────────────────────────────────────────────
 
-  Widget _buildWizard() {
+  Widget _buildWizard(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBackgroundColor,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: kBackgroundColor,
+        backgroundColor: context.colors.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: kTextPrimary),
+        iconTheme: IconThemeData(color: context.colors.textPrimary),
         title: Text(
           _wizardTitles[_currentStep],
-          style: const TextStyle(
-              color: kTextPrimary, fontSize: 18, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: context.colors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
       body: Column(
@@ -390,12 +399,12 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                _buildStep1(),
-                _buildStep2(),
+                _buildStep1(context),
+                _buildStep2(context),
               ],
             ),
           ),
-          _buildNavButtons(),
+          _buildNavButtons(context),
         ],
       ),
     );
@@ -406,7 +415,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
     'Any notes?',
   ];
 
-  Widget _buildStep1() {
+  Widget _buildStep1(BuildContext context) {
     return Form(
       key: _step1Key,
       child: SingleChildScrollView(
@@ -416,6 +425,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
           children: [
             const SizedBox(height: 8),
             _buildTextField(
+              context: context,
               key: const Key('wizard-title'),
               controller: _nameController,
               label: 'Piece Title',
@@ -427,6 +437,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
             ),
             const SizedBox(height: 16),
             _buildTextField(
+              context: context,
               controller: _composerController,
               label: 'Composer',
               hint: 'e.g. Ludwig van Beethoven',
@@ -439,6 +450,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
             ),
             const SizedBox(height: 16),
             _buildTextField(
+              context: context,
               controller: _pageNumberController,
               label: 'Page Number',
               hint: 'e.g. 42',
@@ -447,6 +459,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
             ),
             const SizedBox(height: 16),
             _buildTextField(
+              context: context,
               key: const Key('wizard-measures'),
               controller: _measuresController,
               label: 'Total Measures',
@@ -462,6 +475,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
             ),
             const SizedBox(height: 16),
             _buildTextField(
+              context: context,
               controller: _targetTempoController,
               label: 'Target BPM',
               hint: 'e.g. 120',
@@ -476,6 +490,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
             ),
             const SizedBox(height: 16),
             _buildTextField(
+              context: context,
               controller: _currentTempoController,
               label: 'Current BPM',
               hint: 'Your current practice tempo',
@@ -494,7 +509,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
     );
   }
 
-  Widget _buildStep2() {
+  Widget _buildStep2(BuildContext context) {
     return Form(
       key: _step2Key,
       child: SingleChildScrollView(
@@ -504,6 +519,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
           children: [
             const SizedBox(height: 8),
             _buildTextField(
+              context: context,
               controller: _notesController,
               label: 'Practice Notes',
               hint: 'Tips, reminders, tricky sections...',
@@ -517,15 +533,15 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: kGoldColor.withOpacity(0.2)),
               ),
-              child: const Row(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.lightbulb_outline, color: kGoldColor, size: 18),
-                  SizedBox(width: 10),
+                  const Icon(Icons.lightbulb_outline, color: kGoldColor, size: 18),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Use practice notes to track tricky sections, fingering tips, or reminders for your next session.',
-                      style: TextStyle(color: kTextSecondary, fontSize: 13, height: 1.5),
+                      style: TextStyle(color: context.colors.textSecondary, fontSize: 13, height: 1.5),
                     ),
                   ),
                 ],
@@ -537,7 +553,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
     );
   }
 
-  Widget _buildNavButtons() {
+  Widget _buildNavButtons(BuildContext context) {
     final isLast = _currentStep == 1;
     return SafeArea(
       child: Padding(
@@ -549,8 +565,8 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                 child: OutlinedButton(
                   onPressed: _prevStep,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: kTextSecondary,
-                    side: const BorderSide(color: kDividerColor),
+                    foregroundColor: context.colors.textSecondary,
+                    side: BorderSide(color: context.colors.divider),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: const Text('Back'),
@@ -586,6 +602,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
 
   Widget _buildTextField({
     Key? key,
+    required BuildContext context,
     required TextEditingController controller,
     required String label,
     String? hint,
@@ -602,21 +619,21 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
       inputFormatters: inputFormatters,
       maxLines: maxLines,
       validator: validator,
-      style: const TextStyle(color: kTextPrimary),
+      style: TextStyle(color: context.colors.textPrimary),
       decoration: InputDecoration(
         labelText: isRequired ? '$label *' : label,
-        labelStyle: const TextStyle(color: kTextSecondary),
+        labelStyle: TextStyle(color: context.colors.textSecondary),
         hintText: hint,
-        hintStyle: TextStyle(color: kTextSecondary.withOpacity(0.5)),
+        hintStyle: TextStyle(color: context.colors.textSecondary.withOpacity(0.5)),
         filled: true,
-        fillColor: kCardColor,
+        fillColor: context.colors.card,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: kDividerColor),
+          borderSide: BorderSide(color: context.colors.divider),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: kDividerColor),
+          borderSide: BorderSide(color: context.colors.divider),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -661,7 +678,7 @@ class _StepIndicator extends StatelessWidget {
                 duration: const Duration(milliseconds: 250),
                 height: 4,
                 decoration: BoxDecoration(
-                  color: isDone || isActive ? kGoldColor : kDividerColor,
+                  color: isDone || isActive ? kGoldColor : context.colors.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -678,14 +695,14 @@ class _StepIndicator extends StatelessWidget {
 class _SectionLabel extends StatelessWidget {
   final String text;
 
-  const _SectionLabel(this.text);
+  const _SectionLabel({required this.text});
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text.toUpperCase(),
-      style: const TextStyle(
-        color: kTextSecondary,
+      style: TextStyle(
+        color: context.colors.textSecondary,
         fontSize: 11,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.8,

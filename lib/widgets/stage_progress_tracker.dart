@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/piece.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 
 class StageProgressTracker extends StatelessWidget {
@@ -42,7 +43,7 @@ class StageProgressTracker extends StatelessWidget {
                             width: 2,
                             color: isPastStage
                                 ? stageColor.withOpacity(0.5)
-                                : kDividerColor,
+                                : context.colors.divider,
                           ),
                         ),
                       ),
@@ -94,12 +95,12 @@ class _StageNode extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isFuture
-            ? kCardColor
+            ? context.colors.card
             : isActive
                 ? color
                 : color.withOpacity(0.3),
         border: Border.all(
-          color: isFuture ? kDividerColor : color,
+          color: isFuture ? context.colors.divider : color,
           width: isActive ? 2.5 : 1.5,
         ),
       ),
@@ -153,7 +154,7 @@ class _StageContent extends StatelessWidget {
             ? stageColor.withOpacity(0.08)
             : isFutureStage
                 ? Colors.transparent
-                : kCardColor.withOpacity(0.5),
+                : context.colors.card.withOpacity(0.5),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isCurrentStage
@@ -169,7 +170,7 @@ class _StageContent extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  color: isFutureStage ? kTextSecondary : stageColor,
+                  color: isFutureStage ? context.colors.textSecondary : stageColor,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -200,7 +201,7 @@ class _StageContent extends StatelessWidget {
           Text(
             description,
             style: TextStyle(
-              color: isFutureStage ? kTextSecondary.withOpacity(0.5) : kTextSecondary,
+              color: isFutureStage ? context.colors.textSecondary.withOpacity(0.5) : context.colors.textSecondary,
               fontSize: 12,
             ),
           ),

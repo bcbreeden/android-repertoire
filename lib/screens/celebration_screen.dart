@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 
 class CelebrationScreen extends StatefulWidget {
@@ -81,10 +82,10 @@ class _CelebrationScreenState extends State<CelebrationScreen>
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 12),
-                        const Text(
+                        Text(
                           'is now in your Repertoire!',
                           style: TextStyle(
-                            color: kTextPrimary,
+                            color: context.colors.textPrimary,
                             fontSize: 20,
                             fontWeight: FontWeight.w500,
                           ),

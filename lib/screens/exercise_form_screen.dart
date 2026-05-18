@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/exercise.dart';
 import '../providers/exercise_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 import '../widgets/book_field.dart';
 
@@ -106,47 +107,47 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBackgroundColor,
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: kBackgroundColor,
+        backgroundColor: context.colors.background,
         surfaceTintColor: Colors.transparent,
         title: Text(
           isEditing ? 'Edit Exercise' : 'New Exercise',
-          style: const TextStyle(
-            color: kTextPrimary,
+          style: TextStyle(
+            color: context.colors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
-        iconTheme: const IconThemeData(color: kTextPrimary),
+        iconTheme: IconThemeData(color: context.colors.textPrimary),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            _label('Name'),
+            _label(context, 'Name'),
             const SizedBox(height: 6),
             TextFormField(
               controller: _nameController,
               autofocus: !isEditing,
-              style: const TextStyle(color: kTextPrimary),
-              decoration: _inputDecoration('e.g. Scales, Hanon No. 1'),
+              style: TextStyle(color: context.colors.textPrimary),
+              decoration: _inputDecoration(context, 'e.g. Scales, Hanon No. 1'),
               textCapitalization: TextCapitalization.words,
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Name is required' : null,
             ),
             const SizedBox(height: 20),
-            _label('Source (optional)'),
+            _label(context, 'Source (optional)'),
             const SizedBox(height: 6),
             TextFormField(
               controller: _sourceController,
-              style: const TextStyle(color: kTextPrimary),
-              decoration: _inputDecoration('e.g. Hanon, Czerny, Original'),
+              style: TextStyle(color: context.colors.textPrimary),
+              decoration: _inputDecoration(context, 'e.g. Hanon, Czerny, Original'),
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 20),
-            _label('Book (optional)'),
+            _label(context, 'Book (optional)'),
             const SizedBox(height: 6),
             BookField(
               initialValue: widget.exercise?.book ?? '',
@@ -154,22 +155,22 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
               onControllerReady: (c) => _bookFieldController = c,
             ),
             const SizedBox(height: 20),
-            _label('Page Number (optional)'),
+            _label(context, 'Page Number (optional)'),
             const SizedBox(height: 6),
             TextFormField(
               controller: _pageController,
-              style: const TextStyle(color: kTextPrimary),
-              decoration: _inputDecoration('e.g. 42'),
+              style: TextStyle(color: context.colors.textPrimary),
+              decoration: _inputDecoration(context, 'e.g. 42'),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             const SizedBox(height: 20),
-            _label('Notes (optional)'),
+            _label(context, 'Notes (optional)'),
             const SizedBox(height: 6),
             TextFormField(
               controller: _notesController,
-              style: const TextStyle(color: kTextPrimary),
-              decoration: _inputDecoration('Any notes about this exercise…'),
+              style: TextStyle(color: context.colors.textPrimary),
+              decoration: _inputDecoration(context, 'Any notes about this exercise…'),
               maxLines: 4,
               keyboardType: TextInputType.multiline,
             ),
@@ -201,23 +202,23 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
     );
   }
 
-  Widget _label(String text) => Text(
+  Widget _label(BuildContext context, String text) => Text(
         text,
-        style: const TextStyle(color: kTextSecondary, fontSize: 13),
+        style: TextStyle(color: context.colors.textSecondary, fontSize: 13),
       );
 
-  InputDecoration _inputDecoration(String hint) => InputDecoration(
+  InputDecoration _inputDecoration(BuildContext context, String hint) => InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: kTextSecondary.withOpacity(0.5)),
+        hintStyle: TextStyle(color: context.colors.textSecondary.withOpacity(0.5)),
         filled: true,
-        fillColor: kCardColor,
+        fillColor: context.colors.card,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: kDividerColor),
+          borderSide: BorderSide(color: context.colors.divider),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: kDividerColor),
+          borderSide: BorderSide(color: context.colors.divider),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),

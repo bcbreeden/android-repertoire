@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/piece.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 
 class PieceCard extends StatelessWidget {
@@ -33,10 +34,10 @@ class PieceCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: isRepertoire ? const Color(0xFF1F1A0E) : kCardColor,
+          color: isRepertoire ? const Color(0xFF1F1A0E) : context.colors.card,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isRepertoire ? kGoldColor.withOpacity(0.5) : kDividerColor,
+            color: isRepertoire ? kGoldColor.withOpacity(0.5) : context.colors.divider,
             width: isRepertoire ? 1.5 : 1,
           ),
         ),
@@ -63,7 +64,7 @@ class PieceCard extends StatelessWidget {
                               Text(
                                 piece.name,
                                 style: TextStyle(
-                                  color: isRepertoire ? kGoldLight : kTextPrimary,
+                                  color: isRepertoire ? kGoldLight : context.colors.textPrimary,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -75,8 +76,8 @@ class PieceCard extends StatelessWidget {
                                 const SizedBox(height: 2),
                                 Text(
                                   piece.composer!,
-                                  style: const TextStyle(
-                                    color: kTextSecondary,
+                                  style: TextStyle(
+                                    color: context.colors.textSecondary,
                                     fontSize: 13,
                                   ),
                                   maxLines: 1,
@@ -99,7 +100,7 @@ class PieceCard extends StatelessWidget {
                   ),
                   LinearProgressIndicator(
                     value: progress,
-                    backgroundColor: kDividerColor,
+                    backgroundColor: context.colors.divider,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       stageColor.withOpacity(0.55),
                     ),
@@ -157,7 +158,7 @@ class _LastPracticedRow extends StatelessWidget {
       icon = Icons.check_circle;
     } else if (practiceDay == yesterday) {
       dateStr = 'Yesterday, $timeStr';
-      iconColor = kTextSecondary;
+      iconColor = context.colors.textSecondary;
       icon = Icons.history;
     } else if (daysDiff >= 3) {
       dateStr = '${DateFormat('MMM d').format(lastPracticed!)}, $timeStr';
@@ -165,7 +166,7 @@ class _LastPracticedRow extends StatelessWidget {
       icon = Icons.schedule;
     } else {
       dateStr = '${DateFormat('MMM d').format(lastPracticed!)}, $timeStr';
-      iconColor = kTextSecondary;
+      iconColor = context.colors.textSecondary;
       icon = Icons.history;
     }
 
@@ -176,7 +177,7 @@ class _LastPracticedRow extends StatelessWidget {
         Text(
           dateStr,
           style: TextStyle(
-            color: daysDiff >= 3 ? Colors.amber : kTextSecondary,
+            color: daysDiff >= 3 ? Colors.amber : context.colors.textSecondary,
             fontSize: 11,
           ),
         ),

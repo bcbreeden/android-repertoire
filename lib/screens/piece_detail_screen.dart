@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/piece.dart';
 import '../providers/piece_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 import '../widgets/log_practice_sheet.dart';
 import 'celebration_screen.dart';
@@ -25,15 +26,15 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
 
         if (piece == null) {
           return Scaffold(
-            backgroundColor: kBackgroundColor,
+            backgroundColor: context.colors.background,
             appBar: AppBar(
-              backgroundColor: kBackgroundColor,
-              iconTheme: const IconThemeData(color: kTextPrimary),
+              backgroundColor: context.colors.background,
+              iconTheme: IconThemeData(color: context.colors.textPrimary),
             ),
-            body: const Center(
+            body: Center(
               child: Text(
                 'Song not found',
-                style: TextStyle(color: kTextSecondary),
+                style: TextStyle(color: context.colors.textSecondary),
               ),
             ),
           );
@@ -43,20 +44,20 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
         final isRepertoire = piece.isRepertoire;
 
         return Scaffold(
-          backgroundColor: kBackgroundColor,
+          backgroundColor: context.colors.background,
           appBar: AppBar(
             backgroundColor: isRepertoire
                 ? const Color(0xFF1A1400)
-                : kBackgroundColor,
+                : context.colors.background,
             surfaceTintColor: Colors.transparent,
             elevation: 0,
             iconTheme: IconThemeData(
-              color: isRepertoire ? kGoldColor : kTextPrimary,
+              color: isRepertoire ? kGoldColor : context.colors.textPrimary,
             ),
             title: Text(
               piece.name,
               style: TextStyle(
-                color: isRepertoire ? kGoldLight : kTextPrimary,
+                color: isRepertoire ? kGoldLight : context.colors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -113,23 +114,26 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
       BuildContext context, Piece piece, PieceProvider provider) async {
     final newStageLabel =
         kStageLabels[nextStage(piece.status)] ?? nextStage(piece.status);
+    final cardColor = context.colors.card;
+    final textPrimary = context.colors.textPrimary;
+    final textSecondary = context.colors.textSecondary;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: kCardColor,
+        backgroundColor: cardColor,
         title: Text(
           'Promote to $newStageLabel?',
-          style: const TextStyle(color: kTextPrimary),
+          style: TextStyle(color: textPrimary),
         ),
-        content: const Text(
+        content: Text(
           "Make sure you're ready — this can't be undone.",
-          style: TextStyle(color: kTextSecondary),
+          style: TextStyle(color: textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel', style: TextStyle(color: kTextSecondary)),
+            child: Text('Cancel', style: TextStyle(color: textSecondary)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -180,23 +184,26 @@ class _PieceDetailScreenState extends State<PieceDetailScreen> {
     final sessionWarning = sessionCount > 0
         ? ' This will also delete $sessionCount practice ${sessionCount == 1 ? 'session' : 'sessions'}.'
         : '';
+    final cardColor = context.colors.card;
+    final textPrimary = context.colors.textPrimary;
+    final textSecondary = context.colors.textSecondary;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: kCardColor,
-        title: const Text(
+        backgroundColor: cardColor,
+        title: Text(
           'Delete Song?',
-          style: TextStyle(color: kTextPrimary),
+          style: TextStyle(color: textPrimary),
         ),
         content: Text(
           'Are you sure you want to delete "${piece.name}"?$sessionWarning This cannot be undone.',
-          style: const TextStyle(color: kTextSecondary),
+          style: TextStyle(color: textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child:
-                const Text('Cancel', style: TextStyle(color: kTextSecondary)),
+                Text('Cancel', style: TextStyle(color: textSecondary)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -239,9 +246,9 @@ class _HeroHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: isRepertoire
             ? const Color(0xFF1F1A0E)
-            : kSurfaceColor,
-        border: const Border(
-          bottom: BorderSide(color: kDividerColor),
+            : context.colors.surface,
+        border: Border(
+          bottom: BorderSide(color: context.colors.divider),
         ),
       ),
       child: Column(
@@ -252,8 +259,8 @@ class _HeroHeader extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 4),
               child: Text(
                 piece.composer!,
-                style: const TextStyle(
-                  color: kTextSecondary,
+                style: TextStyle(
+                  color: context.colors.textSecondary,
                   fontSize: 15,
                   fontStyle: FontStyle.italic,
                 ),
@@ -292,11 +299,11 @@ class _HeroHeader extends StatelessWidget {
           if (piece.measures != null)
             Row(
               children: [
-                const Icon(Icons.piano, size: 14, color: kTextSecondary),
+                Icon(Icons.piano, size: 14, color: context.colors.textSecondary),
                 const SizedBox(width: 4),
                 Text(
                   '${piece.measures} measures',
-                  style: const TextStyle(color: kTextSecondary, fontSize: 13),
+                  style: TextStyle(color: context.colors.textSecondary, fontSize: 13),
                 ),
               ],
             ),
@@ -304,15 +311,15 @@ class _HeroHeader extends StatelessWidget {
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.menu_book_outlined,
-                    size: 14, color: kTextSecondary),
+                Icon(Icons.menu_book_outlined,
+                    size: 14, color: context.colors.textSecondary),
                 const SizedBox(width: 4),
                 Text(
                   piece.page != null
                       ? '${piece.book}, p. ${piece.page}'
                       : piece.book!,
                   style:
-                      const TextStyle(color: kTextSecondary, fontSize: 13),
+                      TextStyle(color: context.colors.textSecondary, fontSize: 13),
                 ),
               ],
             ),
@@ -335,17 +342,17 @@ class _ProgressSection extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kCardColor,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kDividerColor),
+        border: Border.all(color: context.colors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Progress',
             style: TextStyle(
-              color: kTextSecondary,
+              color: context.colors.textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
@@ -404,11 +411,11 @@ class _ProgressBar extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(color: kTextPrimary, fontSize: 13),
+              style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
             ),
             Text(
               display,
-              style: const TextStyle(color: kTextSecondary, fontSize: 12),
+              style: TextStyle(color: context.colors.textSecondary, fontSize: 12),
             ),
           ],
         ),
@@ -417,7 +424,7 @@ class _ProgressBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(6),
           child: LinearProgressIndicator(
             value: value.clamp(0.0, 1.0),
-            backgroundColor: kDividerColor,
+            backgroundColor: context.colors.divider,
             valueColor: AlwaysStoppedAnimation<Color>(color),
             minHeight: 8,
           ),
@@ -434,6 +441,7 @@ class _LogPracticeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cardColor = context.colors.card;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: SizedBox(
@@ -442,7 +450,7 @@ class _LogPracticeButton extends StatelessWidget {
           onPressed: () => showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            backgroundColor: kCardColor,
+            backgroundColor: cardColor,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
@@ -546,21 +554,21 @@ class _NotesSection extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: kCardColor,
+          color: context.colors.card,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: kDividerColor),
+          border: Border.all(color: context.colors.divider),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.notes, size: 14, color: kTextSecondary),
-                SizedBox(width: 6),
+                Icon(Icons.notes, size: 14, color: context.colors.textSecondary),
+                const SizedBox(width: 6),
                 Text(
                   'Practice Notes',
                   style: TextStyle(
-                    color: kTextSecondary,
+                    color: context.colors.textSecondary,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.5,
@@ -571,8 +579,8 @@ class _NotesSection extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               notes,
-              style: const TextStyle(
-                color: kTextPrimary,
+              style: TextStyle(
+                color: context.colors.textPrimary,
                 fontSize: 14,
                 height: 1.5,
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/exercise_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 import '../widgets/exercise_card.dart';
 import '../widgets/log_exercise_sheet.dart';
@@ -21,6 +22,7 @@ class _ExercisesTabState extends State<ExercisesTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final colors = context.colors;
     return Consumer<ExerciseProvider>(
       builder: (context, provider, _) {
         if (provider.isLoading) {
@@ -34,7 +36,7 @@ class _ExercisesTabState extends State<ExercisesTab>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(provider.error!,
-                    style: const TextStyle(color: kTextSecondary)),
+                    style: TextStyle(color: colors.textSecondary)),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: provider.loadExercises,
@@ -51,7 +53,7 @@ class _ExercisesTabState extends State<ExercisesTab>
 
         return RefreshIndicator(
           color: kGoldColor,
-          backgroundColor: kCardColor,
+          backgroundColor: colors.card,
           onRefresh: provider.loadExercises,
           child: CustomScrollView(
             key: const Key('exercises_scroll'),
@@ -87,10 +89,11 @@ class _ExercisesTabState extends State<ExercisesTab>
   }
 
   void _showLogSheet(BuildContext context, int exerciseId) {
+    final cardColor = context.colors.card;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: kCardColor,
+      backgroundColor: cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -104,6 +107,7 @@ class _EmptyExerciseState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -113,21 +117,21 @@ class _EmptyExerciseState extends StatelessWidget {
             Icon(
               Icons.fitness_center,
               size: 64,
-              color: kTextSecondary.withOpacity(0.4),
+              color: colors.textSecondary.withOpacity(0.4),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'No exercises yet',
               style: TextStyle(
-                color: kTextPrimary,
+                color: colors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Add scales, arpeggios, or any exercise\nyou want to keep practicing',
-              style: TextStyle(color: kTextSecondary, fontSize: 14),
+              style: TextStyle(color: colors.textSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),
           ],

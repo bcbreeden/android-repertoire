@@ -13,6 +13,7 @@ import '../models/practice_session.dart';
 import '../models/exercise_session.dart';
 import '../providers/exercise_provider.dart';
 import '../providers/piece_provider.dart';
+import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 
 class StatsTab extends StatelessWidget {
@@ -140,21 +141,21 @@ class _EmptyStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.bar_chart, size: 48, color: kTextSecondary),
-          SizedBox(height: 12),
+          Icon(Icons.bar_chart, size: 48, color: context.colors.textSecondary),
+          const SizedBox(height: 12),
           Text(
             'No stats yet',
             style: TextStyle(
-                color: kTextPrimary, fontSize: 16, fontWeight: FontWeight.w600),
+                color: context.colors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             'Log a practice session to see your stats here.',
-            style: TextStyle(color: kTextSecondary, fontSize: 13),
+            style: TextStyle(color: context.colors.textSecondary, fontSize: 13),
             textAlign: TextAlign.center,
           ),
         ],
@@ -217,9 +218,9 @@ class _StatBox extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: kCardColor,
+          color: context.colors.card,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: kDividerColor),
+          border: Border.all(color: context.colors.divider),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,8 +232,8 @@ class _StatBox extends StatelessWidget {
                 Flexible(
                   child: Text(
                     label,
-                    style: const TextStyle(
-                        color: kTextSecondary,
+                    style: TextStyle(
+                        color: context.colors.textSecondary,
                         fontSize: 10,
                         fontWeight: FontWeight.w500),
                     overflow: TextOverflow.ellipsis,
@@ -252,8 +253,8 @@ class _StatBox extends StatelessWidget {
             if (unit != null)
               Text(
                 unit!,
-                style: const TextStyle(
-                    color: kTextSecondary,
+                style: TextStyle(
+                    color: context.colors.textSecondary,
                     fontSize: 10,
                     fontWeight: FontWeight.w500),
               ),
@@ -306,14 +307,14 @@ class _ThisWeekCardState extends State<_ThisWeekCard> {
 
   int _weekSeconds() {
     final now = DateTime.now();
-    final weekStart =
-        DateTime(now.year, now.month, now.day - (now.weekday - 1));
+    // Rolling 7-day window: midnight 6 days ago through end of today.
+    final windowStart = DateTime(now.year, now.month, now.day - 6);
     int seconds = 0;
     for (final s in widget.songSessions) {
-      if (!s.timestamp.isBefore(weekStart)) seconds += s.durationSeconds ?? 0;
+      if (!s.timestamp.isBefore(windowStart)) seconds += s.durationSeconds ?? 0;
     }
     for (final s in widget.exSessions) {
-      if (!s.timestamp.isBefore(weekStart)) seconds += s.durationSeconds ?? 0;
+      if (!s.timestamp.isBefore(windowStart)) seconds += s.durationSeconds ?? 0;
     }
     return seconds;
   }
@@ -341,17 +342,17 @@ class _ThisWeekCardState extends State<_ThisWeekCard> {
     final progressColor = goalMet ? const Color(0xFF4CAF50) : kGoldColor;
 
     return _Card(
-      label: 'THIS WEEK',
+      label: 'LAST 7 DAYS',
       action: IconButton(
         icon: Icon(
           _goalHours != null ? Icons.flag : Icons.flag_outlined,
           size: 15,
-          color: _goalHours != null ? kGoldColor : kTextSecondary,
+          color: _goalHours != null ? kGoldColor : context.colors.textSecondary,
         ),
         onPressed: _showGoalDialog,
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),
-        tooltip: 'Set weekly goal',
+        tooltip: 'Set 7-day goal',
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,8 +360,8 @@ class _ThisWeekCardState extends State<_ThisWeekCard> {
           _InlineStatTile(
             value: _formatPracticeDuration(seconds),
             label: goalSeconds != null
-                ? 'of ${_goalHours}h goal this week'
-                : 'practiced this week',
+                ? 'of ${_goalHours}h goal'
+                : 'past 7 days',
             icon: Icons.timer_outlined,
             color: goalMet ? progressColor : kGoldColor,
           ),
@@ -374,7 +375,7 @@ class _ThisWeekCardState extends State<_ThisWeekCard> {
                     child: LinearProgressIndicator(
                       value: progress,
                       minHeight: 6,
-                      backgroundColor: kDividerColor,
+                      backgroundColor: context.colors.divider,
                       valueColor:
                           AlwaysStoppedAnimation<Color>(progressColor),
                     ),
@@ -430,10 +431,10 @@ class _GoalDialogState extends State<_GoalDialog> {
   Widget build(BuildContext context) {
     final h = _hours.round();
     return AlertDialog(
-      backgroundColor: kCardColor,
-      title: const Text(
+      backgroundColor: context.colors.card,
+      title: Text(
         'Weekly Practice Goal',
-        style: TextStyle(color: kTextPrimary, fontSize: 16),
+        style: TextStyle(color: context.colors.textPrimary, fontSize: 16),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -450,7 +451,7 @@ class _GoalDialogState extends State<_GoalDialog> {
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: kGoldColor,
-              inactiveTrackColor: kDividerColor,
+              inactiveTrackColor: context.colors.divider,
               thumbColor: kGoldColor,
               overlayColor: kGoldColor.withOpacity(0.15),
             ),
@@ -462,11 +463,11 @@ class _GoalDialogState extends State<_GoalDialog> {
               onChanged: (v) => setState(() => _hours = v),
             ),
           ),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('1h', style: TextStyle(color: kTextSecondary, fontSize: 11)),
-              Text('20h', style: TextStyle(color: kTextSecondary, fontSize: 11)),
+              Text('1h', style: TextStyle(color: context.colors.textSecondary, fontSize: 11)),
+              Text('20h', style: TextStyle(color: context.colors.textSecondary, fontSize: 11)),
             ],
           ),
         ],
@@ -476,13 +477,13 @@ class _GoalDialogState extends State<_GoalDialog> {
           TextButton(
             onPressed: () =>
                 Navigator.pop(context, const _GoalResult.cleared()),
-            child: const Text('Clear',
-                style: TextStyle(color: kTextSecondary)),
+            child: Text('Clear',
+                style: TextStyle(color: context.colors.textSecondary)),
           ),
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel',
-              style: TextStyle(color: kTextSecondary)),
+          child: Text('Cancel',
+              style: TextStyle(color: context.colors.textSecondary)),
         ),
         ElevatedButton(
           onPressed: () =>
@@ -523,7 +524,7 @@ class _Last7DaysCard extends StatelessWidget {
       minuteMap[d] = 0;
     }
 
-    bool _sameDay(DateTime a, DateTime b) =>
+    bool sameDay(DateTime a, DateTime b) =>
         a.year == b.year && a.month == b.month && a.day == b.day;
 
     for (final s in songSessions) {
@@ -550,7 +551,7 @@ class _Last7DaysCard extends StatelessWidget {
         children: days.map((day) {
           final secs = minuteMap[day] ?? 0;
           final mins = secs ~/ 60;
-          final isToday = _sameDay(day, now);
+          final isToday = sameDay(day, now);
           final barFlex = maxSeconds == 0 ? 1 : (secs == 0 ? 1 : secs);
           final emptyFlex = maxSeconds == 0 ? 0 : (maxSeconds - secs);
 
@@ -563,7 +564,7 @@ class _Last7DaysCard extends StatelessWidget {
                     Text(
                       _formatBarLabel(mins),
                       style: TextStyle(
-                        color: isToday ? kGoldColor : kTextPrimary,
+                        color: isToday ? kGoldColor : context.colors.textPrimary,
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                       ),
@@ -582,7 +583,7 @@ class _Last7DaysCard extends StatelessWidget {
                           child: Container(
                             decoration: BoxDecoration(
                               color: secs == 0
-                                  ? kDividerColor
+                                  ? context.colors.divider
                                   : isToday
                                       ? kGoldColor
                                       : kGoldColor.withOpacity(0.5),
@@ -597,7 +598,7 @@ class _Last7DaysCard extends StatelessWidget {
                   Text(
                     DateFormat('E').format(day).substring(0, 1),
                     style: TextStyle(
-                      color: isToday ? kGoldColor : kTextSecondary,
+                      color: isToday ? kGoldColor : context.colors.textSecondary,
                       fontSize: 10,
                       fontWeight:
                           isToday ? FontWeight.w600 : FontWeight.normal,
@@ -641,7 +642,7 @@ class _SongProgressCard extends StatelessWidget {
                 value: '$totalPieces ${totalPieces == 1 ? 'song' : 'songs'}',
                 label: 'total',
                 icon: Icons.library_music,
-                color: kTextPrimary,
+                color: context.colors.textPrimary,
               ),
               const SizedBox(width: 24),
               _InlineStatTile(
@@ -662,7 +663,7 @@ class _SongProgressCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: overallPct / 100,
                     minHeight: 8,
-                    backgroundColor: kDividerColor,
+                    backgroundColor: context.colors.divider,
                     valueColor: const AlwaysStoppedAnimation<Color>(kGoldColor),
                   ),
                 ),
@@ -711,8 +712,8 @@ class _SongProgressCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           '${kStageLabels[stage] ?? stage}: ${stageCounts[stage]} ${stageCounts[stage] == 1 ? 'song' : 'songs'}',
-                          style: const TextStyle(
-                              color: kTextSecondary, fontSize: 10),
+                          style: TextStyle(
+                              color: context.colors.textSecondary, fontSize: 10),
                         ),
                       ],
                     ))
@@ -763,7 +764,7 @@ class _MostPracticedCard extends StatelessWidget {
         children: [
           for (int i = 0; i < top.length; i++) ...[
             if (i > 0)
-              const Divider(height: 16, color: kDividerColor),
+              Divider(height: 16, color: context.colors.divider),
             _MostPracticedRow(
               rank: i + 1,
               piece: pieces.getPieceById(top[i].key),
@@ -797,8 +798,8 @@ class _MostPracticedRow extends StatelessWidget {
           width: 20,
           child: Text(
             '$rank',
-            style: const TextStyle(
-                color: kTextSecondary,
+            style: TextStyle(
+                color: context.colors.textSecondary,
                 fontSize: 12,
                 fontWeight: FontWeight.w600),
           ),
@@ -818,8 +819,8 @@ class _MostPracticedRow extends StatelessWidget {
             children: [
               Text(
                 piece?.name ?? 'Unknown Song',
-                style: const TextStyle(
-                    color: kTextPrimary,
+                style: TextStyle(
+                    color: context.colors.textPrimary,
                     fontSize: 13,
                     fontWeight: FontWeight.w500),
                 overflow: TextOverflow.ellipsis,
@@ -827,8 +828,8 @@ class _MostPracticedRow extends StatelessWidget {
               if (piece?.composer != null)
                 Text(
                   piece!.composer!,
-                  style: const TextStyle(
-                      color: kTextSecondary, fontSize: 11),
+                  style: TextStyle(
+                      color: context.colors.textSecondary, fontSize: 11),
                   overflow: TextOverflow.ellipsis,
                 ),
             ],
@@ -836,7 +837,7 @@ class _MostPracticedRow extends StatelessWidget {
         ),
         Text(
           _formatPracticeDuration(totalSeconds),
-          style: const TextStyle(color: kTextSecondary, fontSize: 11),
+          style: TextStyle(color: context.colors.textSecondary, fontSize: 11),
         ),
       ],
     );
@@ -858,9 +859,9 @@ class _Card extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kCardColor,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kDividerColor),
+        border: Border.all(color: context.colors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -869,8 +870,8 @@ class _Card extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: kTextSecondary,
+                style: TextStyle(
+                  color: context.colors.textSecondary,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.5,
@@ -918,11 +919,11 @@ class _InlineStatTile extends StatelessWidget {
         ),
         Row(
           children: [
-            Icon(icon, size: 12, color: kTextSecondary),
+            Icon(icon, size: 12, color: context.colors.textSecondary),
             const SizedBox(width: 3),
             Text(label,
                 style:
-                    const TextStyle(color: kTextSecondary, fontSize: 11)),
+                    TextStyle(color: context.colors.textSecondary, fontSize: 11)),
           ],
         ),
       ],
@@ -1016,14 +1017,17 @@ class _DataCardState extends State<_DataCard> {
     final pieceCount = (data['pieces'] as List).length;
     final sessionCount = (data['practice_sessions'] as List).length;
     final exerciseCount = (data['exercises'] as List).length;
+    final cardColor = context.colors.card;
+    final textPrimary = context.colors.textPrimary;
+    final textSecondary = context.colors.textSecondary;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: kCardColor,
-        title: const Text(
+        backgroundColor: cardColor,
+        title: Text(
           'Replace all data?',
-          style: TextStyle(color: kTextPrimary),
+          style: TextStyle(color: textPrimary),
         ),
         content: Text(
           'Your current data will be replaced with:\n\n'
@@ -1031,12 +1035,12 @@ class _DataCardState extends State<_DataCard> {
           '• $sessionCount practice ${sessionCount == 1 ? 'session' : 'sessions'}\n'
           '• $exerciseCount ${exerciseCount == 1 ? 'exercise' : 'exercises'}\n\n'
           'This cannot be undone.',
-          style: const TextStyle(color: kTextSecondary),
+          style: TextStyle(color: textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: kTextSecondary)),
+            child: Text('Cancel', style: TextStyle(color: textSecondary)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -1120,17 +1124,17 @@ class _DataCardState extends State<_DataCard> {
             child: OutlinedButton.icon(
               onPressed: busy ? null : _import,
               icon: _isImporting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: kTextSecondary),
+                          strokeWidth: 2, color: context.colors.textSecondary),
                     )
                   : const Icon(Icons.download_outlined, size: 16),
               label: const Text('Import'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: kTextSecondary,
-                side: const BorderSide(color: kDividerColor),
+                foregroundColor: context.colors.textSecondary,
+                side: BorderSide(color: context.colors.divider),
                 padding: const EdgeInsets.symmetric(vertical: 10),
               ),
             ),
