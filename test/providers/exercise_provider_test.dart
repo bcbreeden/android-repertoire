@@ -181,6 +181,34 @@ void main() {
     });
   });
 
+  // ── bookNames ─────────────────────────────────────────────────────────────
+  group('bookNames', () {
+    test('returns empty list when no exercises have books', () async {
+      await provider.addExercise(_exercise());
+      expect(provider.bookNames, isEmpty);
+    });
+
+    test('returns unique sorted book names', () async {
+      final now = DateTime(2024, 1, 1);
+      await provider.addExercise(
+          Exercise(name: 'A', book: 'Hanon', createdAt: now, updatedAt: now));
+      await provider.addExercise(
+          Exercise(name: 'B', book: 'Alfred', createdAt: now, updatedAt: now));
+      await provider.addExercise(
+          Exercise(name: 'C', book: 'Hanon', createdAt: now, updatedAt: now));
+      expect(provider.bookNames, ['Alfred', 'Hanon']);
+    });
+
+    test('excludes null and empty books', () async {
+      final now = DateTime(2024, 1, 1);
+      await provider.addExercise(
+          Exercise(name: 'A', book: null, createdAt: now, updatedAt: now));
+      await provider.addExercise(
+          Exercise(name: 'B', book: '', createdAt: now, updatedAt: now));
+      expect(provider.bookNames, isEmpty);
+    });
+  });
+
   // ── clearError ────────────────────────────────────────────────────────────
   group('clearError', () {
     test('clears error field and notifies listeners', () {

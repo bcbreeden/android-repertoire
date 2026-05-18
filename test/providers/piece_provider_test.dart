@@ -321,6 +321,35 @@ void main() {
     });
   });
 
+  // ── bookNames ─────────────────────────────────────────────────────────────
+
+  group('bookNames', () {
+    test('returns empty list when no pieces have books', () async {
+      await provider.addPiece(_piece());
+      expect(provider.bookNames, isEmpty);
+    });
+
+    test('returns unique sorted book names', () async {
+      final now = DateTime(2024, 1, 1);
+      await provider.addPiece(Piece(
+          name: 'A', createdAt: now, updatedAt: now, book: 'Royal Conservatory'));
+      await provider.addPiece(Piece(
+          name: 'B', createdAt: now, updatedAt: now, book: 'Alfred Adult'));
+      await provider.addPiece(Piece(
+          name: 'C', createdAt: now, updatedAt: now, book: 'Royal Conservatory'));
+      expect(provider.bookNames, ['Alfred Adult', 'Royal Conservatory']);
+    });
+
+    test('excludes null and empty books', () async {
+      final now = DateTime(2024, 1, 1);
+      await provider.addPiece(
+          Piece(name: 'A', createdAt: now, updatedAt: now, book: null));
+      await provider.addPiece(
+          Piece(name: 'B', createdAt: now, updatedAt: now, book: ''));
+      expect(provider.bookNames, isEmpty);
+    });
+  });
+
   // ── clearError ────────────────────────────────────────────────────────────
 
   group('clearError', () {

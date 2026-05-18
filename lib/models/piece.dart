@@ -9,6 +9,8 @@ class Piece {
   final int? currentTempo;
   final int? targetTempo;
   final String? notes;
+  final String? book;
+  final int? page;
   final String status;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -26,6 +28,8 @@ class Piece {
     this.currentTempo,
     this.targetTempo,
     this.notes,
+    this.book,
+    this.page,
     this.status = kStageLearning,
     required this.createdAt,
     required this.updatedAt,
@@ -78,6 +82,8 @@ class Piece {
     int? currentTempo,
     int? targetTempo,
     String? notes,
+    String? book,
+    int? page,
     String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -88,6 +94,8 @@ class Piece {
     bool clearCurrentTempo = false,
     bool clearTargetTempo = false,
     bool clearNotes = false,
+    bool clearBook = false,
+    bool clearPage = false,
   }) {
     return Piece(
       id: id ?? this.id,
@@ -101,6 +109,8 @@ class Piece {
           clearCurrentTempo ? null : (currentTempo ?? this.currentTempo),
       targetTempo: clearTargetTempo ? null : (targetTempo ?? this.targetTempo),
       notes: clearNotes ? null : (notes ?? this.notes),
+      book: clearBook ? null : (book ?? this.book),
+      page: clearPage ? null : (page ?? this.page),
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -119,6 +129,8 @@ class Piece {
       'current_tempo': currentTempo,
       'target_tempo': targetTempo,
       'notes': notes,
+      'book': book,
+      'page': page,
       'status': status,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -137,6 +149,8 @@ class Piece {
       currentTempo: map['current_tempo'] as int?,
       targetTempo: map['target_tempo'] as int?,
       notes: map['notes'] as String?,
+      book: map['book'] as String?,
+      page: map['page'] as int?,
       status: map['status'] as String? ?? kStageLearning,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),

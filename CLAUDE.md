@@ -14,10 +14,10 @@ lib/
   models/
     piece.dart               # Piece model with computed properties
     practice_session.dart    # Practice session model
-    exercise.dart            # Exercise model (name, source, notes — no stages)
+    exercise.dart            # Exercise model (name, source, notes, book, page — no stages)
     exercise_session.dart    # ExerciseSession model (exerciseId, bpm, notes, duration)
   database/
-    database_helper.dart     # SQLite singleton (sqflite), schema version 6
+    database_helper.dart     # SQLite singleton (sqflite), schema version 9
   providers/
     piece_provider.dart      # PieceProvider (ChangeNotifier) — single source of truth for songs
     exercise_provider.dart   # ExerciseProvider (ChangeNotifier) — single source of truth for exercises
@@ -40,8 +40,10 @@ lib/
     stage_progress_tracker.dart
     stats_card.dart
     paywall_sheet.dart
+    book_field.dart          # Autocomplete widget for book name, shared by both forms
   utils/
     constants.dart           # Stage identifiers, kStageOrder, colors, nextStage(), etc.
+    achievements.dart        # Achievement definitions (kAchievements list, Achievement class, AchievementCheck typedef)
 ```
 
 ## Stage Pipeline
@@ -60,13 +62,16 @@ Helper functions in `constants.dart`: `nextStage()`, `isLastStage()`, `stageInde
 - **Stage timestamps are write-once** — `advancePieceStage()` and `setPieceStage()` only set a stage timestamp if it is currently null. First-achievement time is preserved forever.
 - **No backlog stage**: The pipeline is just two stages — `learning` → `repertoire`. All new pieces start in `learning` with `learningAt` set to creation time.
 - **Free tier cap**: `canAddPiece` returns false if `!isPremium && pieces.length >= 3`. Premium status is stored in `SharedPreferences` under key `'is_premium'`.
+- **Weekly practice goal**: Stored in `SharedPreferences` under key `'weekly_goal_hours'` (int, 1–20). Managed entirely within `_ThisWeekCard` (a `StatefulWidget` in `stats_screen.dart`). The flag icon button (outlined = no goal, filled = goal set) opens `_GoalDialog` (a slider dialog). The card shows a `LinearProgressIndicator` toward the goal when one is set; turns green when met. `_ThisWeekCard` is shown in both the normal and empty-state layout so users can set a goal even before logging any sessions.
+- **Achievements**: 13 achievements defined in `lib/utils/achievements.dart` (`kAchievements` list). Each `Achievement` has an `id`, `name`, `description`, `icon`, `color`, and a `AchievementCheck` function `(PieceProvider, ExerciseProvider) → bool`. Unlock timestamps are persisted in `SharedPreferences` under keys `achievement_{id}`. The `_AchievementsCard` in `stats_screen.dart` is a `StatefulWidget` that loads unlock state on init, then re-checks whenever provider data changes (via `didUpdateWidget` with a signature-based diff). The card shows a 4-column `GridView` of tiles — colored icon + name when unlocked, lock icon + dimmed name when locked. Tapping a tile opens a detail dialog with description and unlock date. Achievements appear in both the empty-state and non-empty Stats layouts.
 - **Piece sorting**: `filteredPieces` sorts by last practice date descending; pieces with no sessions sort to the end.
 - **Portrait-only**: `SystemChrome.setPreferredOrientations` enforces this at startup.
 - **Startup flow**: `SplashScreen` is the initial route. It parallel-loads both `PieceProvider.loadPieces()` and `ExerciseProvider.loadExercises()` via `Future.wait`, shows an animated progress bar, then crossfades to `MainScreen`. Neither `PiecesTab` nor `ExercisesTab` call load in `initState` — pull-to-refresh still works via explicit `onRefresh` callbacks.
 - **Bottom NavigationBar**: `MainScreen` uses a `NavigationBar` (Material 3, bottom) with `IndexedStack` instead of a top `TabBar` + `TabBarView`. All four tabs are always mounted (IndexedStack keeps them alive), so `AutomaticKeepAliveClientMixin` on tab screens is redundant but harmless. NavigationBar is themed with `kBackgroundColor`, gold indicator, and `WidgetStateProperty` for label/icon colors.
 - **Filter bar is horizontal scroll**: `_FilterBar` in `home_screen.dart` uses `SingleChildScrollView(scrollDirection: Axis.horizontal)` + `Row` instead of `Wrap`, so all filter chips stay on one row without wrapping.
 - **Exercises tab**: Middle tab (index 1) in a 3-tab layout (Songs=0, Exercises=1, Practice=2). Exercises have no stages — just a name, optional source (e.g. "Hanon"), and optional notes. Sessions record BPM, notes, and duration. The Play button on each `ExerciseCard` is always visible (unconditional). Session history lives in `ExerciseDetailScreen`, not in `PracticeTab`.
-- **DB schema v7**: Removes backlog stage. Migration from v6: all `status='backlog'` rows become `status='learning'`. The `backlog_at` column remains in the DB (unused, harmless). Earlier migrations (v5→v6) added `backlog_at`; v6→v7 renders it defunct.
+- **DB schema v9**: Current version. v7 removed backlog stage; v8 dropped NOT NULL constraint on `measures` via table recreation; v9 added `book TEXT` and `page INTEGER` columns to both `pieces` and `exercises`. The `backlog_at` column remains in `pieces` (unused, harmless).
+- **Book/page fields**: Both `Piece` and `Exercise` have optional `book` (String?) and `page` (int?) fields for referencing a music book and page number. In forms, book uses `BookField` (an `Autocomplete<String>` widget in `lib/widgets/book_field.dart`) populated from `PieceProvider.bookNames` / `ExerciseProvider.bookNames` — unique, sorted lists of previously used book names. The autocomplete `TextEditingController` is owned by `Autocomplete` and exposed via an `onControllerReady` callback; the form reads it at save time via a nullable `_bookFieldController` field.
 - **FAB per tab**: Songs tab → Add Song (with long-press shortcut to Log Practice), Exercises tab → Add Exercise, Practice tab → Log Practice. Uses `Consumer2<PieceProvider, ExerciseProvider>`. Practice FAB hides only when BOTH providers have zero items.
 - **Dark gold theme**: `kGoldColor = #C9A227`, `kBackgroundColor = #111318`. All UI uses the centralized theme from `main.dart`.
 - **Debug seed button**: `Icons.science_outlined` FAB visible only in `kDebugMode`. Seeds 40 pieces across 2 stages (30 Learning, 10 Repertoire) with realistic data and practice sessions.
@@ -146,6 +151,7 @@ flutter test integration_test/app_test.dart -d <device-id>
 - Groups with independent tests use `setUp` to reset before each test.
 - `DatabaseHelper.instance.resetForTesting()` deletes all rows without closing the connection.
 - The "Stage advancement" group uses `setUpAll` to reset + seed once; both tests share that data.
+- The "Stats tab" group also clears `SharedPreferences` key `'weekly_goal_hours'` in `setUp` to avoid goal state leaking between tests.
 
 Key helpers in `app_test.dart`:
 - `_cardFinder(name)` — `find.byWidgetPredicate` matching `PieceCard.piece.name`. Uses `skipOffstage: false` so assertions work regardless of scroll position.
@@ -162,7 +168,11 @@ Integration test pitfalls:
 - **Keyboard blocking bottom-sheet buttons**: After `enterText` inside a modal bottom sheet, the soft keyboard remains up and its hit-test layer blocks taps on buttons near the bottom of the sheet (e.g. "Save Session"). Always call `FocusManager.instance.primaryFocus?.unfocus(); await tester.pumpAndSettle();` before tapping such buttons.
 - **Practice tab empty-state text**: When both providers have zero items the text is "Nothing added yet"; when items exist but no sessions have been logged it is "No sessions yet". The old "No songs yet" string no longer exists.
 - **Tab navigation in tests**: Use `find.widgetWithText(NavigationDestination, 'Exercises')` (not `find.text('Exercises')`) to avoid ambiguity with exercise names rendered elsewhere on screen. Same pattern for `'Practice'`.
+- **Stats tab ListView cache extent**: Cards deep in the Stats `ListView` (e.g. `MOST PRACTICED`, `DATA`) may not be built if the achievements grid pushes them far below the viewport. Use `skipOffstage: false` only for widgets that are built but invisible; for un-built ListView children, scroll first or omit the assertion. `ensureVisible` also requires the widget to already be in the element tree (built by ListView), so it won't work for un-built items.
 - **Exercise names in Practice tab assertions**: When asserting an exercise name appears in the Practice tab after navigating from the Exercises tab, use `findsAtLeastNWidgets(1)` — the Exercises tab card remains in-tree via `AutomaticKeepAliveClientMixin` and is NOT wrapped in `Offstage`, so `skipOffstage: true` does not filter it out.
+- **Piece wizard field indices**: `BookField` (Autocomplete) renders a `TextFormField` and is visible to `find.byType(TextFormField)`. Step 1 order: 0=Title, 1=Composer, 2=Book, 3=Page, 4=Total Measures, 5=Target BPM, 6=Current BPM. Edit form order: 0=Title, 1=Composer, 2=Book, 3=Page, 4=Total Measures, 5=Measures Learned, 6=Current Tempo, 7=Target Tempo, 8=Notes.
+- **Exercise form field indices**: 0=Name, 1=Source, 2=Book (Autocomplete TextFormField), 3=Page, 4=Notes.
+- **"Add Exercise" button scrolling**: The exercise form's `ListView` may need `await tester.ensureVisible(find.text('Add Exercise', skipOffstage: false))` before tapping — the extra book/page fields push the button below the visible area when the keyboard is up.
 
 ## Dependencies
 

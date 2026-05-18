@@ -198,6 +198,23 @@ class _InfoCard extends StatelessWidget {
               ),
             ),
           ],
+          if (exercise.book != null && exercise.book!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.menu_book_outlined,
+                    size: 14, color: kTextSecondary),
+                const SizedBox(width: 6),
+                Text(
+                  exercise.page != null
+                      ? '${exercise.book}, p. ${exercise.page}'
+                      : exercise.book!,
+                  style:
+                      const TextStyle(color: kTextSecondary, fontSize: 13),
+                ),
+              ],
+            ),
+          ],
           if (exercise.notes != null && exercise.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
             const Divider(color: kDividerColor, height: 1),

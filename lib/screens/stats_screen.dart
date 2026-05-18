@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/achievements.dart';
 import '../database/database_helper.dart';
 import '../models/practice_session.dart';
 import '../models/exercise_session.dart';
@@ -35,13 +37,19 @@ class StatsTab extends StatelessWidget {
         );
 
         if (isEmpty) {
-          return Column(
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             children: [
-              const Expanded(child: _EmptyStats()),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                child: dataCard,
-              ),
+              const SizedBox(height: 48),
+              const _EmptyStats(),
+              const SizedBox(height: 24),
+              _AchievementsCard(
+                  pieceProvider: pieces, exerciseProvider: exercises),
+              const SizedBox(height: 16),
+              _ThisWeekCard(
+                  songSessions: allSongSessions, exSessions: allExSessions),
+              const SizedBox(height: 16),
+              dataCard,
             ],
           );
         }
@@ -59,6 +67,13 @@ class StatsTab extends StatelessWidget {
 
             // ── Last 7 days bar chart ──────────────────────────────────────
             _Last7DaysCard(songSessions: allSongSessions, exSessions: allExSessions),
+            const SizedBox(height: 16),
+
+            // ── Achievements ──────────────────────────────────────────────
+            _AchievementsCard(
+              pieceProvider: pieces,
+              exerciseProvider: exercises,
+            ),
             const SizedBox(height: 16),
 
             // ── Song progress ─────────────────────────────────────────────
@@ -100,6 +115,15 @@ class StatsTab extends StatelessWidget {
 }
 
 // ── Duration formatting ────────────────────────────────────────────────────────
+
+/// Formats a minute count for the bar chart labels above each bar.
+/// e.g. 45 → "45m", 60 → "1hr", 65 → "1hr 5m", 120 → "2hr"
+String _formatBarLabel(int totalMinutes) {
+  if (totalMinutes < 60) return '${totalMinutes}m';
+  final h = totalMinutes ~/ 60;
+  final m = totalMinutes % 60;
+  return m == 0 ? '${h}hr' : '${h}hr ${m}m';
+}
 
 String _formatPracticeDuration(int seconds) {
   if (seconds == 0) return '0 min';
@@ -250,7 +274,7 @@ class _StatBox extends StatelessWidget {
 
 // ── This week card ─────────────────────────────────────────────────────────────
 
-class _ThisWeekCard extends StatelessWidget {
+class _ThisWeekCard extends StatefulWidget {
   final List<PracticeSession> songSessions;
   final List<ExerciseSession> exSessions;
 
@@ -260,35 +284,224 @@ class _ThisWeekCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  State<_ThisWeekCard> createState() => _ThisWeekCardState();
+}
+
+class _ThisWeekCardState extends State<_ThisWeekCard> {
+  static const _kGoalKey = 'weekly_goal_hours';
+  int? _goalHours;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGoal();
+  }
+
+  Future<void> _loadGoal() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) setState(() => _goalHours = prefs.getInt(_kGoalKey));
+  }
+
+  Future<void> _saveGoal(int? hours) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (hours == null) {
+      await prefs.remove(_kGoalKey);
+    } else {
+      await prefs.setInt(_kGoalKey, hours);
+    }
+    if (mounted) setState(() => _goalHours = hours);
+  }
+
+  int _weekSeconds() {
     final now = DateTime.now();
-    // Start of current week (Monday)
     final weekStart =
         DateTime(now.year, now.month, now.day - (now.weekday - 1));
-
     int seconds = 0;
-
-    for (final s in songSessions) {
-      if (!s.timestamp.isBefore(weekStart)) {
-        seconds += s.durationSeconds ?? 0;
-      }
+    for (final s in widget.songSessions) {
+      if (!s.timestamp.isBefore(weekStart)) seconds += s.durationSeconds ?? 0;
     }
-    for (final s in exSessions) {
-      if (!s.timestamp.isBefore(weekStart)) {
-        seconds += s.durationSeconds ?? 0;
-      }
+    for (final s in widget.exSessions) {
+      if (!s.timestamp.isBefore(weekStart)) seconds += s.durationSeconds ?? 0;
     }
+    return seconds;
+  }
 
-    final timeStr = _formatPracticeDuration(seconds);
+  Future<void> _showGoalDialog() async {
+    final result = await showDialog<_GoalResult>(
+      context: context,
+      builder: (_) => _GoalDialog(
+        initialHours: _goalHours ?? 5,
+        hasGoal: _goalHours != null,
+      ),
+    );
+    if (result == null) return;
+    await _saveGoal(result.clear ? null : result.hours);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final seconds = _weekSeconds();
+    final goalSeconds = _goalHours != null ? _goalHours! * 3600 : null;
+    final progress = goalSeconds != null
+        ? (seconds / goalSeconds).clamp(0.0, 1.0)
+        : null;
+    final goalMet = progress != null && progress >= 1.0;
+    final progressColor = goalMet ? const Color(0xFF4CAF50) : kGoldColor;
 
     return _Card(
       label: 'THIS WEEK',
-      child: _InlineStatTile(
-        value: timeStr,
-        label: 'practiced',
-        icon: Icons.timer_outlined,
-        color: kGoldColor,
+      action: IconButton(
+        icon: Icon(
+          _goalHours != null ? Icons.flag : Icons.flag_outlined,
+          size: 15,
+          color: _goalHours != null ? kGoldColor : kTextSecondary,
+        ),
+        onPressed: _showGoalDialog,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        tooltip: 'Set weekly goal',
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _InlineStatTile(
+            value: _formatPracticeDuration(seconds),
+            label: goalSeconds != null
+                ? 'of ${_goalHours}h goal this week'
+                : 'practiced this week',
+            icon: Icons.timer_outlined,
+            color: goalMet ? progressColor : kGoldColor,
+          ),
+          if (goalSeconds != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 6,
+                      backgroundColor: kDividerColor,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(progressColor),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  goalMet ? 'Done!' : '${(progress! * 100).round()}%',
+                  style: TextStyle(
+                    color: progressColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Weekly goal dialog ──────────────────────────────────────────────────────────
+
+class _GoalResult {
+  final int hours;
+  final bool clear;
+  const _GoalResult.set(this.hours) : clear = false;
+  const _GoalResult.cleared() : hours = 0, clear = true;
+}
+
+class _GoalDialog extends StatefulWidget {
+  final int initialHours;
+  final bool hasGoal;
+
+  const _GoalDialog({required this.initialHours, required this.hasGoal});
+
+  @override
+  State<_GoalDialog> createState() => _GoalDialogState();
+}
+
+class _GoalDialogState extends State<_GoalDialog> {
+  late double _hours;
+
+  @override
+  void initState() {
+    super.initState();
+    _hours = widget.initialHours.toDouble();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final h = _hours.round();
+    return AlertDialog(
+      backgroundColor: kCardColor,
+      title: const Text(
+        'Weekly Practice Goal',
+        style: TextStyle(color: kTextPrimary, fontSize: 16),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$h ${h == 1 ? 'hour' : 'hours'} per week',
+            style: const TextStyle(
+              color: kGoldColor,
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: kGoldColor,
+              inactiveTrackColor: kDividerColor,
+              thumbColor: kGoldColor,
+              overlayColor: kGoldColor.withOpacity(0.15),
+            ),
+            child: Slider(
+              value: _hours,
+              min: 1,
+              max: 20,
+              divisions: 19,
+              onChanged: (v) => setState(() => _hours = v),
+            ),
+          ),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('1h', style: TextStyle(color: kTextSecondary, fontSize: 11)),
+              Text('20h', style: TextStyle(color: kTextSecondary, fontSize: 11)),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        if (widget.hasGoal)
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context, const _GoalResult.cleared()),
+            child: const Text('Clear',
+                style: TextStyle(color: kTextSecondary)),
+          ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel',
+              style: TextStyle(color: kTextSecondary)),
+        ),
+        ElevatedButton(
+          onPressed: () =>
+              Navigator.pop(context, _GoalResult.set(_hours.round())),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kGoldColor,
+            foregroundColor: const Color(0xFF1A1200),
+          ),
+          child: const Text('Set Goal'),
+        ),
+      ],
     );
   }
 }
@@ -356,7 +569,7 @@ class _Last7DaysCard extends StatelessWidget {
                 children: [
                   if (mins > 0)
                     Text(
-                      '${mins}m',
+                      _formatBarLabel(mins),
                       style: TextStyle(
                         color: isToday ? kGoldColor : kTextPrimary,
                         fontSize: 10,
@@ -528,6 +741,239 @@ class _SongProgressCard extends StatelessWidget {
   }
 }
 
+// ── Achievements card ──────────────────────────────────────────────────────────
+
+class _AchievementsCard extends StatefulWidget {
+  final PieceProvider pieceProvider;
+  final ExerciseProvider exerciseProvider;
+
+  const _AchievementsCard({
+    required this.pieceProvider,
+    required this.exerciseProvider,
+  });
+
+  @override
+  State<_AchievementsCard> createState() => _AchievementsCardState();
+}
+
+class _AchievementsCardState extends State<_AchievementsCard> {
+  Map<String, DateTime> _unlockedAt = {};
+  bool _loaded = false;
+  bool _checking = false;
+  String _lastSignature = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  @override
+  void didUpdateWidget(_AchievementsCard old) {
+    super.didUpdateWidget(old);
+    final sig = _signature();
+    if (_loaded && sig != _lastSignature) {
+      _lastSignature = sig;
+      _checkNewUnlocks();
+    }
+  }
+
+  String _signature() =>
+      '${widget.pieceProvider.practiceSessions.length}'
+      '_${widget.exerciseProvider.sessions.length}'
+      '_${widget.pieceProvider.totalCount}'
+      '_${widget.pieceProvider.repertoireCount}'
+      '_${widget.pieceProvider.streak}';
+
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    final map = <String, DateTime>{};
+    for (final a in kAchievements) {
+      final ts = prefs.getString('achievement_${a.id}');
+      if (ts != null) map[a.id] = DateTime.parse(ts);
+    }
+    if (!mounted) return;
+    setState(() {
+      _unlockedAt = map;
+      _loaded = true;
+      _lastSignature = _signature();
+    });
+    await _checkNewUnlocks();
+  }
+
+  Future<void> _checkNewUnlocks() async {
+    if (!_loaded || _checking) return;
+    _checking = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      bool anyNew = false;
+      for (final a in kAchievements) {
+        if (!_unlockedAt.containsKey(a.id) &&
+            a.check(widget.pieceProvider, widget.exerciseProvider)) {
+          final now = DateTime.now();
+          await prefs.setString('achievement_${a.id}', now.toIso8601String());
+          _unlockedAt[a.id] = now;
+          anyNew = true;
+        }
+      }
+      if (!mounted || !anyNew) return;
+      setState(() {});
+    } finally {
+      _checking = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded) return const SizedBox.shrink();
+    final unlockedCount =
+        kAchievements.where((a) => _unlockedAt.containsKey(a.id)).length;
+    return _Card(
+      label: 'ACHIEVEMENTS · $unlockedCount / ${kAchievements.length}',
+      child: GridView.count(
+        crossAxisCount: 4,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        childAspectRatio: 0.78,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 4,
+        children: kAchievements
+            .map((a) => _AchievementTile(
+                  achievement: a,
+                  unlockedAt: _unlockedAt[a.id],
+                ))
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _AchievementTile extends StatelessWidget {
+  final Achievement achievement;
+  final DateTime? unlockedAt;
+
+  const _AchievementTile({required this.achievement, required this.unlockedAt});
+
+  @override
+  Widget build(BuildContext context) {
+    final unlocked = unlockedAt != null;
+
+    return GestureDetector(
+      onTap: () => _showDetail(context),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: unlocked
+                  ? achievement.color.withValues(alpha: 0.15)
+                  : kDividerColor,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: unlocked
+                    ? achievement.color.withValues(alpha: 0.4)
+                    : Colors.transparent,
+              ),
+            ),
+            child: Icon(
+              unlocked ? achievement.icon : Icons.lock_outline,
+              color: unlocked
+                  ? achievement.color
+                  : kTextSecondary.withValues(alpha: 0.35),
+              size: 20,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            unlocked ? achievement.name : achievement.name,
+            style: TextStyle(
+              color: unlocked
+                  ? kTextPrimary
+                  : kTextSecondary.withValues(alpha: 0.4),
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDetail(BuildContext context) {
+    final unlocked = unlockedAt != null;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: kCardColor,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: unlocked
+                    ? achievement.color.withValues(alpha: 0.15)
+                    : kDividerColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: unlocked
+                      ? achievement.color.withValues(alpha: 0.4)
+                      : Colors.transparent,
+                ),
+              ),
+              child: Icon(
+                unlocked ? achievement.icon : Icons.lock_outline,
+                color: unlocked ? achievement.color : kTextSecondary,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              achievement.name,
+              style: TextStyle(
+                color: unlocked ? kTextPrimary : kTextSecondary,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              achievement.description,
+              style: const TextStyle(color: kTextSecondary, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+            if (unlocked) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Unlocked ${DateFormat('MMM d, yyyy').format(unlockedAt!)}',
+                style: TextStyle(
+                  color: achievement.color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close',
+                style: TextStyle(color: kTextSecondary)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── Most practiced card ────────────────────────────────────────────────────────
 
 class _MostPracticedCard extends StatelessWidget {
@@ -643,8 +1089,9 @@ class _MostPracticedRow extends StatelessWidget {
 class _Card extends StatelessWidget {
   final String label;
   final Widget child;
+  final Widget? action;
 
-  const _Card({required this.label, required this.child});
+  const _Card({required this.label, required this.child, this.action});
 
   @override
   Widget build(BuildContext context) {
@@ -659,14 +1106,22 @@ class _Card extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: kTextSecondary,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
+          Row(
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: kTextSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              if (action != null) ...[
+                const Spacer(),
+                action!,
+              ],
+            ],
           ),
           const SizedBox(height: 12),
           child,

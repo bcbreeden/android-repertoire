@@ -30,6 +30,17 @@ class ExerciseProvider extends ChangeNotifier {
     return list;
   }
 
+  List<String> get bookNames {
+    final names = _exercises
+        .map((e) => e.book)
+        .whereType<String>()
+        .where((b) => b.isNotEmpty)
+        .toSet()
+        .toList();
+    names.sort();
+    return names;
+  }
+
   Exercise? getExerciseById(int id) {
     try {
       return _exercises.firstWhere((e) => e.id == id);

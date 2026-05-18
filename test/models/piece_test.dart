@@ -257,6 +257,32 @@ void main() {
       final p = _piece(composer: 'Bach');
       expect(p.copyWith(composer: 'Chopin').composer, 'Chopin');
     });
+
+    test('updates book', () {
+      final p = _piece();
+      expect(p.copyWith(book: 'Alfred Adult').book, 'Alfred Adult');
+    });
+
+    test('clearBook sets book to null', () {
+      final p = Piece(
+        name: 'Test', createdAt: DateTime(2024), updatedAt: DateTime(2024),
+        book: 'Hanon',
+      );
+      expect(p.copyWith(clearBook: true).book, isNull);
+    });
+
+    test('updates page', () {
+      final p = _piece();
+      expect(p.copyWith(page: 12).page, 12);
+    });
+
+    test('clearPage sets page to null', () {
+      final p = Piece(
+        name: 'Test', createdAt: DateTime(2024), updatedAt: DateTime(2024),
+        page: 5,
+      );
+      expect(p.copyWith(clearPage: true).page, isNull);
+    });
   });
 
   // ── toMap / fromMap round-trip ────────────────────────────────────────────
@@ -324,6 +350,27 @@ void main() {
       expect(result.targetTempo, 96);
       expect(result.notes, 'Watch dynamics');
       expect(result.learningAt, ts);
+    });
+
+    test('preserves book and page through round-trip', () {
+      final p = Piece(
+        id: 3,
+        name: 'Étude',
+        createdAt: DateTime(2024),
+        updatedAt: DateTime(2024),
+        book: 'Royal Conservatory',
+        page: 42,
+      );
+      final result = roundTrip(p);
+      expect(result.book, 'Royal Conservatory');
+      expect(result.page, 42);
+    });
+
+    test('null book and page remain null through round-trip', () {
+      final p = _piece();
+      final result = roundTrip(p);
+      expect(result.book, isNull);
+      expect(result.page, isNull);
     });
 
     test('null optional fields remain null through round-trip', () {

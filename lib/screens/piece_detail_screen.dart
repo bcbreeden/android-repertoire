@@ -300,6 +300,23 @@ class _HeroHeader extends StatelessWidget {
                 ),
               ],
             ),
+          if (piece.book != null && piece.book!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.menu_book_outlined,
+                    size: 14, color: kTextSecondary),
+                const SizedBox(width: 4),
+                Text(
+                  piece.page != null
+                      ? '${piece.book}, p. ${piece.page}'
+                      : piece.book!,
+                  style:
+                      const TextStyle(color: kTextSecondary, fontSize: 13),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

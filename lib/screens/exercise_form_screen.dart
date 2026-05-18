@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/exercise.dart';
 import '../providers/exercise_provider.dart';
 import '../utils/constants.dart';
+import '../widgets/book_field.dart';
 
 class ExerciseFormScreen extends StatefulWidget {
   final Exercise? exercise;
@@ -18,6 +20,8 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _sourceController;
   late final TextEditingController _notesController;
+  late final TextEditingController _pageController;
+  TextEditingController? _bookFieldController;
   bool _isSaving = false;
 
   bool get isEditing => widget.exercise != null;
@@ -29,6 +33,7 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
     _nameController = TextEditingController(text: e?.name ?? '');
     _sourceController = TextEditingController(text: e?.source ?? '');
     _notesController = TextEditingController(text: e?.notes ?? '');
+    _pageController = TextEditingController(text: e?.page?.toString() ?? '');
   }
 
   @override
@@ -36,6 +41,7 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
     _nameController.dispose();
     _sourceController.dispose();
     _notesController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -48,6 +54,10 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
     final name = _nameController.text.trim();
     final source = _sourceController.text.trim();
     final notes = _notesController.text.trim();
+    final book = (_bookFieldController?.text ?? '').trim();
+    final page = _pageController.text.trim().isEmpty
+        ? null
+        : int.tryParse(_pageController.text);
     final now = DateTime.now();
 
     if (isEditing) {
@@ -55,9 +65,13 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
         name: name,
         source: source.isEmpty ? null : source,
         notes: notes.isEmpty ? null : notes,
+        book: book.isEmpty ? null : book,
+        page: page,
         updatedAt: now,
         clearSource: source.isEmpty,
         clearNotes: notes.isEmpty,
+        clearBook: book.isEmpty,
+        clearPage: page == null,
       );
       await provider.updateExercise(updated);
     } else {
@@ -65,6 +79,8 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
         name: name,
         source: source.isEmpty ? null : source,
         notes: notes.isEmpty ? null : notes,
+        book: book.isEmpty ? null : book,
+        page: page,
         createdAt: now,
         updatedAt: now,
       );
@@ -128,6 +144,24 @@ class _ExerciseFormScreenState extends State<ExerciseFormScreen> {
               style: const TextStyle(color: kTextPrimary),
               decoration: _inputDecoration('e.g. Hanon, Czerny, Original'),
               textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 20),
+            _label('Book (optional)'),
+            const SizedBox(height: 6),
+            BookField(
+              initialValue: widget.exercise?.book ?? '',
+              bookNames: context.watch<ExerciseProvider>().bookNames,
+              onControllerReady: (c) => _bookFieldController = c,
+            ),
+            const SizedBox(height: 20),
+            _label('Page Number (optional)'),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _pageController,
+              style: const TextStyle(color: kTextPrimary),
+              decoration: _inputDecoration('e.g. 42'),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             const SizedBox(height: 20),
             _label('Notes (optional)'),

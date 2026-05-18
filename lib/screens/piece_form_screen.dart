@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/piece.dart';
 import '../providers/piece_provider.dart';
 import '../utils/constants.dart';
+import '../widgets/book_field.dart';
 
 class PieceFormScreen extends StatefulWidget {
   final Piece? piece;
@@ -26,6 +27,9 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
   late final TextEditingController _currentTempoController;
   late final TextEditingController _targetTempoController;
   late final TextEditingController _notesController;
+  late final TextEditingController _pageNumberController;
+  // Book field uses Autocomplete's internal controller; we store a reference.
+  TextEditingController? _bookFieldController;
   late String _status;
 
   final PageController _pageController = PageController();
@@ -49,6 +53,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
     _targetTempoController =
         TextEditingController(text: p?.targetTempo?.toString() ?? '');
     _notesController = TextEditingController(text: p?.notes ?? '');
+    _pageNumberController = TextEditingController(text: p?.page?.toString() ?? '');
     _status = p?.status ?? kStageLearning;
   }
 
@@ -61,8 +66,10 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
     _currentTempoController.dispose();
     _targetTempoController.dispose();
     _notesController.dispose();
+    _pageNumberController.dispose();
     _pageController.dispose();
     super.dispose();
+
   }
 
   void _nextStep() {
@@ -98,6 +105,7 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
     final provider = context.read<PieceProvider>();
     final now = DateTime.now();
 
+    final bookText = (_bookFieldController?.text ?? '').trim();
     final piece = Piece(
       id: widget.piece?.id,
       name: _nameController.text.trim(),
@@ -119,6 +127,10 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
       notes: _notesController.text.trim().isEmpty
           ? null
           : _notesController.text.trim(),
+      book: bookText.isEmpty ? null : bookText,
+      page: _pageNumberController.text.trim().isEmpty
+          ? null
+          : int.tryParse(_pageNumberController.text),
       status: _status,
       createdAt: widget.piece?.createdAt ?? now,
       updatedAt: now,
@@ -195,6 +207,20 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
                 controller: _composerController,
                 label: 'Composer',
                 hint: 'e.g. Ludwig van Beethoven',
+              ),
+              const SizedBox(height: 12),
+              BookField(
+                initialValue: widget.piece?.book ?? '',
+                bookNames: context.watch<PieceProvider>().bookNames,
+                onControllerReady: (c) => _bookFieldController = c,
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                controller: _pageNumberController,
+                label: 'Page Number',
+                hint: 'e.g. 42',
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
               const SizedBox(height: 12),
               _buildTextField(
@@ -404,6 +430,20 @@ class _PieceFormScreenState extends State<PieceFormScreen> {
               controller: _composerController,
               label: 'Composer',
               hint: 'e.g. Ludwig van Beethoven',
+            ),
+            const SizedBox(height: 16),
+            BookField(
+              initialValue: widget.piece?.book ?? '',
+              bookNames: context.watch<PieceProvider>().bookNames,
+              onControllerReady: (c) => _bookFieldController = c,
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(
+              controller: _pageNumberController,
+              label: 'Page Number',
+              hint: 'e.g. 42',
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             const SizedBox(height: 16),
             _buildTextField(

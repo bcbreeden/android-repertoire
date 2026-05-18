@@ -64,6 +64,17 @@ class PieceProvider extends ChangeNotifier {
 
   bool get canAddPiece => true; // cap disabled during testing
 
+  List<String> get bookNames {
+    final names = _pieces
+        .map((p) => p.book)
+        .whereType<String>()
+        .where((b) => b.isNotEmpty)
+        .toSet()
+        .toList();
+    names.sort();
+    return names;
+  }
+
   DateTime? lastPracticeDateForPiece(int pieceId) => _lastPracticeDates[pieceId];
 
   Future<List<Map<String, dynamic>>> get recentMilestones =>

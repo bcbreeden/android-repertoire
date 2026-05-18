@@ -22,7 +22,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'repertoire.db');
     return await openDatabase(
       path,
-      version: 8,
+      version: 9,
       onCreate: _createDatabase,
       onUpgrade: _onUpgrade,
     );
@@ -39,6 +39,8 @@ class DatabaseHelper {
         current_tempo INTEGER,
         target_tempo INTEGER,
         notes TEXT,
+        book TEXT,
+        page INTEGER,
         status TEXT NOT NULL DEFAULT '$kStageLearning',
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
@@ -68,6 +70,8 @@ class DatabaseHelper {
         name TEXT NOT NULL,
         source TEXT,
         notes TEXT,
+        book TEXT,
+        page INTEGER,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -200,6 +204,23 @@ class DatabaseHelper {
       ''');
       await db.execute('DROP TABLE pieces');
       await db.execute('ALTER TABLE pieces_new RENAME TO pieces');
+    }
+    if (oldVersion < 9) {
+      // Add book/page to pieces and exercises
+      final pieceCols = await db.rawQuery('PRAGMA table_info(pieces)');
+      if (!pieceCols.any((c) => c['name'] == 'book')) {
+        await db.execute('ALTER TABLE pieces ADD COLUMN book TEXT');
+      }
+      if (!pieceCols.any((c) => c['name'] == 'page')) {
+        await db.execute('ALTER TABLE pieces ADD COLUMN page INTEGER');
+      }
+      final exerciseCols = await db.rawQuery('PRAGMA table_info(exercises)');
+      if (!exerciseCols.any((c) => c['name'] == 'book')) {
+        await db.execute('ALTER TABLE exercises ADD COLUMN book TEXT');
+      }
+      if (!exerciseCols.any((c) => c['name'] == 'page')) {
+        await db.execute('ALTER TABLE exercises ADD COLUMN page INTEGER');
+      }
     }
   }
 
