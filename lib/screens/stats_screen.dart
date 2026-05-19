@@ -513,10 +513,11 @@ class _Last7DaysCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final days = List.generate(7, (i) {
-      final d = now.subtract(Duration(days: 6 - i));
-      return DateTime(d.year, d.month, d.day);
-    });
+    final today = DateTime(now.year, now.month, now.day);
+    // weekday: Mon=1 … Sun=7. Days since last Sunday:
+    final daysSinceSunday = today.weekday % 7;
+    final sunday = today.subtract(Duration(days: daysSinceSunday));
+    final days = List.generate(7, (i) => sunday.add(Duration(days: i)));
 
     // seconds per day
     final minuteMap = <DateTime, int>{};
@@ -545,7 +546,7 @@ class _Last7DaysCard extends StatelessWidget {
     final maxSeconds = minuteMap.values.fold(0, (a, b) => a > b ? a : b);
 
     return _Card(
-      label: 'LAST 7 DAYS · time',
+      label: 'THIS WEEK · time',
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: days.map((day) {
