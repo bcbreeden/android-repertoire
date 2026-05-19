@@ -88,6 +88,17 @@ Future<void> _tapChip(WidgetTester tester, String label) async {
   await tester.pumpAndSettle();
 }
 
+/// Starts the app and waits for the splash screen to complete.
+/// app.main() is async (awaits themeNotifier.load() via a platform channel
+/// before calling runApp), so pumpAndSettle alone can return before runApp
+/// fires. The extra pump bridges this gap consistently across all devices.
+Future<void> _startApp(WidgetTester tester) async {
+  app.main();
+  await tester.pumpAndSettle();
+  await tester.pump(const Duration(seconds: 2));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -100,10 +111,7 @@ void main() {
     });
 
     testWidgets('home screen loads with all tabs', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
-      await tester.pump(const Duration(seconds: 2));
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       expect(find.text('Songs', skipOffstage: false), findsOneWidget);
       expect(find.text('Practice', skipOffstage: false), findsOneWidget);
@@ -111,8 +119,7 @@ void main() {
     });
 
     testWidgets('can add a new piece', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
@@ -140,15 +147,13 @@ void main() {
     });
 
     testWidgets('piece card shows stage badge', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       expect(find.text('Learning'), findsWidgets);
     });
 
     testWidgets('filter chips filter the list', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       // Tap Learning chip — chip always exists even with 0 pieces in stage
       await _tapChip(tester, 'Learning');
@@ -163,13 +168,7 @@ void main() {
     });
 
     testWidgets('tapping a piece opens detail screen', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
-      // main() is async (awaits themeNotifier.load() before runApp), so
-      // pumpAndSettle alone may return before runApp fires. Extra pump ensures
-      // the splash screen completes and MainScreen is fully built.
-      await tester.pump(const Duration(seconds: 2));
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       // Test Piece was created by 'can add a new piece' above and persists
       // because setUpAll only resets once for the whole group.
@@ -186,8 +185,7 @@ void main() {
     });
 
     testWidgets('fills all fields on add, then edits all fields and verifies', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       // ── Add ──────────────────────────────────────────────────────────────
       await tester.tap(find.byType(FloatingActionButton));
@@ -304,8 +302,7 @@ void main() {
     });
 
     testWidgets('Practice tab shows correct empty or history state', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.text('Practice'));
       await tester.pumpAndSettle();
@@ -318,8 +315,7 @@ void main() {
     });
 
     testWidgets('can open log practice sheet and see timer', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.text('Practice'));
       await tester.pumpAndSettle();
@@ -335,8 +331,7 @@ void main() {
     });
 
     testWidgets('timer start and pause work', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.text('Practice'));
       await tester.pumpAndSettle();
@@ -366,8 +361,7 @@ void main() {
     });
 
     testWidgets('app loads without crash on fresh install', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       expect(find.text('Repertoire'), findsAtLeastNWidgets(1));
     });
@@ -384,8 +378,7 @@ void main() {
     });
 
     testWidgets('filter chips isolate pieces by stage', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       // Each stage chip should show a count from the seeded data
       expect(find.textContaining('Learning'), findsAtLeastNWidgets(1));
@@ -417,8 +410,7 @@ void main() {
     });
 
     testWidgets('advancing a piece moves it to the next stage', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       // 'Clair de Lune' is in Learning — near top of sorted list
       await _openPiece(tester, 'Clair de Lune');
@@ -463,8 +455,7 @@ void main() {
     });
 
     testWidgets('deleting a song removes it from the list', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
@@ -501,8 +492,7 @@ void main() {
     });
 
     testWidgets('cancelling the delete dialog keeps the song', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
@@ -543,8 +533,7 @@ void main() {
     });
 
     testWidgets('saving a session shows it in the Practice tab', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
@@ -592,8 +581,7 @@ void main() {
     });
 
     testWidgets('saved session chip shows measures in the Practice tab', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
@@ -646,8 +634,7 @@ void main() {
     });
 
     testWidgets('opening detail screen Log Practice shows sheet pre-filled for that piece', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
@@ -684,8 +671,7 @@ void main() {
     });
 
     testWidgets('tapping a card navigates to the detail screen', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
@@ -718,8 +704,7 @@ void main() {
     });
 
     testWidgets('can add an exercise and see it in the list', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.widgetWithText(NavigationDestination, 'Exercises'));
       await tester.pumpAndSettle();
@@ -741,8 +726,7 @@ void main() {
     });
 
     testWidgets('Play button opens log exercise sheet', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.widgetWithText(NavigationDestination, 'Exercises'));
       await tester.pumpAndSettle();
@@ -775,8 +759,7 @@ void main() {
 
     testWidgets('logging an exercise session shows it in the Practice tab',
         (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       // Add an exercise
       await tester.tap(find.widgetWithText(NavigationDestination, 'Exercises'));
@@ -824,8 +807,7 @@ void main() {
     });
 
     testWidgets('tapping a session tile opens the detail screen', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
@@ -868,8 +850,7 @@ void main() {
 
     testWidgets('deleting a session from the detail screen removes it from Practice tab',
         (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
@@ -920,8 +901,7 @@ void main() {
 
     testWidgets('editing duration in detail screen saves and reflects change',
         (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
@@ -990,11 +970,7 @@ void main() {
     });
 
     testWidgets('Stats tab shows empty state when no data', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
-      // Extra pump to ensure providers fully reload after reset
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       await tester.tap(find.text('Stats').last);
       await tester.pumpAndSettle();
@@ -1004,8 +980,7 @@ void main() {
 
     testWidgets('Stats tab shows summary stats after logging a session',
         (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       // Add a song
       await tester.tap(find.byType(FloatingActionButton));
@@ -1053,8 +1028,7 @@ void main() {
     });
 
     testWidgets('weekly goal can be set and cleared', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       // Add a song so the non-empty stats path renders, putting LAST 7 DAYS near top
       await tester.tap(find.byType(FloatingActionButton));
@@ -1116,8 +1090,7 @@ void main() {
     });
 
     testWidgets('Toggle switches between dark and light mode', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await _startApp(tester);
 
       // Default is dark — light_mode icon visible (tapping switches to light)
       expect(find.byIcon(Icons.light_mode_outlined), findsOneWidget);
