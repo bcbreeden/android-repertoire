@@ -15,6 +15,26 @@ class ExerciseSession {
     this.durationSeconds,
   });
 
+  ExerciseSession copyWith({
+    int? id,
+    int? exerciseId,
+    DateTime? timestamp,
+    int? bpm,
+    bool clearBpm = false,
+    String? notes,
+    bool clearNotes = false,
+    int? durationSeconds,
+    bool clearDurationSeconds = false,
+  }) =>
+      ExerciseSession(
+        id: id ?? this.id,
+        exerciseId: exerciseId ?? this.exerciseId,
+        timestamp: timestamp ?? this.timestamp,
+        bpm: clearBpm ? null : (bpm ?? this.bpm),
+        notes: clearNotes ? null : (notes ?? this.notes),
+        durationSeconds: clearDurationSeconds ? null : (durationSeconds ?? this.durationSeconds),
+      );
+
   Map<String, dynamic> toMap() => {
         if (id != null) 'id': id,
         'exercise_id': exerciseId,

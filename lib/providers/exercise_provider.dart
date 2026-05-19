@@ -160,6 +160,32 @@ class ExerciseProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> updateExerciseSession(ExerciseSession session) async {
+    try {
+      await _db.updateExerciseSession(session);
+      final idx = _sessions.indexWhere((s) => s.id == session.id);
+      if (idx != -1) _sessions[idx] = session;
+      // Refresh last session dates in case timestamp changed
+      _lastSessionDates = await _db.getAllLastExerciseSessionDates();
+      notifyListeners();
+    } catch (e) {
+      _error = 'Failed to update session: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteExerciseSession(int id) async {
+    try {
+      await _db.deleteExerciseSession(id);
+      _sessions.removeWhere((s) => s.id == id);
+      _lastSessionDates = await _db.getAllLastExerciseSessionDates();
+      notifyListeners();
+    } catch (e) {
+      _error = 'Failed to delete session: $e';
+      notifyListeners();
+    }
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();

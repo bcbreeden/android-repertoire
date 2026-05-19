@@ -31,8 +31,9 @@ lib/
     practice_screen.dart     # Practice session history (songs only)
     celebration_screen.dart  # Shown when piece reaches Repertoire
     exercises_screen.dart    # ExercisesTab: list of exercises with Play buttons
-    exercise_detail_screen.dart  # Exercise info + session history + Log Session FAB
-    exercise_form_screen.dart    # Add/edit exercise (single-page form)
+    exercise_detail_screen.dart          # Exercise info + session history + Log Session FAB
+    exercise_form_screen.dart            # Add/edit exercise (single-page form)
+    exercise_session_detail_screen.dart  # Edit/delete an exercise session (duration, BPM, notes, date/time)
   widgets/
     piece_card.dart          # Card shown in the list; PieceCard widget
     exercise_card.dart       # ExerciseCard with always-visible Play pill button

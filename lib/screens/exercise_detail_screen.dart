@@ -8,6 +8,7 @@ import '../theme/app_colors.dart';
 import '../utils/constants.dart';
 import '../widgets/log_exercise_sheet.dart';
 import 'exercise_form_screen.dart';
+import 'exercise_session_detail_screen.dart';
 
 class ExerciseDetailScreen extends StatelessWidget {
   final Exercise exercise;
@@ -80,6 +81,7 @@ class ExerciseDetailScreen extends StatelessWidget {
                       return _DayGroup(
                         date: dateKeys[index],
                         sessions: grouped[dateKeys[index]]!,
+                        exercise: current,
                       );
                     },
                     childCount: _groupByDate(sessions).length,
@@ -241,7 +243,8 @@ class _InfoCard extends StatelessWidget {
 class _DayGroup extends StatelessWidget {
   final DateTime date;
   final List<ExerciseSession> sessions;
-  const _DayGroup({required this.date, required this.sessions});
+  final Exercise exercise;
+  const _DayGroup({required this.date, required this.sessions, required this.exercise});
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +293,7 @@ class _DayGroup extends StatelessWidget {
                         color: context.colors.divider,
                         indent: 16,
                         endIndent: 16),
-                  _SessionTile(session: sessions[i]),
+                  _SessionTile(session: sessions[i], exercise: exercise),
                 ],
               );
             }),
@@ -303,7 +306,8 @@ class _DayGroup extends StatelessWidget {
 
 class _SessionTile extends StatelessWidget {
   final ExerciseSession session;
-  const _SessionTile({required this.session});
+  final Exercise exercise;
+  const _SessionTile({required this.session, required this.exercise});
 
   String _formatDuration(int seconds) {
     final h = seconds ~/ 3600;
@@ -317,7 +321,18 @@ class _SessionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final timeStr = DateFormat('h:mm a').format(session.timestamp);
 
-    return Padding(
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ExerciseSessionDetailScreen(
+            session: session,
+            exercise: exercise,
+          ),
+        ),
+      ),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,6 +395,7 @@ class _SessionTile extends StatelessWidget {
             ),
           ],
         ],
+      ),
       ),
     );
   }

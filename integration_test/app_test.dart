@@ -809,6 +809,103 @@ void main() {
     });
   });
 
+  // ── Exercise session detail ───────────────────────────────────────────────
+  group('Exercise session detail', () {
+    setUp(() async {
+      await DatabaseHelper.instance.resetForTesting();
+    });
+
+    /// Helper: add exercise 'Edit Me', log a session, navigate to ExerciseDetailScreen.
+    Future<void> _setupExerciseWithSession(WidgetTester tester) async {
+      await _startApp(tester);
+
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Exercises'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(TextFormField).at(0));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(0), 'Edit Me');
+      await tester.pumpAndSettle();
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Add Exercise', skipOffstage: false));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Exercise'));
+      await tester.pumpAndSettle();
+
+      // Log a session via detail screen
+      await tester.tap(find.text('Edit Me'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Log Session'));
+      await tester.pumpAndSettle();
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save Session'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('tapping a session tile opens the session detail screen',
+        (tester) async {
+      await _setupExerciseWithSession(tester);
+
+      // A session tile is now visible; tap it
+      await tester.tap(find.text(RegExp(r'\d{1,2}:\d{2} [AP]M')).first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Session Details'), findsOneWidget);
+      expect(find.text('Save Changes'), findsOneWidget);
+    });
+
+    testWidgets('editing duration in exercise session detail saves correctly',
+        (tester) async {
+      await _setupExerciseWithSession(tester);
+
+      await tester.tap(find.text(RegExp(r'\d{1,2}:\d{2} [AP]M')).first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Session Details'), findsOneWidget);
+
+      // Enter 20 minutes — Duration (min) is the first TextFormField (index 0)
+      await tester.tap(find.byType(TextFormField).at(0));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(0), '20');
+      await tester.pumpAndSettle();
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save Changes'));
+      await tester.pumpAndSettle();
+
+      // Back on exercise detail — timer chip should show 20:00
+      expect(find.text('20:00'), findsOneWidget);
+    });
+
+    testWidgets('deleting an exercise session removes it from session history',
+        (tester) async {
+      await _setupExerciseWithSession(tester);
+
+      await tester.tap(find.text(RegExp(r'\d{1,2}:\d{2} [AP]M')).first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Session Details'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      // Back on exercise detail — no session history
+      expect(find.text('SESSION HISTORY'), findsNothing);
+    });
+  });
+
   // ── Practice session detail ───────────────────────────────────────────────
   group('Practice session detail', () {
     setUp(() async {

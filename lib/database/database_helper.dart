@@ -623,6 +623,21 @@ class DatabaseHelper {
     return await db.insert('exercise_sessions', session.toMap());
   }
 
+  Future<int> updateExerciseSession(ExerciseSession session) async {
+    final db = await database;
+    return await db.update(
+      'exercise_sessions',
+      session.toMap(),
+      where: 'id = ?',
+      whereArgs: [session.id],
+    );
+  }
+
+  Future<int> deleteExerciseSession(int id) async {
+    final db = await database;
+    return await db.delete('exercise_sessions', where: 'id = ?', whereArgs: [id]);
+  }
+
   Future<List<ExerciseSession>> getAllExerciseSessions() async {
     final db = await database;
     final rows = await db.query('exercise_sessions', orderBy: 'timestamp DESC');
