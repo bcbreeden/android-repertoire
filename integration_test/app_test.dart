@@ -99,6 +99,18 @@ Future<void> _startApp(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// Dismisses the software keyboard and waits for the OS-level dismiss
+/// animation to fully complete before the caller taps a button.
+/// pumpAndSettle() alone only settles Flutter animations; the Android keyboard
+/// hides asynchronously via InputMethodManager, so an extra real-time pump
+/// is needed (especially on API 37 where the dismiss animation is longer).
+Future<void> _dismissKeyboard(WidgetTester tester) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 500));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -562,8 +574,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Dismiss keyboard so Save Session button is tappable
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
 
       // Save
       await tester.tap(find.text('Save Session'));
@@ -609,8 +620,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Dismiss keyboard so Save Session button is tappable
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
 
       await tester.tap(find.text('Save Session'));
       await tester.pumpAndSettle();
@@ -718,8 +728,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Dismiss keyboard so the viewport expands and Add Exercise is in range.
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
       await tester.ensureVisible(find.text('Add Exercise', skipOffstage: false));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add Exercise'));
@@ -743,8 +752,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Dismiss keyboard so the viewport expands and Add Exercise is in range.
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
       await tester.ensureVisible(find.text('Add Exercise', skipOffstage: false));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add Exercise'));
@@ -780,8 +788,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Dismiss keyboard so the viewport expands and Add Exercise is in range.
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
       await tester.ensureVisible(find.text('Add Exercise', skipOffstage: false));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add Exercise'));
@@ -791,8 +798,7 @@ void main() {
       await tester.tap(find.text('Play'));
       await tester.pumpAndSettle();
 
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
 
       await tester.tap(find.text('Save Session'));
       await tester.pumpAndSettle();
@@ -830,8 +836,7 @@ void main() {
       await tester.enterText(find.byType(TextFormField).at(0), 'Edit Me');
       await tester.pumpAndSettle();
 
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
       await tester.ensureVisible(find.text('Add Exercise', skipOffstage: false));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add Exercise'));
@@ -844,8 +849,7 @@ void main() {
       await tester.tap(find.text('Log Session'));
       await tester.pumpAndSettle();
 
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
       await tester.tap(find.text('Save Session'));
       await tester.pumpAndSettle();
     }
@@ -877,8 +881,7 @@ void main() {
       await tester.enterText(find.byType(TextFormField).at(0), '20');
       await tester.pumpAndSettle();
 
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
       await tester.tap(find.text('Save Changes'));
       await tester.pumpAndSettle();
 
@@ -937,8 +940,7 @@ void main() {
       await tester.tap(find.text('Log Practice'));
       await tester.pumpAndSettle();
 
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
       await tester.tap(find.text('Save Session'));
       await tester.pumpAndSettle();
 
@@ -979,8 +981,7 @@ void main() {
       await tester.tap(find.text('Log Practice'));
       await tester.pumpAndSettle();
 
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
       await tester.tap(find.text('Save Session'));
       await tester.pumpAndSettle();
 
@@ -1030,8 +1031,7 @@ void main() {
       await tester.tap(find.text('Log Practice'));
       await tester.pumpAndSettle();
 
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
       await tester.tap(find.text('Save Session'));
       await tester.pumpAndSettle();
 
@@ -1053,8 +1053,7 @@ void main() {
       await tester.enterText(find.byType(TextFormField).at(2), '45');
       await tester.pumpAndSettle();
 
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
       await tester.tap(find.text('Save Changes'));
       await tester.pumpAndSettle();
 
@@ -1111,8 +1110,7 @@ void main() {
       await tester.tap(find.text('Log Practice'));
       await tester.pumpAndSettle();
 
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
+      await _dismissKeyboard(tester);
       await tester.tap(find.text('Save Session'));
       await tester.pumpAndSettle();
 
