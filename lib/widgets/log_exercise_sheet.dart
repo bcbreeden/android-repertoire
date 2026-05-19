@@ -145,7 +145,7 @@ class _LogExerciseSheetState extends State<LogExerciseSheet>
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SingleChildScrollView(
         child: Container(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
+          padding: EdgeInsets.fromLTRB(24, 20, 24, 36 + MediaQuery.of(context).viewPadding.bottom),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
