@@ -173,7 +173,7 @@ Integration test pitfalls:
 - **Exercise names in Practice tab assertions**: When asserting an exercise name appears in the Practice tab after navigating from the Exercises tab, use `findsAtLeastNWidgets(1)` — the Exercises tab card remains in-tree via `AutomaticKeepAliveClientMixin` and is NOT wrapped in `Offstage`, so `skipOffstage: true` does not filter it out.
 - **Piece wizard field indices**: `BookField` (Autocomplete) renders a `TextFormField` and is visible to `find.byType(TextFormField)`. Step 1 order: 0=Title, 1=Composer, 2=Book, 3=Page, 4=Total Measures, 5=Target BPM, 6=Current BPM. Edit form order: 0=Title, 1=Composer, 2=Book, 3=Page, 4=Total Measures, 5=Measures Learned, 6=Current Tempo, 7=Target Tempo, 8=Notes.
 - **Exercise form field indices**: 0=Name, 1=Source, 2=Book (Autocomplete TextFormField), 3=Page, 4=Notes.
-- **"Add Exercise" button scrolling**: The exercise form's `ListView` may need `await tester.ensureVisible(find.text('Add Exercise', skipOffstage: false))` before tapping — the extra book/page fields push the button below the visible area when the keyboard is up.
+- **"Add Exercise" button scrolling**: The exercise form's `ListView` has the "Add Exercise" button pushed below the visible area when the keyboard is up. With a tall keyboard, the button can fall outside the `SliverChildListDelegate` cache extent and be absent from the render tree entirely, causing `find.text('Add Exercise')` to return 0 widgets. Always call `FocusManager.instance.primaryFocus?.unfocus(); await tester.pumpAndSettle();` before `ensureVisible` to expand the viewport, then call `ensureVisible` and `tap`.
 
 ## Dependencies
 

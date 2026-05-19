@@ -717,6 +717,9 @@ void main() {
       await tester.enterText(find.byType(TextFormField).at(0), 'C Major Scale');
       await tester.pumpAndSettle();
 
+      // Dismiss keyboard so the viewport expands and Add Exercise is in range.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Add Exercise', skipOffstage: false));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add Exercise'));
@@ -739,6 +742,9 @@ void main() {
       await tester.enterText(find.byType(TextFormField).at(0), 'Arpeggios');
       await tester.pumpAndSettle();
 
+      // Dismiss keyboard so the viewport expands and Add Exercise is in range.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Add Exercise', skipOffstage: false));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add Exercise'));
@@ -773,6 +779,9 @@ void main() {
       await tester.enterText(find.byType(TextFormField).at(0), 'Hanon No. 1');
       await tester.pumpAndSettle();
 
+      // Dismiss keyboard so the viewport expands and Add Exercise is in range.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Add Exercise', skipOffstage: false));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add Exercise'));
