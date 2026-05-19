@@ -7,7 +7,7 @@ import '../providers/exercise_provider.dart';
 import '../providers/piece_provider.dart';
 import '../theme/app_colors.dart';
 import '../utils/constants.dart';
-import 'exercise_detail_screen.dart';
+import 'exercise_session_detail_screen.dart';
 import 'practice_session_detail_screen.dart';
 
 // ── Unified entry ──────────────────────────────────────────────────────────────
@@ -213,8 +213,10 @@ class _DayGroup extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  ExerciseDetailScreen(exercise: exercise),
+                              builder: (_) => ExerciseSessionDetailScreen(
+                                session: entry.exerciseSession!,
+                                exercise: exercise,
+                              ),
                             ),
                           );
                         }

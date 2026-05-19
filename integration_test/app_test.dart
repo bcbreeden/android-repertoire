@@ -813,6 +813,47 @@ void main() {
       expect(find.text('Hanon No. 1'), findsAtLeastNWidgets(1));
       expect(find.text('Session History'), findsOneWidget);
     });
+
+    testWidgets('tapping exercise session in Practice tab opens session detail',
+        (tester) async {
+      await _startApp(tester);
+
+      // Add exercise and log a session
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Exercises'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(TextFormField).at(0));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).at(0), 'Scales');
+      await tester.pumpAndSettle();
+
+      await _dismissKeyboard(tester);
+      await tester.ensureVisible(find.text('Add Exercise', skipOffstage: false));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Exercise'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Play'));
+      await tester.pumpAndSettle();
+
+      await _dismissKeyboard(tester);
+      await tester.tap(find.text('Save Session'));
+      await tester.pumpAndSettle();
+
+      // Navigate to Practice tab and tap the exercise session tile
+      await tester.tap(find.widgetWithText(NavigationDestination, 'Practice'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.textContaining(RegExp(r'\d{1,2}:\d{2} [AP]M')).first);
+      await tester.pumpAndSettle();
+
+      // Should open the session detail screen directly
+      expect(find.text('Session Details'), findsOneWidget);
+      expect(find.text('Save Changes'), findsOneWidget);
+    });
   });
 
   // ── Exercise session detail ───────────────────────────────────────────────
