@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -68,17 +69,6 @@ class StatsTab extends StatelessWidget {
             // ── Last 7 days bar chart ──────────────────────────────────────
             _Last7DaysCard(songSessions: allSongSessions, exSessions: allExSessions),
             const SizedBox(height: 16),
-
-            // ── Song progress ─────────────────────────────────────────────
-            if (pieces.totalCount > 0) ...[
-              _SongProgressCard(
-                totalPieces: pieces.totalCount,
-                repertoireCount: pieces.repertoireCount,
-                stageCounts: pieces.stageCounts,
-                overallPct: pieces.overallProgressPct,
-              ),
-              const SizedBox(height: 16),
-            ],
 
             // ── Most practiced ────────────────────────────────────────────
             if (allSongSessions.isNotEmpty) ...[
@@ -177,90 +167,90 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _StatBox(
-          label: 'Total Time',
-          value: _formatPracticeDuration(totalSeconds),
-          icon: Icons.timer_outlined,
-          color: kGoldColor,
+    const streakColor = Color(0xFFFF6B35);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+      decoration: BoxDecoration(
+        color: context.colors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.colors.divider),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            // Total time
+            Expanded(
+              child: _SummaryStatColumn(
+                label: 'Total Time',
+                value: _formatPracticeDuration(totalSeconds),
+                icon: Icons.timer_outlined,
+                color: kGoldColor,
+              ),
+            ),
+            VerticalDivider(
+              width: 24,
+              thickness: 1,
+              color: context.colors.divider,
+            ),
+            // Streak
+            Expanded(
+              child: _SummaryStatColumn(
+                label: 'Streak',
+                value: '${streak}d',
+                icon: Icons.local_fire_department,
+                color: streakColor,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 10),
-        _StatBox(
-          label: 'Streak',
-          value: '${streak}d',
-          icon: Icons.local_fire_department,
-          color: const Color(0xFFFF6B35),
-        ),
-      ],
+      ),
     );
   }
 }
 
-class _StatBox extends StatelessWidget {
+class _SummaryStatColumn extends StatelessWidget {
   final String label;
   final String value;
-  final String? unit;
   final IconData icon;
   final Color color;
 
-  const _StatBox({
+  const _SummaryStatColumn({
     required this.label,
     required this.value,
     required this.icon,
     required this.color,
-    this.unit,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: context.colors.card,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.colors.divider),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(icon, size: 13, color: color),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                        color: context.colors.textSecondary,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
+            Icon(icon, size: 12, color: color),
+            const SizedBox(width: 4),
             Text(
-              value,
+              label,
               style: TextStyle(
-                color: color,
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
+                color: context.colors.textSecondary,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            if (unit != null)
-              Text(
-                unit!,
-                style: TextStyle(
-                    color: context.colors.textSecondary,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500),
-              ),
           ],
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            height: 1.0,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -305,16 +295,17 @@ class _ThisWeekCardState extends State<_ThisWeekCard> {
     if (mounted) setState(() => _goalHours = hours);
   }
 
+  /// Seconds practiced in the current Sun–Sat week.
   int _weekSeconds() {
     final now = DateTime.now();
-    // Rolling 7-day window: midnight 6 days ago through end of today.
-    final windowStart = DateTime(now.year, now.month, now.day - 6);
+    final today = DateTime(now.year, now.month, now.day);
+    final sunday = today.subtract(Duration(days: today.weekday % 7));
     int seconds = 0;
     for (final s in widget.songSessions) {
-      if (!s.timestamp.isBefore(windowStart)) seconds += s.durationSeconds ?? 0;
+      if (!s.timestamp.isBefore(sunday)) seconds += s.durationSeconds ?? 0;
     }
     for (final s in widget.exSessions) {
-      if (!s.timestamp.isBefore(windowStart)) seconds += s.durationSeconds ?? 0;
+      if (!s.timestamp.isBefore(sunday)) seconds += s.durationSeconds ?? 0;
     }
     return seconds;
   }
@@ -335,68 +326,178 @@ class _ThisWeekCardState extends State<_ThisWeekCard> {
   Widget build(BuildContext context) {
     final seconds = _weekSeconds();
     final goalSeconds = _goalHours != null ? _goalHours! * 3600 : null;
-    final progress = goalSeconds != null
+    final progress = goalSeconds != null && goalSeconds > 0
         ? (seconds / goalSeconds).clamp(0.0, 1.0)
         : null;
     final goalMet = progress != null && progress >= 1.0;
     final progressColor = goalMet ? const Color(0xFF4CAF50) : kGoldColor;
 
     return _Card(
-      label: 'LAST 7 DAYS',
-      action: IconButton(
-        icon: Icon(
-          _goalHours != null ? Icons.flag : Icons.flag_outlined,
-          size: 15,
-          color: _goalHours != null ? kGoldColor : context.colors.textSecondary,
-        ),
-        onPressed: _showGoalDialog,
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
-        tooltip: 'Set 7-day goal',
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      label: 'THIS WEEK',
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _InlineStatTile(
-            value: _formatPracticeDuration(seconds),
-            label: goalSeconds != null
-                ? 'of ${_goalHours}h goal'
-                : 'past 7 days',
-            icon: Icons.timer_outlined,
-            color: goalMet ? progressColor : kGoldColor,
-          ),
-          if (goalSeconds != null) ...[
-            const SizedBox(height: 12),
-            Row(
+          // Left: time value + optional progress bar
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 6,
-                      backgroundColor: context.colors.divider,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(progressColor),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
                 Text(
-                  goalMet ? 'Done!' : '${(progress! * 100).round()}%',
+                  _formatPracticeDuration(seconds),
                   style: TextStyle(
                     color: progressColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    height: 1.0,
                   ),
                 ),
+                const SizedBox(height: 3),
+                Text(
+                  _goalHours != null
+                      ? (goalMet
+                          ? 'Goal reached!'
+                          : '${_formatPracticeDuration(math.max(0, goalSeconds! - seconds))} to go · ${_goalHours}h goal')
+                      : 'practiced this week',
+                  style: TextStyle(
+                    color: goalMet ? progressColor : context.colors.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+                if (_goalHours != null) ...[
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress ?? 0,
+                      minHeight: 5,
+                      backgroundColor: context.colors.divider,
+                      valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                    ),
+                  ),
+                ],
               ],
             ),
-          ],
+          ),
+          // Right: donut (if goal set) or set-goal button
+          const SizedBox(width: 14),
+          if (_goalHours != null)
+            _GoalDonut(
+              progress: progress!,
+              goalMet: goalMet,
+              progressColor: progressColor,
+              goalHours: _goalHours!,
+              onTap: _showGoalDialog,
+            )
+          else
+            TextButton.icon(
+              onPressed: _showGoalDialog,
+              icon: const Icon(Icons.flag_outlined, size: 14),
+              label: const Text('Set goal'),
+              style: TextButton.styleFrom(
+                foregroundColor: context.colors.textSecondary,
+                textStyle: const TextStyle(fontSize: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                side: BorderSide(color: context.colors.divider),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
+}
+
+class _GoalDonut extends StatelessWidget {
+  final double progress;
+  final bool goalMet;
+  final Color progressColor;
+  final int goalHours;
+  final VoidCallback onTap;
+
+  const _GoalDonut({
+    required this.progress,
+    required this.goalMet,
+    required this.progressColor,
+    required this.goalHours,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = (progress * 100).round();
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 52,
+        height: 52,
+        child: CustomPaint(
+          painter: _DonutPainter(
+            progress: progress,
+            color: progressColor,
+            trackColor: context.colors.divider,
+          ),
+          child: Center(
+            child: Text(
+              goalMet ? '✓' : '$pct%',
+              style: TextStyle(
+                color: progressColor,
+                fontSize: goalMet ? 16 : 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DonutPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final Color trackColor;
+
+  const _DonutPainter({
+    required this.progress,
+    required this.color,
+    required this.trackColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const strokeWidth = 8.0;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - strokeWidth / 2;
+
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = trackColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth,
+    );
+
+    if (progress > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2,
+        2 * math.pi * progress.clamp(0.0, 1.0),
+        false,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DonutPainter old) =>
+      old.progress != progress || old.color != color || old.trackColor != trackColor;
 }
 
 // ── Weekly goal dialog ──────────────────────────────────────────────────────────
@@ -858,7 +959,7 @@ class _Card extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
       decoration: BoxDecoration(
         color: context.colors.card,
         borderRadius: BorderRadius.circular(12),
@@ -884,7 +985,7 @@ class _Card extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           child,
         ],
       ),

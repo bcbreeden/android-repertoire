@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/piece.dart';
@@ -338,6 +340,11 @@ class _ProgressSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showMeasures = piece.measures != null;
+    final showTempo = piece.targetTempo != null;
+
+    if (!showMeasures && !showTempo) return const SizedBox.shrink();
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -350,37 +357,37 @@ class _ProgressSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Progress',
+            'PROGRESS',
             style: TextStyle(
               color: context.colors.textSecondary,
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: 14),
-          _ProgressBar(
-            label: 'Measures Learned',
-            value: piece.measuresLearnedPct / 100,
-            display: piece.measuresLearned != null && piece.measures != null
-                ? '${piece.measuresLearned} / ${piece.measures} (${piece.measuresLearnedPct.toStringAsFixed(0)}%)'
-                : piece.measuresLearned != null
-                    ? '${piece.measuresLearned} learned'
-                    : piece.measures != null
-                        ? '${piece.measures} total'
-                        : 'Not set',
-            color: stageColor,
-          ),
-          const SizedBox(height: 12),
-          _ProgressBar(
-            label: 'Tempo',
-            value: piece.tempoPct / 100,
-            display: piece.currentTempo != null && piece.targetTempo != null
-                ? '${piece.currentTempo} / ${piece.targetTempo} BPM (${piece.tempoPct.toStringAsFixed(0)}%)'
-                : piece.currentTempo != null
-                    ? '${piece.currentTempo} BPM (no target set)'
-                    : 'Not set',
-            color: stageColor,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              if (showMeasures)
+                _DonutChart(
+                  progress: piece.measuresLearnedPct / 100,
+                  label: 'Measures',
+                  valueText: piece.measuresLearned != null
+                      ? '${piece.measuresLearned} / ${piece.measures}'
+                      : '- / ${piece.measures}',
+                  color: stageColor,
+                ),
+              if (showTempo)
+                _DonutChart(
+                  progress: piece.tempoPct / 100,
+                  label: 'Tempo',
+                  valueText: piece.currentTempo != null
+                      ? '${piece.currentTempo} / ${piece.targetTempo} BPM'
+                      : '- / ${piece.targetTempo} BPM',
+                  color: stageColor,
+                ),
+            ],
           ),
         ],
       ),
@@ -388,50 +395,112 @@ class _ProgressSection extends StatelessWidget {
   }
 }
 
-class _ProgressBar extends StatelessWidget {
+class _DonutChart extends StatelessWidget {
+  final double progress;
   final String label;
-  final double value;
-  final String display;
+  final String valueText;
   final Color color;
 
-  const _ProgressBar({
+  const _DonutChart({
+    required this.progress,
     required this.label,
-    required this.value,
-    required this.display,
+    required this.valueText,
     required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
+    final pct = (progress.clamp(0.0, 1.0) * 100).round();
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: TextStyle(color: context.colors.textPrimary, fontSize: 13),
+        SizedBox(
+          width: 88,
+          height: 88,
+          child: CustomPaint(
+            painter: _DonutPainter(
+              progress: progress.clamp(0.0, 1.0),
+              color: color,
+              trackColor: context.colors.divider,
             ),
-            Text(
-              display,
-              style: TextStyle(color: context.colors.textSecondary, fontSize: 12),
+            child: Center(
+              child: Text(
+                '$pct%',
+                style: TextStyle(
+                  color: context.colors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: value.clamp(0.0, 1.0),
-            backgroundColor: context.colors.divider,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 8,
           ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: context.colors.textSecondary,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          valueText,
+          style: TextStyle(color: context.colors.textSecondary, fontSize: 11),
         ),
       ],
     );
   }
+}
+
+class _DonutPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final Color trackColor;
+
+  const _DonutPainter({
+    required this.progress,
+    required this.color,
+    required this.trackColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const strokeWidth = 9.0;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - strokeWidth / 2;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    // Track
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = trackColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth,
+    );
+
+    // Progress arc (clockwise from top)
+    if (progress > 0) {
+      canvas.drawArc(
+        rect,
+        -math.pi / 2,
+        2 * math.pi * progress,
+        false,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DonutPainter old) =>
+      old.progress != progress || old.color != color || old.trackColor != trackColor;
 }
 
 class _LogPracticeButton extends StatelessWidget {
