@@ -1207,9 +1207,9 @@ void main() {
       await tester.tap(find.text('Set Goal'));
       await tester.pumpAndSettle();
 
-      // Goal is now set — donut % shown, Set goal button gone
+      // Goal is now set — donut % shown, Set goal button gone, subtitle shows remaining time
       expect(find.byIcon(Icons.flag_outlined), findsNothing);
-      expect(find.textContaining('goal'), findsOneWidget);
+      expect(find.textContaining('to go'), findsOneWidget);
 
       // Open dialog again by tapping the donut percentage
       await tester.tap(find.textContaining('%'));
@@ -1219,9 +1219,9 @@ void main() {
       await tester.tap(find.text('Clear'));
       await tester.pumpAndSettle();
 
-      // Goal cleared — Set goal button is back
+      // Goal cleared — Set goal button is back, no remaining-time subtitle
       expect(find.byIcon(Icons.flag_outlined), findsOneWidget);
-      expect(find.textContaining('goal'), findsNothing);
+      expect(find.textContaining('to go'), findsNothing);
     });
   });
 
