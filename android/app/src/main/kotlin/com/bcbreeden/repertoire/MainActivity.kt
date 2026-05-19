@@ -1,4 +1,4 @@
-package com.example.repertoire
+package com.bcbreeden.repertoire
 
 import io.flutter.embedding.android.FlutterActivity
 

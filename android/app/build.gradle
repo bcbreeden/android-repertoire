@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace "com.example.repertoire"
+    namespace "com.bcbreeden.repertoire"
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
@@ -23,7 +23,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.repertoire"
+        applicationId "com.bcbreeden.repertoire"
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutter.versionCode
