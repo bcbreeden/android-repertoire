@@ -1167,7 +1167,6 @@ void main() {
       expect(find.text('Streak'), findsOneWidget);
 
       // Section headers
-      expect(find.text('LAST 7 DAYS'), findsOneWidget);
       expect(find.text('THIS WEEK · time'), findsOneWidget);
       expect(find.text('MOST PRACTICED'), findsOneWidget);
     });
@@ -1194,11 +1193,10 @@ void main() {
       await tester.tap(find.text('Stats').last);
       await tester.pumpAndSettle();
 
-      // No goal set — flag icon is outlined
+      // No goal set — "Set goal" button with outlined flag icon
       expect(find.byIcon(Icons.flag_outlined), findsOneWidget);
-      expect(find.byIcon(Icons.flag), findsNothing);
 
-      // Open goal dialog
+      // Open goal dialog via Set goal button
       await tester.tap(find.byIcon(Icons.flag_outlined));
       await tester.pumpAndSettle();
 
@@ -1209,21 +1207,21 @@ void main() {
       await tester.tap(find.text('Set Goal'));
       await tester.pumpAndSettle();
 
-      // Goal is now set — filled flag icon
-      expect(find.byIcon(Icons.flag), findsOneWidget);
-      expect(find.textContaining('of '), findsOneWidget);
+      // Goal is now set — donut % shown, Set goal button gone
+      expect(find.byIcon(Icons.flag_outlined), findsNothing);
+      expect(find.textContaining('goal'), findsOneWidget);
 
-      // Open dialog again and clear the goal
-      await tester.tap(find.byIcon(Icons.flag));
+      // Open dialog again by tapping the donut percentage
+      await tester.tap(find.textContaining('%'));
       await tester.pumpAndSettle();
 
       expect(find.text('Weekly Practice Goal'), findsOneWidget);
       await tester.tap(find.text('Clear'));
       await tester.pumpAndSettle();
 
-      // Goal cleared — back to outlined flag, no progress label
+      // Goal cleared — Set goal button is back
       expect(find.byIcon(Icons.flag_outlined), findsOneWidget);
-      expect(find.textContaining('of '), findsNothing);
+      expect(find.textContaining('goal'), findsNothing);
     });
   });
 
