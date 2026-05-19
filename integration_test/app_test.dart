@@ -855,7 +855,7 @@ void main() {
       await _setupExerciseWithSession(tester);
 
       // A session tile is now visible; tap it
-      await tester.tap(find.text(RegExp(r'\d{1,2}:\d{2} [AP]M')).first);
+      await tester.tap(find.textContaining(RegExp(r'\d{1,2}:\d{2} [AP]M')).first);
       await tester.pumpAndSettle();
 
       expect(find.text('Session Details'), findsOneWidget);
@@ -866,7 +866,7 @@ void main() {
         (tester) async {
       await _setupExerciseWithSession(tester);
 
-      await tester.tap(find.text(RegExp(r'\d{1,2}:\d{2} [AP]M')).first);
+      await tester.tap(find.textContaining(RegExp(r'\d{1,2}:\d{2} [AP]M')).first);
       await tester.pumpAndSettle();
 
       expect(find.text('Session Details'), findsOneWidget);
@@ -890,7 +890,7 @@ void main() {
         (tester) async {
       await _setupExerciseWithSession(tester);
 
-      await tester.tap(find.text(RegExp(r'\d{1,2}:\d{2} [AP]M')).first);
+      await tester.tap(find.textContaining(RegExp(r'\d{1,2}:\d{2} [AP]M')).first);
       await tester.pumpAndSettle();
 
       expect(find.text('Session Details'), findsOneWidget);
